@@ -83,12 +83,13 @@ engineering_value = raw / scale
 `i16` uses two's-complement; `u32` is high-word first.  The CSV contains units,
 types, limits, writable flags, pulse flags, and descriptions for HMI widgets.
 
-The ST program initializes every `%QW` command to a valid safe value, advances
-each non-zero watchdog every 200 ms, and checks that each FC4 watchdog echo
-continues to progress.  A stale mismatch for 3 seconds applies the documented
-communication fail-safe policy.  It also implements the same rising-edge trip
-matrix as `examples/external_plc.py` and closes the main steam valve above
-3150 RPM.
+The ST program explicitly copies every contract-safe value into `%QW` on its
+first scan (located-variable declaration initializers alone are not reliable
+with Runtime v4), advances each non-zero watchdog every 200 ms, and checks that
+each FC4 watchdog echo continues to progress.  A stale mismatch for 3 seconds
+applies the documented communication fail-safe policy.  It also implements the
+same rising-edge trip matrix as `examples/external_plc.py` and closes the main
+steam valve above 3150 RPM.
 
 HMI writes to pulse coils (`START`, `STOP`, `RESET_TRIP`, `ACK_ALARM`,
 `TRIP_TEST`, `CLEAR_TOTALIZER`, plus generator breaker commands) are held for

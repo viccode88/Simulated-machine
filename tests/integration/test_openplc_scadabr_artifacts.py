@@ -175,6 +175,36 @@ def _expected_local(function_code: int, device_index: int, remote_offset: int) -
     raise AssertionError(f"unexpected function code {function_code}")
 
 
+def _expected_safe_qw(row: dict[str, str], device_index: int) -> int:
+    scale = float(row["scale"] or 1)
+    raw_minimum = (
+        max(0, min(0xFFFF, int(round(float(row["min"]) * scale))))
+        if row["min"]
+        else 0
+    )
+    raw_maximum = (
+        max(0, min(0xFFFF, int(round(float(row["max"]) * scale))))
+        if row["max"]
+        else 0xFFFF
+    )
+    fixed = {
+        "CONTROL_MODE": 3,
+        "COMMAND_SEQUENCE": 0,
+        "WATCHDOG_COUNTER": 1,
+        "RESET_KEY": 0,
+        "SIMULATION_FLAGS": 0,
+        "ACTIVE_CONTROLLER_ID": device_index + 1,
+        "COMMAND_LEASE_TIME": 5,
+        "OUTPUT_RATE_LIMIT": 1000,
+        "RESERVED": 0,
+        "OUTPUT_HIGH_LIMIT": 10000,
+        "OUTPUT_LOW_LIMIT": 0,
+        "CONTROLLER_SCAN_TIME": 200,
+    }
+    value = fixed.get(row["name"], raw_minimum)
+    return max(raw_minimum, min(raw_maximum, value))
+
+
 def _covered_offsets(groups: Iterable[dict[str, Any]], function_code: int) -> set[int]:
     covered: set[int] = set()
     for group in groups:
@@ -331,6 +361,26 @@ def test_openplc_northbound_server_and_project_source(
         assert safety_term in program_text
 
     program_body = program_text.rsplit("END_VAR", maxsplit=1)[-1]
+    init_match = re.search(
+        r"IF\s+NOT\s+I_OUTPUTS_INITIALIZED\s+THEN"
+        r"(?P<body>.*?)"
+        r"I_OUTPUTS_INITIALIZED\s*:=\s*TRUE\s*;\s*END_IF\s*;",
+        program_body,
+        flags=re.DOTALL,
+    )
+    assert init_match, "main.st must explicitly initialize the Runtime QW image"
+    init_body = init_match.group("body")
+    for device_index, device in enumerate(DEVICE_ORDER):
+        for row in register_rows:
+            if row["device"] != device or row["table"] != "HOLDING":
+                continue
+            stem = f"{device}__holding__{row['name'].lower()}".upper()
+            expected = _expected_safe_qw(row, device_index)
+            assert re.search(
+                rf"\b{re.escape(stem)}\s*:=\s*{expected}\s*;",
+                init_body,
+            ), f"{device}.{row['name']} has no executable safe QW initialization"
+
     pulse_rows = [row for row in register_rows if row["table"] == "COIL" and row["pulse"] == "yes"]
     assert len(pulse_rows) == 50
     for row in pulse_rows:

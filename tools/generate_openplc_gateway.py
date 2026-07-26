@@ -464,6 +464,43 @@ def declarations(remotes: Sequence[dict], rows: Sequence[Register]) -> list[str]
     return output
 
 
+def safe_output_initialization(rows: Sequence[Register]) -> list[str]:
+    """Emit executable first-scan assignments for every southbound %QW.
+
+    OpenPLC Runtime v4 can start located output variables with a zeroed process
+    image even when their ST declarations contain ``:=`` initializers. Values
+    whose contract minimum is above zero would then be rejected by the device
+    with Modbus exception 03.
+    """
+    output = [
+        "  (* Runtime v4 may zero located %QW variables after declaration setup.",
+        "     Copy every contract-safe value into the output image on first scan. *)",
+        "  IF NOT i_outputs_initialized THEN",
+    ]
+    for device_index, device in enumerate(DEVICE_ORDER):
+        device_rows = sorted(
+            (
+                row
+                for row in rows
+                if row.device == device and row.table == "HOLDING"
+            ),
+            key=lambda row: row.offset,
+        )
+        for row in device_rows:
+            output.append(
+                f"    {alias(device, 'holding', row.name)} := "
+                f"{safe_initial(row, device_index)};"
+            )
+    output.extend(
+        [
+            "    i_outputs_initialized := TRUE;",
+            "  END_IF;",
+            "",
+        ]
+    )
+    return output
+
+
 def _pulse_state_name(device: str, name: str, suffix: str) -> str:
     return f"i_{slug(device)}_{slug(name)}_{suffix}"
 
@@ -487,6 +524,7 @@ def make_main_st(rows: Sequence[Register], remotes: Sequence[dict]) -> str:
         "   The cyclic task interval is 20 ms. *)",
         "PROGRAM main",
         "  VAR",
+        "    i_outputs_initialized : BOOL := FALSE;",
         "    i_watchdog_scan_count : UINT := 0;",
         "    i_watchdog_tick : BOOL := FALSE;",
     ]
@@ -514,6 +552,7 @@ def make_main_st(rows: Sequence[Register], remotes: Sequence[dict]) -> str:
             *declarations(remotes, rows),
             "  END_VAR",
             "",
+            *safe_output_initialization(rows),
             "  (* 200 ms non-zero watchdog for every device. *)",
             "  i_watchdog_tick := FALSE;",
             "  i_watchdog_scan_count := i_watchdog_scan_count + 1;",
@@ -863,12 +902,13 @@ engineering_value = raw / scale
 `i16` uses two's-complement; `u32` is high-word first.  The CSV contains units,
 types, limits, writable flags, pulse flags, and descriptions for HMI widgets.
 
-The ST program initializes every `%QW` command to a valid safe value, advances
-each non-zero watchdog every 200 ms, and checks that each FC4 watchdog echo
-continues to progress.  A stale mismatch for 3 seconds applies the documented
-communication fail-safe policy.  It also implements the same rising-edge trip
-matrix as `examples/external_plc.py` and closes the main steam valve above
-{OVERSPEED_RAW_RPM} RPM.
+The ST program explicitly copies every contract-safe value into `%QW` on its
+first scan (located-variable declaration initializers alone are not reliable
+with Runtime v4), advances each non-zero watchdog every 200 ms, and checks that
+each FC4 watchdog echo continues to progress.  A stale mismatch for 3 seconds
+applies the documented communication fail-safe policy.  It also implements the
+same rising-edge trip matrix as `examples/external_plc.py` and closes the main
+steam valve above {OVERSPEED_RAW_RPM} RPM.
 
 HMI writes to pulse coils (`START`, `STOP`, `RESET_TRIP`, `ACK_ALARM`,
 `TRIP_TEST`, `CLEAR_TOTALIZER`, plus generator breaker commands) are held for
@@ -1025,6 +1065,28 @@ def validate_generated(files: dict[Path, str], rows: Sequence[Register]) -> None
         )
         if not re.search(pattern, st):
             raise ValueError(f"main.st lacks safe QW initializer for {row.device}/{row.name}")
+    init_start = "  IF NOT i_outputs_initialized THEN\n"
+    init_done = "    i_outputs_initialized := TRUE;\n"
+    if st.count(init_start) != 1 or st.count(init_done) != 1:
+        raise ValueError(
+            "main.st must contain one executable first-scan QW initialization"
+        )
+    init_block = st.split(init_start, 1)[1].split(init_done, 1)[0]
+    if st.index(init_start) > st.index("  (* 200 ms non-zero watchdog"):
+        raise ValueError("first-scan QW initialization must run before watchdog logic")
+    for row in rows:
+        if row.table != "HOLDING":
+            continue
+        device_index = DEVICE_ORDER.index(row.device)
+        expected_initial = safe_initial(row, device_index)
+        assignment = (
+            f"    {alias(row.device, 'holding', row.name)} := {expected_initial};"
+        )
+        if init_block.count(assignment) != 1:
+            raise ValueError(
+                "main.st lacks executable safe QW initialization for "
+                f"{row.device}/{row.name}"
+            )
     for row in rows:
         if row.table != "COIL":
             continue
