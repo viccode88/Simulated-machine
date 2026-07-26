@@ -819,6 +819,38 @@ def test_historian_resumes_sampling_after_timeline_rewind(tmp_path):
 
 
 # ---------------------------------------------------------------------------
+# 其他：historian 記錄 FIRST_OUT 時 event 參數重複
+# ---------------------------------------------------------------------------
+def test_historian_records_first_out_without_event_field_collision(tmp_path, monkeypatch):
+    """症狀：FIRST_OUT payload 的 event 欄位會讓 EventLogger.emit 收到重複參數。"""
+    monkeypatch.setenv("STATE_DIR", str(tmp_path))
+    monkeypatch.setenv("EVENT_LOG_STDOUT", "0")
+    from historian.main import Historian
+
+    historian = Historian()
+    payload = {
+        "event": "FIRST_OUT",
+        "device": "boiler",
+        "sim_time": 12.3,
+        "wall_time": "2026-07-26T00:00:00+00:00",
+        "code": 5103,
+        "name": "HIGH_PRESSURE",
+    }
+    try:
+        historian._on_event(payload)
+
+        row = historian.conn.execute(
+            "SELECT device,event,code FROM events ORDER BY id DESC LIMIT 1"
+        ).fetchone()
+        assert row == ("boiler", "FIRST_OUT", 5103)
+        assert historian.first_outs[-1] == payload
+        assert historian.log.ring[-1]["event"] == "FIRST_OUT_RECORDED"
+    finally:
+        historian.conn.close()
+        historian.log.close()
+
+
+# ---------------------------------------------------------------------------
 # 其他：scenario runner 忽略 API 錯誤與使用舊事件
 # ---------------------------------------------------------------------------
 def test_scenario_runner_reports_api_errors(tmp_path):

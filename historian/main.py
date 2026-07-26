@@ -129,7 +129,7 @@ class Historian:
         if payload.get("event") == "FIRST_OUT":
             self.first_outs.append(payload)
             self.log.emit("FIRST_OUT_RECORDED", **{k: v for k, v in payload.items()
-                                                   if k not in ("wall_time", "sim_time")})
+                                                   if k not in ("event", "wall_time", "sim_time")})
 
     async def _retention_loop(self) -> None:
         while True:
