@@ -256,7 +256,7 @@ class SteamValve(BaseDevice):
         }
 
     def fill_registers(self, regs: list[int]) -> None:
-        position, _ = self.faults.sensor("position", self.position + self.feedback_bias, self.dt)
+        position, _ = self.sensor_sample("position", self.position + self.feedback_bias)
         regs[9] = enc_u16(self.command, 100)
         regs[10] = enc_u16(position, 100)
         regs[11] = enc_u16(self.upstream, 100)

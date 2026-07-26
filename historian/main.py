@@ -86,7 +86,14 @@ class Historian:
             await runner.cleanup()
 
     def _on_tick(self, message: dict) -> None:
-        self.sim_time = float(message.get("sim_time", self.sim_time))
+        sim_time = float(message.get("sim_time", self.sim_time))
+        # 快照還原可能把模擬時間拉回較早的時間軸；若不重設取樣基準，
+        # historian 會停止取樣直到模擬時間追過舊時間線
+        if sim_time < self._last_sample:
+            self.log.emit("HISTORIAN_TIMELINE_REWIND", from_sim_time=round(self._last_sample, 3),
+                          to_sim_time=round(sim_time, 3))
+            self._last_sample = -1e9
+        self.sim_time = sim_time
         self.tick = int(message.get("tick", self.tick))
         signals = message.get("inputs") or {}
         self.latest = signals

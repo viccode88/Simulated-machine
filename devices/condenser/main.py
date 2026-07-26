@@ -196,14 +196,14 @@ class Condenser(BaseDevice):
             self.set_hr("MANUAL_OUTPUT", 100.0)
 
     def protection_values(self) -> dict[str, float]:
-        pressure, _ = self.faults.sensor("pressure", self.pressure, self.dt)
-        level, _ = self.faults.sensor("hotwell_level", self.hotwell_level, self.dt)
+        pressure, _ = self.sensor_sample("pressure", self.pressure)
+        level, _ = self.sensor_sample("hotwell_level", self.hotwell_level)
         return {"pressure": pressure, "hotwell_level": level, "capacity": self.capacity,
                 "exhaust": self.exhaust_in}
 
     def publish(self) -> dict[str, float]:
-        pressure, _ = self.faults.sensor("pressure", self.pressure, self.dt)
-        level, _ = self.faults.sensor("hotwell_level", self.hotwell_level, self.dt)
+        pressure, _ = self.sensor_sample("pressure", self.pressure)
+        level, _ = self.sensor_sample("hotwell_level", self.hotwell_level)
         return {
             "condenser.pressure_bar_abs": pressure,
             "condenser.hotwell_level_pct": level,
@@ -214,8 +214,8 @@ class Condenser(BaseDevice):
         }
 
     def fill_registers(self, regs: list[int]) -> None:
-        pressure, _ = self.faults.sensor("pressure", self.pressure, self.dt)
-        level, _ = self.faults.sensor("hotwell_level", self.hotwell_level, self.dt)
+        pressure, _ = self.sensor_sample("pressure", self.pressure)
+        level, _ = self.sensor_sample("hotwell_level", self.hotwell_level)
         regs[9] = enc_u16(pressure, 10000)
         regs[10] = enc_u16(max(0.0, 101.325 - pressure * 100.0), 100)
         regs[11] = enc_u16(max(0.0, level), 100)

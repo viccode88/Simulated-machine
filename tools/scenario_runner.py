@@ -6,11 +6,28 @@
 from __future__ import annotations
 
 import time
+from datetime import datetime
 from typing import Any, Callable
 
 import yaml
 
 from tools.invariants import InvariantChecker
+
+
+def _api_error(response: Any) -> str:
+    """回傳 API 回應中的錯誤訊息；成功則回空字串。"""
+    if isinstance(response, dict) and response.get("error"):
+        return str(response["error"])
+    return ""
+
+
+def _parse_wall_time(value: Any) -> datetime | None:
+    if not isinstance(value, str) or not value:
+        return None
+    try:
+        return datetime.fromisoformat(value)
+    except ValueError:
+        return None
 
 
 class ScenarioResult:
@@ -60,14 +77,16 @@ def run_scenario(path: str, api: Callable, modbus_write: Callable, verbose: bool
         response = api("/snapshot/restore", "POST",
                        {"name": setup["restore"], "clear_latches": bool(setup.get("clean", True)),
                         "resume": True})
-        ok = "error" not in response
-        result.add(f"還原基準快照 {setup['restore']}", ok, response.get("error", ""))
-        log(f"→ 還原快照 {setup['restore']}：{'OK' if ok else response.get('error')}")
-        if not ok:
+        error = _api_error(response)
+        result.add(f"還原基準快照 {setup['restore']}", not error, error)
+        log(f"→ 還原快照 {setup['restore']}：{'OK' if not error else error}")
+        if error:
             print(result.report())
             return 1
     if scenario.get("speed"):
-        api("/sim/speed", "POST", {"speed": float(scenario["speed"])})
+        response = api("/sim/speed", "POST", {"speed": float(scenario["speed"])})
+        error = _api_error(response)
+        result.add(f"設定模擬速度 {scenario['speed']}", not error, error)
 
     for index, step in enumerate(scenario.get("steps") or []):
         kind = next(iter(step))
@@ -83,8 +102,10 @@ def run_scenario(path: str, api: Callable, modbus_write: Callable, verbose: bool
         elif kind == "write":
             response = modbus_write(value["device"], value["register"], float(value["value"]),
                                     coil=bool(value.get("coil", False)))
+            expect_ok = bool(value.get("expect_ok", True))
             result.add(f"寫入 {value['device']}.{value['register']}={value['value']}",
-                       bool(response.get("ok")), str(response.get("response", response)))
+                       bool(response.get("ok")) == expect_ok,
+                       str(response.get("response", response)))
 
         elif kind == "fault":
             response = api("/fault", "POST", {
@@ -92,23 +113,33 @@ def run_scenario(path: str, api: Callable, modbus_write: Callable, verbose: bool
                 "name": value.get("name"), "spec": value.get("spec"),
             })
             result.add(f"注入故障 {value.get('target')}/{value.get('name')}",
-                       bool(response.get("acked")), str(response))
+                       not _api_error(response) and bool(response.get("acked")), str(response))
 
         elif kind == "fault_clear":
-            api("/fault/clear", "POST", {"target": value.get("target", "*"),
-                                         "category": value.get("category"),
-                                         "name": value.get("name")})
+            response = api("/fault/clear", "POST", {"target": value.get("target", "*"),
+                                                    "category": value.get("category"),
+                                                    "name": value.get("name")})
+            result.add(f"清除故障 {value.get('target')}/{value.get('name')}",
+                       not _api_error(response) and bool(response.get("acked")), str(response))
 
         elif kind == "signal":
-            api("/signal/force", "POST", {"name": value["name"], "value": value.get("value")})
+            response = api("/signal/force", "POST", {"name": value["name"],
+                                                     "value": value.get("value")})
+            error = _api_error(response)
+            result.add(f"強制訊號 {value['name']}={value.get('value')}", not error, error)
 
         elif kind == "snapshot_save":
-            api("/snapshot/save", "POST", {"name": value["name"],
-                                           "description": value.get("description", "")})
+            response = api("/snapshot/save", "POST", {"name": value["name"],
+                                                      "description": value.get("description", "")})
+            error = _api_error(response)
+            result.add(f"儲存快照 {value['name']}", not error, error)
 
         elif kind == "snapshot_restore":
-            api("/snapshot/restore", "POST", {"name": value["name"],
-                                              "clear_latches": bool(value.get("clean", False))})
+            response = api("/snapshot/restore", "POST",
+                           {"name": value["name"],
+                            "clear_latches": bool(value.get("clean", False))})
+            error = _api_error(response)
+            result.add(f"還原快照 {value['name']}", not error, error)
 
         elif kind == "expect":
             ok, detail = _expect_signal(api, checker, value)
@@ -127,7 +158,9 @@ def run_scenario(path: str, api: Callable, modbus_write: Callable, verbose: bool
             result.add("物理安全不變量", not violations, "; ".join(violations[:5]))
 
         elif kind in ("pause", "resume"):
-            api(f"/sim/{kind}", "POST")
+            response = api(f"/sim/{kind}", "POST")
+            error = _api_error(response)
+            result.add(f"模擬 {kind}", not error, error)
 
         else:
             result.add(f"未知步驟 {kind}", False, "")
@@ -163,14 +196,31 @@ def _expect_signal(api: Callable, checker: InvariantChecker, spec: dict) -> tupl
 
 
 def _expect_event(api: Callable, spec: dict) -> tuple[bool, str]:
+    """等待事件出現。
+
+    只接受「這個步驟開始之後」才發生的事件：事件 ring 會保留先前情境留下的
+    舊事件，若不過濾，情境會拿別人的事件宣告 PASS。以 wall_time 為準（而非
+    sim_time），因為快照還原會讓模擬時間往回跳。
+    """
     within = float(spec.get("within", 30.0))
+    since_wall = _parse_wall_time((_state(api) or {}).get("wall_time"))
+    since_sim = float((_state(api) or {}).get("sim_time", 0.0))
     deadline = time.time() + within
+
+    def is_new(event: dict) -> bool:
+        stamp = _parse_wall_time(event.get("wall_time"))
+        if stamp is not None and since_wall is not None:
+            return stamp >= since_wall
+        value = event.get("sim_time")
+        return value is None or float(value) >= since_sim
+
     while time.time() < deadline:
         query = f"/events?limit=500&event={spec['event']}"
         if spec.get("device"):
             query += f"&device={spec['device']}"
         events = api(query)
         if isinstance(events, list) and events:
+            events = [e for e in events if is_new(e)]
             if spec.get("code") is not None:
                 events = [e for e in events if e.get("code") == spec["code"]]
             if spec.get("first_out") is not None:
@@ -178,7 +228,7 @@ def _expect_event(api: Callable, spec: dict) -> tuple[bool, str]:
             if events:
                 return True, f"共 {len(events)} 筆，最後 sim_time={events[-1].get('sim_time')}"
         time.sleep(0.5)
-    return False, "未觀察到事件"
+    return False, "未觀察到事件（僅計入本步驟開始後發生的事件）"
 
 
 def _expect_tripped(api: Callable, spec: dict) -> tuple[bool, str]:

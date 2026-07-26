@@ -217,7 +217,10 @@ class RegisterMap:
     holdings: dict[int, RegSpec] = field(default_factory=dict)
     coil_size: int = 32
     discrete_size: int = 32
-    input_size: int = 64
+    # 部分 PLC/SCADA I/O scanner 會把單一 tag 合併成從 offset 0 開始的
+    # 100-word FC4 區塊讀取。保留 0～127 的連續 input image，未映射位置維持 0，
+    # 避免合法 tag（例如 offset 19）因整批範圍超過舊的 64 words 而收到 Exception 02。
+    input_size: int = 128
     holding_size: int = 64
 
     @classmethod

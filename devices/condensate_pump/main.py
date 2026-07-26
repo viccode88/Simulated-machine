@@ -75,7 +75,7 @@ class CondensatePump(PumpDevice):
         self.alarms.set(CODE + 14, self.sm.running and self.flow < 5.0, self.flow, 5.0)
 
     def publish(self) -> dict[str, float]:
-        flow, _ = self.faults.sensor("flow", self.flow, self.dt)
+        flow, _ = self.sensor_sample("flow", self.flow)
         return {
             "condensate_pump.flow_kg_s": flow,
             "condensate_pump.speed_pct": self.speed,

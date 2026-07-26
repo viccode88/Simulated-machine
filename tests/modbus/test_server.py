@@ -101,6 +101,25 @@ async def test_read_input_registers(client, server):
     assert result.registers[0] == 6670
 
 
+async def test_read_100_input_register_scan_block(client, server):
+    """PLC I/O scanners may poll offset 0..99 even when only one tag is mapped."""
+    inputs = list(server.image.inputs)
+    inputs[19] = 0x1234
+    server.image = RegisterImage(
+        coils=server.image.coils,
+        discretes=server.image.discretes,
+        inputs=tuple(inputs),
+        holdings=server.image.holdings,
+    )
+
+    result = await client.read_input_registers(0, count=100, device_id=1)
+
+    assert not result.isError()
+    assert len(result.registers) == 100
+    assert result.registers[19] == 0x1234
+    assert result.registers[99] == 0
+
+
 async def test_read_holding_and_discrete_and_coils(client):
     assert not (await client.read_holding_registers(0, count=10, device_id=1)).isError()
     assert not (await client.read_discrete_inputs(0, count=16, device_id=1)).isError()

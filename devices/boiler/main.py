@@ -76,7 +76,8 @@ class Boiler(BaseDevice):
 
     STATE_VARS = [
         "water_mass", "evaporation", "pressure", "steam_temp", "burner_output",
-        "burner_command", "flame", "purge_timer", "ignition_timer", "feedwater_permitted",
+        "burner_command", "burner_demand", "flame", "purge_timer", "ignition_timer",
+        "feedwater_permitted",
         "level_actual", "level_indicated", "blowdown_flow", "feedwater_flow", "steam_outflow",
         "flame_fail_flag", "relief_flow",
     ]
@@ -111,6 +112,7 @@ class Boiler(BaseDevice):
         self.steam_temp = 25.0
         self.burner_output = 0.0
         self.burner_command = 0.0
+        self.burner_demand = 0.0
         self.flame = 0
         self.purge_timer = 0.0
         self.ignition_timer = 0.0
@@ -166,6 +168,7 @@ class Boiler(BaseDevice):
 
     def on_stop(self) -> None:
         self.burner_command = 0.0
+        self.burner_demand = 0.0
         self.sm.to(DeviceState.STOPPING, "STOP")
 
     def on_reset(self) -> None:
@@ -176,6 +179,7 @@ class Boiler(BaseDevice):
     def on_trip(self, codes: list[int]) -> None:
         # 燃燒器立即降為 0%、切斷燃料
         self.burner_command = 0.0
+        self.burner_demand = 0.0
         self.burner_output = 0.0
         self.flame = 0
         first = self.protection.first_out_code()
@@ -217,11 +221,15 @@ class Boiler(BaseDevice):
         # --- 燃燒器命令 ---
         firing_states = (DeviceState.IGNITING, DeviceState.PRESSURIZING, DeviceState.RUNNING)
         if self.sm.tripped or self.estop or self.force_safe or state not in firing_states:
-            target = 0.0
+            demand = 0.0
         else:
-            target = self.hr("MANUAL_OUTPUT")
-            target = clamp(target, self.hr("OUTPUT_LOW_LIMIT"), self.hr("OUTPUT_HIGH_LIMIT"))
-            target = max(target, self.min_fire_pct)
+            demand = self.hr("MANUAL_OUTPUT")
+            demand = clamp(demand, self.hr("OUTPUT_LOW_LIMIT"), self.hr("OUTPUT_HIGH_LIMIT"))
+            demand = max(demand, self.min_fire_pct)
+        # burner_demand = 控制端「要求」的燃燒率；burner_command = 執行器實際輸出。
+        # 兩者必須分開，火焰失效偵測才能比較「要求燃燒」與「實際有火」。
+        self.burner_demand = demand
+        target = demand
         # 執行器故障：燃燒器火焰喪失
         if self.faults.actuator("burner_flame_loss"):
             target = 0.0
@@ -275,7 +283,9 @@ class Boiler(BaseDevice):
         self.steam_temp = first_order(self.steam_temp, sat + superheat, 20.0, dt)
 
         # --- 火焰失效偵測 ---
-        expect_flame = state in firing_states and self.burner_command > 0.0
+        # 必須以「要求燃燒」(burner_demand) 判斷，不能用執行器實際輸出：
+        # burner_flame_loss 故障會把實際輸出壓成 0，若用它判斷則永遠測不到失效
+        expect_flame = state in firing_states and self.burner_demand > 0.0
         self.flame_fail_flag = 1.0 if (expect_flame and self.flame == 0) else 0.0
 
         # --- 警報 ---
@@ -289,6 +299,7 @@ class Boiler(BaseDevice):
         if policy in ("FAIL_LOW", "FAIL_CLOSE", "HOLD_LAST"):
             self.set_hr("MANUAL_OUTPUT", 0.0)
             self.burner_command = 0.0
+            self.burner_demand = 0.0
 
     def protection_values(self) -> dict[str, float]:
         return {
@@ -302,8 +313,8 @@ class Boiler(BaseDevice):
         }
 
     def publish(self) -> dict[str, float]:
-        pressure, _ = self.faults.sensor("pressure", self.pressure, self.dt)
-        level, _ = self.faults.sensor("level", self.level_indicated, self.dt)
+        pressure, _ = self.sensor_sample("pressure", self.pressure)
+        level, _ = self.sensor_sample("level", self.level_indicated)
         return {
             "boiler.pressure_bar_abs": pressure,
             "boiler.level_pct": level,
@@ -317,8 +328,8 @@ class Boiler(BaseDevice):
         }
 
     def fill_registers(self, regs: list[int]) -> None:
-        pressure, _ = self.faults.sensor("pressure", self.pressure, self.dt)
-        level, _ = self.faults.sensor("level", self.level_indicated, self.dt)
+        pressure, _ = self.sensor_sample("pressure", self.pressure)
+        level, _ = self.sensor_sample("level", self.level_indicated)
         regs[9] = enc_u16(pressure, 100)
         regs[10] = enc_u16(max(0.0, level), 100)
         regs[11] = enc_u16(max(0.0, self.level_actual), 100)

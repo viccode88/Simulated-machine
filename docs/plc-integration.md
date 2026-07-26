@@ -107,7 +107,10 @@ CSV 可用 `python -m tools.export_docs` 重新產生。
 
 實務意義：PLC 要**持續寫**（至少每秒 kick 一次 watchdog）才不會被別人搶走控制權；
 反過來說，測試工具想插手就得等 PLC 停寫超過 5 秒。
-`EMERGENCY_STOP` coil 可設定成安全來源白名單（`modbus.safety_allowlist`）而不受租約限制。
+`EMERGENCY_STOP`／`FORCE_SAFE` coil 可設定成安全來源白名單（`modbus.safety_allowlist`）
+而不受租約限制。此特權只涵蓋**整批位址都是安全線圈**的寫入：若用 FC15 一次寫入的範圍
+混進 `START`、`RESET_TRIP` 等非安全線圈，整批會退回一般寫入規則檢查（`write_allowlist`
+與單一寫入者租約），避免安全來源藉由批次寫入取得完整控制權。
 
 ### 3.3 控制器 watchdog（40003 → 30030）
 

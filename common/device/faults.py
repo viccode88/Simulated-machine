@@ -131,7 +131,11 @@ class FaultInjector:
             self.actuators.clear()
             self.process.clear()
             return
-        target = {"sensor": self.sensors, "actuator": self.actuators, "process": self.process}[category]
+        targets = {"sensor": self.sensors, "actuator": self.actuators, "process": self.process}
+        if category not in targets:
+            # 與 set() 一致拋 ValueError；未知類別（例如 comm）不得變成 KeyError
+            raise ValueError(f"未知故障類別: {category}")
+        target = targets[category]
         if name is None:
             target.clear()
         else:

@@ -89,7 +89,7 @@ RESTORE_ON_BOOT=steady-60mw docker compose --profile standalone up
 ## 二、系統架構
 
 ```
-              外部 PLC / HMI / Fuzzer
+           外部 PLC / HMI / 測試工具
                         │  Modbus TCP
         ┌───────────────┴───────────────┐  control_net
    ┌────┴────┐ ┌────────┐ ┌───────┐ ┌───┴────┐ ┌────────┐
@@ -104,7 +104,7 @@ RESTORE_ON_BOOT=steady-60mw docker compose --profile standalone up
               historian / HMI / metrics
 ```
 
-* **control_net**：Modbus TCP、外部 PLC/DCS、HMI、測試工具、封包擷取、fuzzer。
+* **control_net**：Modbus TCP、外部 PLC/DCS、HMI、測試工具、封包擷取。
 * **sim_net**（`internal: true`）：只交換物理量，外部 PLC 無法繞過 Modbus 介面直接改狀態。
 * **management_net**：metrics、日誌、歷史資料、健康檢查。
 
@@ -134,13 +134,12 @@ RESTORE_ON_BOOT=steady-60mw docker compose --profile standalone up
 ```bash
 docker compose --profile standalone up --build       # 設備 + plant-bus + 內建 DCS + HMI + historian
 docker compose --profile external-plc up --build     # 設備 + plant-bus + HMI + historian（無內建 DCS）
-docker compose -f compose.yaml -f compose.fuzz.yaml --profile fuzz up --build
 docker compose -f compose.yaml -f compose.secure.yaml --profile secure up --build
 ```
 
 設備服務不綁 profile，因此任何模式都會啟動；只有控制器、HMI 與測試工具受 profile 控制。
 `secure` profile 以 stunnel sidecar 在 802 埠提供 Modbus Security（TLS + X.509），
-普通 Modbus TCP 仍保留，方便相容性測試與協定模糊測試。
+普通 Modbus TCP 仍保留，方便相容性測試與外部協定測試。
 
 ---
 
@@ -199,7 +198,7 @@ Reset Key、Reset Coil 脈衝、安全條件、緊急停止已解除、命令序
 
 ---
 
-## 六、故障注入與模糊測試
+## 六、故障注入
 
 故障注入只在 `LAB_MODE=true` 開放，且**協定層故障與物理層故障分開**：
 
@@ -223,14 +222,11 @@ plantctl fault set --target turbine --category comm --name modbus \
 plantctl fault clear --target '*'
 ```
 
-模糊測試 harness 每一輪都會先還原同一個基準快照，再送出畸形封包，
-最後檢查設備存活、Modbus 規格一致性與物理安全不變量，失敗時輸出 crash artifact：
+外部測試工具若要從同一個起點重複測試，可先存一個基準快照，
+之後每輪用 `POST /snapshot/restore`（`clear_latches: true`）毫秒級還原，
+再用 `tools/invariants.py` 檢查物理安全不變量（詳見 [docs/snapshot.md](docs/snapshot.md)）。
 
-```bash
-docker compose -f compose.yaml -f compose.fuzz.yaml --profile fuzz up --build
-```
-
-封包錄製與回放（重現崩潰）：
+封包錄製與回放（重現問題序列）：
 
 ```bash
 python -m tools.modbus_recorder record --listen 0.0.0.0:1502 --target boiler:502 --out cap.jsonl
@@ -243,7 +239,7 @@ python -m tools.modbus_recorder replay --target boiler:502 --file cap.jsonl
 
 ```bash
 pip install -e ".[dev]"
-pytest -q                    # 130 個測試，約 20 秒（不需 docker）
+pytest -q                    # 180 個測試，約 40 秒（不需 docker）
 pytest tests/modbus -q       # Modbus 規格驗收
 pytest tests/physics -q      # 物理模型方向性與守恆
 pytest tests/integration -q  # 整廠閉迴路、快照往返、跳機鎖存、持久化
@@ -269,15 +265,15 @@ plantctl scenario run scenarios/snapshot_roundtrip.yaml
 
 ```
 thermal-plant-simulator/
-├── compose.yaml / compose.fuzz.yaml / compose.secure.yaml / Dockerfile
+├── compose.yaml / compose.secure.yaml / Dockerfile
 ├── common/           modbus（自製 server、register map、編碼）、device（框架、保護、警報、持久化、故障）、simbus
 ├── plant_bus/        lockstep 時間同步、程序量路由與品質、快照協調、HTTP API
 ├── devices/          8 台設備的物理模型與暫存器映射
 ├── controller/       PID、三元素水位、啟動順序、跳機矩陣、DCS 主程式
 ├── historian/ hmi/   事件與歷史資料、簡易 HMI
-├── tools/            plantctl、情境執行器、不變量檢查、fuzz harness、封包錄製、文件產生
+├── tools/            plantctl、情境執行器、不變量檢查、封包錄製、文件產生
 ├── configs/          全廠與各設備設定（所有門檻）
 ├── scenarios/        8 個驗收情境
 ├── docs/             架構、物理模型、暫存器表、代碼表、操作順序
-└── tests/            unit / physics / modbus / integration / scenarios / fuzz
+└── tests/            unit / physics / modbus / integration / scenarios / regression
 ```

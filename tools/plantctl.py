@@ -190,7 +190,8 @@ def cmd_snapshot(args) -> int:
                      {"name": args.name, "clear_latches": args.clean,
                       "keep_faults": args.keep_faults,
                       "preserve_totalizers": args.preserve_totalizers,
-                      "resume": not args.stay_paused})
+                      "resume": not args.stay_paused,
+                      "allow_incomplete": args.allow_incomplete})
     elif args.action == "list":
         result = api("/snapshot")
     elif args.action == "show":
@@ -212,9 +213,12 @@ def cmd_rollback(args) -> int:
             print("沒有可用快照")
             return 1
         name = snapshots[0]["name"]
-    show(api("/snapshot/restore", "POST", {"name": name, "clear_latches": args.clean,
-                                           "resume": True}))
-    return 0
+    result = api("/snapshot/restore", "POST",
+                 {"name": name, "clear_latches": args.clean, "resume": True,
+                  "allow_incomplete": args.allow_incomplete})
+    show(result)
+    # 還原被拒（快照損毀或不完整）必須回非零，讓自動化流程能察覺
+    return 0 if not (isinstance(result, dict) and result.get("error")) else 1
 
 
 def cmd_sim(args) -> int:
@@ -308,12 +312,16 @@ def build_parser() -> argparse.ArgumentParser:
     snap.add_argument("--keep-faults", action="store_true", help="還原時保留目前注入的故障")
     snap.add_argument("--preserve-totalizers", action="store_true", help="保留目前累積量")
     snap.add_argument("--stay-paused", action="store_true", help="還原後維持暫停")
+    snap.add_argument("--allow-incomplete", action="store_true",
+                      help="即使快照缺少部分設備仍強制還原（會造成混合機組狀態）")
     snap.add_argument("--full", action="store_true")
     snap.set_defaults(func=cmd_snapshot)
 
     rollback = sub.add_parser("rollback", help="還原最後一次快照")
     rollback.add_argument("name", nargs="?")
     rollback.add_argument("--clean", action="store_true")
+    rollback.add_argument("--allow-incomplete", action="store_true",
+                          help="即使快照缺少部分設備仍強制還原")
     rollback.set_defaults(func=cmd_rollback)
 
     for action in ("pause", "resume"):

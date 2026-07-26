@@ -3,7 +3,7 @@
 #   docker compose -f compose.yaml -f compose.secure.yaml --profile secure up --build
 #
 # Modbus Security 規格使用 802 埠，以 TLS 提供驗證與訊息完整性。
-# 實驗室預設仍保留普通 Modbus TCP profile，以便相容性測試與協定模糊測試。
+# 實驗室預設仍保留普通 Modbus TCP profile，以便相容性測試與外部協定測試。
 #
 # 這裡以 stunnel sidecar 提供 TLS 終結，設備本身仍是標準 Modbus TCP，
 # 因此協定 gateway 不會重新實作物理模型。

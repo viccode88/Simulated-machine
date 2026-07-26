@@ -11,10 +11,15 @@ from typing import Any
 from aiohttp import web
 
 from .bus import PlantBus
+from .snapshot_store import SnapshotIntegrityError
+
+
+def _dump(data: Any) -> str:
+    return json.dumps(data, ensure_ascii=False, default=str)
 
 
 def _json(data: Any, status: int = 200) -> web.Response:
-    return web.json_response(data, status=status, dumps=lambda d: json.dumps(d, ensure_ascii=False, default=str))
+    return web.json_response(data, status=status, dumps=_dump)
 
 
 def build_app(bus: PlantBus) -> web.Application:
@@ -116,12 +121,16 @@ def build_app(bus: PlantBus) -> web.Application:
             "keep_faults": bool(body.get("keep_faults", False)),
             "preserve_totalizers": bool(body.get("preserve_totalizers", False)),
             "resume": bool(body.get("resume", True)),
+            "allow_incomplete": bool(body.get("allow_incomplete", False)),
         }
         try:
             summary = await bus.restore_snapshot(name, options,
                                                  timeout=float(body.get("timeout", 5.0)))
         except FileNotFoundError:
             return _json({"error": f"找不到快照 {name}"}, status=404)
+        except SnapshotIntegrityError as exc:
+            # 409：快照存在但不可用（損毀或不完整），與伺服器內部錯誤區分
+            return _json({"error": str(exc), "name": name}, status=409)
         except Exception as exc:
             return _json({"error": repr(exc)}, status=500)
         return _json(summary)
@@ -131,6 +140,7 @@ def build_app(bus: PlantBus) -> web.Application:
         name = request.match_info["name"]
         if not bus.store.exists(name):
             return _json({"error": "not found"}, status=404)
+        # 這裡刻意不驗證：損毀的快照也要能被檢視以便診斷
         document = bus.store.load(name)
         if request.query.get("full") == "1":
             return _json(document)
@@ -152,14 +162,17 @@ def build_app(bus: PlantBus) -> web.Application:
             "name": body.get("name"),
             "spec": body.get("spec"),
         }
-        return _json(await bus.inject_fault(target, payload))
+        result = await bus.inject_fault(target, payload)
+        # 未知目標回 404，避免打錯字的請求看起來像成功
+        return _json(result, status=404 if result.get("error") else 200)
 
     @routes.post("/fault/clear")
     async def fault_clear(request: web.Request) -> web.Response:
         body = await _body(request)
         target = str(body.get("target", "*"))
         payload = {"action": "clear", "category": body.get("category"), "name": body.get("name")}
-        return _json(await bus.inject_fault(target, payload))
+        result = await bus.inject_fault(target, payload)
+        return _json(result, status=404 if result.get("error") else 200)
 
     @routes.post("/signal/force")
     async def signal_force(request: web.Request) -> web.Response:
@@ -172,12 +185,25 @@ def build_app(bus: PlantBus) -> web.Application:
 
 
 async def _body(request: web.Request) -> dict:
+    """解析 JSON 請求主體。
+
+    畸形 JSON 必須明確回 400：若靜默當成 `{}`，像 /snapshot/restore 這種
+    「未指定 name 就退回 last_snapshot」的端點會意外執行 rollback。
+    """
     if not request.can_read_body:
         return {}
-    try:
-        return await request.json()
-    except Exception:
+    raw = await request.read()
+    if not raw.strip():
         return {}
+    try:
+        data = json.loads(raw.decode("utf-8"))
+    except (json.JSONDecodeError, UnicodeDecodeError) as exc:
+        raise web.HTTPBadRequest(text=_dump({"error": f"請求主體不是合法 JSON：{exc}"}),
+                                 content_type="application/json") from exc
+    if not isinstance(data, dict):
+        raise web.HTTPBadRequest(text=_dump({"error": "請求主體必須是 JSON 物件"}),
+                                 content_type="application/json")
+    return data
 
 
 async def start_http(bus: PlantBus, host: str = "0.0.0.0", port: int = 8080) -> web.AppRunner:

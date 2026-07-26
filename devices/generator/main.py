@@ -49,10 +49,12 @@ class Generator(BaseDevice):
 
     ALARMS = [
         AlarmSpec(CODE + 11, "OVERCURRENT", 0, "發電機過流"),
-        AlarmSpec(CODE + 12, "FREQUENCY_DEVIATION", 1, "頻率偏差"),
+        # 過頻與欠頻各自獨立：共用一個 code 會讓後評估的欠頻把過頻狀態覆寫掉
+        AlarmSpec(CODE + 12, "OVERFREQUENCY", 1, "頻率過高"),
         AlarmSpec(CODE + 13, "REVERSE_POWER", 2, "逆功率"),
         AlarmSpec(CODE + 14, "SYNC_BLOCKED", 3, "同步條件不成立"),
         AlarmSpec(CODE + 15, "BREAKER_FAIL", 4, "斷路器拒動"),
+        AlarmSpec(CODE + 16, "UNDERFREQUENCY", 5, "頻率過低"),
     ]
     PROTECTION_DEFS = [
         {"code": CODE + 1, "name": "OVERCURRENT", "signal": "current_pu", "direction": "high",
@@ -60,7 +62,7 @@ class Generator(BaseDevice):
         {"code": CODE + 2, "name": "OVERFREQUENCY", "signal": "frequency", "direction": "high",
          "alarm_code": CODE + 12, "message": "Generator overfrequency"},
         {"code": CODE + 3, "name": "UNDERFREQUENCY", "signal": "frequency", "direction": "low",
-         "alarm_code": CODE + 12, "message": "Generator underfrequency"},
+         "alarm_code": CODE + 16, "message": "Generator underfrequency"},
         {"code": CODE + 4, "name": "REVERSE_POWER", "signal": "reverse_power", "direction": "high",
          "alarm_code": CODE + 13, "message": "Generator reverse power"},
     ]
@@ -148,11 +150,23 @@ class Generator(BaseDevice):
         self._open_breaker("PROTECTION")
 
     def _open_breaker(self, reason: str) -> None:
-        if self.breaker_closed:
-            self.breaker_closed = 0
-            self.load_demand = 0.0
-            self._emit("BREAKER_OPENED", reason=reason,
-                       power_before=round(self.electrical_power, 2))
+        if not self.breaker_closed:
+            return
+        # 斷路器拒動故障：命令下達但接點不動作，斷路器仍保持閉合。
+        # 這正是要模擬的危害，不能只點亮警報卻照常開路。
+        if self.faults.actuator("breaker_fail_to_open"):
+            self.alarms.set(CODE + 15, True, 1.0, 1.0)
+            first = self.breaker_fail_timer <= 0.0
+            self.breaker_fail_timer += self.dt
+            if first:
+                self._emit("BREAKER_FAIL_TO_OPEN", reason=reason,
+                           power=round(self.electrical_power, 2))
+            return
+        self.breaker_fail_timer = 0.0
+        self.breaker_closed = 0
+        self.load_demand = 0.0
+        self._emit("BREAKER_OPENED", reason=reason,
+                   power_before=round(self.electrical_power, 2))
 
     def _close_breaker(self) -> None:
         blocked = [name for name, ok in self.sync_permissives() if not ok]
@@ -200,8 +214,15 @@ class Generator(BaseDevice):
         self.voltage_kv = first_order(self.voltage_kv, voltage_target, 1.0, dt)
 
         # --- 負載需求 ---
-        if turbine_tripped or self.sm.tripped or self.estop:
-            self._open_breaker("TURBINE_TRIP" if turbine_tripped else "TRIP")
+        # FORCE_SAFE 是「強制安全狀態」線圈：對發電機而言安全狀態就是斷路器開路
+        if turbine_tripped or self.sm.tripped or self.estop or self.force_safe:
+            if turbine_tripped:
+                reason = "TURBINE_TRIP"
+            elif self.force_safe:
+                reason = "FORCE_SAFE"
+            else:
+                reason = "TRIP"
+            self._open_breaker(reason)
         demand = self.hr("PRIMARY_SETPOINT") if self.auto_mode else self.hr("MANUAL_OUTPUT")
         demand += self.faults.factor("load_step_mw", 0.0)
         if not self.breaker_closed:
@@ -235,8 +256,6 @@ class Generator(BaseDevice):
 
         self.reverse_power_flag = 1.0 if (self.breaker_closed and mech_power < 0.5
                                           and self.electrical_power > 1.0) else 0.0
-        if self.faults.actuator("breaker_fail_to_open") and self.breaker_closed:
-            self.alarms.set(CODE + 15, True)
 
         self.energy_total += self.electrical_power * dt / 3.6  # MW·s -> kWh
 

@@ -30,7 +30,7 @@ x-device: &device
     start_period: 15s
 
 networks:
-  control_net:      # Modbus TCP：外部 PLC / HMI / 測試工具 / 封包擷取 / fuzzer
+  control_net:      # Modbus TCP：外部 PLC / HMI / 測試工具 / 封包擷取
     name: plant_control_net
   sim_net:          # 設備之間的物理量交換（外部 PLC 不應直接使用）
     name: plant_sim_net

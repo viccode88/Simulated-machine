@@ -50,6 +50,13 @@ class PumpDevice(BaseDevice):
     def pump_flow_signal(self) -> str:
         raise NotImplementedError
 
+    def flow_inhibited(self) -> tuple[bool, str]:
+        """子類別可覆寫：回傳 (是否由安全邏輯強制停止送水, 原因)。
+
+        為 True 時 step_pump 會把轉速命令壓到 0，且不套用最低轉速／揚程下限。
+        """
+        return False, ""
+
     # -- 共通設定 ----------------------------------------------------------
     def configure_pump(self, c: dict) -> None:
         self.rated_flow = float(c.get("rated_flow_kg_s", 120.0))
@@ -80,6 +87,7 @@ class PumpDevice(BaseDevice):
         self.outlet_valve = 100.0
         self.source_level_value = 0.0
         self.backpressure = 1.0
+        self._flow_inhibited_latched = False
 
     def control_output(self) -> float:
         return self.speed
@@ -122,12 +130,21 @@ class PumpDevice(BaseDevice):
 
         # --- 轉速命令 ---
         running_states = (DeviceState.STARTING, DeviceState.RUNNING)
+        inhibited, inhibit_reason = self.flow_inhibited()
         if self.sm.tripped or self.estop or self.force_safe or self.sm.state not in running_states:
+            target = 0.0
+        elif inhibited:
+            # 安全禁止送水：必須真正停轉，不可再套用最低轉速／揚程下限，
+            # 否則泵浦會以 min_speed 持續打水到被禁止進水的設備
             target = 0.0
         else:
             target = clamp(self.hr("MANUAL_OUTPUT"), 0.0, 100.0)
             target = clamp(target, self.hr("OUTPUT_LOW_LIMIT"), self.hr("OUTPUT_HIGH_LIMIT"))
             target = max(target, self.min_speed, self._head_floor_speed())
+        if inhibited != self._flow_inhibited_latched:
+            self._flow_inhibited_latched = inhibited
+            self._emit("PUMP_FLOW_INHIBIT" if inhibited else "PUMP_FLOW_INHIBIT_CLEARED",
+                       reason=inhibit_reason)
         derate = self.faults.factor("pump_derate", 1.0)
         target *= clamp(derate, 0.0, 1.0)
         if self.faults.actuator("pump_trip"):

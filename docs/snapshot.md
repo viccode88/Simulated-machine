@@ -98,6 +98,7 @@ RESTORE_ON_BOOT=steady-60mw docker compose --profile standalone up
 | `keep_faults` | false | true 時保留目前注入的故障，不套用快照內的故障設定 |
 | `preserve_totalizers` | false | true 時保留目前累積量（適合長期壓力測試） |
 | `resume` | true | false 時還原後維持暫停，方便單步除錯 |
+| `allow_incomplete` | false | true 時允許還原缺少部分設備的快照（預設拒絕） |
 
 **預設是忠實還原**：跳機鎖存與第一故障原因會一起回來，
 符合「跳機不因數值恢復或容器重啟自動清除」的要求；
@@ -128,17 +129,29 @@ assert api("/state")["snapshot_generation"] == before + 1
 其中 `missing` 是「快照裡有、但目前沒連線」的設備，
 可用來判斷環境是否與快照當時一致。
 
-## 7. 與模糊測試的搭配
+### 完整性檢查
 
-`tools/fuzz/harness.py` 每一輪都：
+還原前一定會驗證快照的格式版本、結構與 SHA-256 checksum；不通過就回 **409** 並拒絕
+還原，不會把損毀內容套到機組上（可用 `GET /snapshot/<name>` 的 `verified` 欄位先確認）。
+
+儲存時若有設備離線，快照 meta 會標記 `complete: false` 與 `missing` 清單。這種快照
+**不會成為 `last_snapshot`**，還原時預設也會被拒絕（同樣回 409），避免產生部分設備
+新狀態、部分設備舊狀態的混合機組；確定要繼續時再加 `allow_incomplete: true`
+（CLI 為 `--allow-incomplete`）。
+
+## 7. 與外部測試工具的搭配
+
+快照是「可重複測試」的基礎。外部測試工具（自製 client、協定測試軟體等）
+建議每一輪都：
 
 1. `POST /snapshot/restore`（`clear_latches: true`）回到基準
-2. 送出一批畸形封包
+2. 送出這一輪的封包
 3. 檢查設備存活、回應格式與例外碼合法
 4. 檢查物理安全不變量（水量守恆、轉速上限、鎖存不得自行解除）
-5. 失敗時輸出 crash artifact（最後 50 筆封包、匯流排狀態、事件）
+   — 可直接用 `tools/invariants.py` 的 `InvariantChecker` 餵 `/state`
+5. 失敗時保留最後的封包、匯流排狀態（`/state`）與事件（`/events`）
 
-因為每輪起點都一模一樣，crash 才有機會被穩定重現；
+因為每輪起點都一模一樣，問題才有機會被穩定重現；
 搭配 `tools/modbus_recorder.py` 的 replay 可以把序列重播回去。
 
 ## 8. 限制

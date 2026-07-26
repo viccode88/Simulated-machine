@@ -210,7 +210,7 @@ class Turbine(BaseDevice):
         self.set_hr("MANUAL_OUTPUT", 0.0)
 
     def protection_values(self) -> dict[str, float]:
-        speed, _ = self.faults.sensor("speed", self.speed_rpm, self.dt)
+        speed, _ = self.sensor_sample("speed", self.speed_rpm)
         return {
             "speed_rpm": speed,
             "vibration": self.vibration,
@@ -221,7 +221,7 @@ class Turbine(BaseDevice):
         }
 
     def publish(self) -> dict[str, float]:
-        speed, _ = self.faults.sensor("speed", self.speed_rpm, self.dt)
+        speed, _ = self.sensor_sample("speed", self.speed_rpm)
         return {
             "turbine.speed_rpm": speed,
             "turbine.mechanical_power_mw": self.mech_power,
@@ -231,7 +231,7 @@ class Turbine(BaseDevice):
         }
 
     def fill_registers(self, regs: list[int]) -> None:
-        speed, _ = self.faults.sensor("speed", self.speed_rpm, self.dt)
+        speed, _ = self.sensor_sample("speed", self.speed_rpm)
         regs[9] = enc_u16(speed, 1)
         regs[10] = enc_u16(self.mech_power, 100)
         regs[11] = enc_u16(self.steam_flow, 100)

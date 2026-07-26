@@ -77,10 +77,14 @@ class FeedwaterPump(PumpDevice):
     def source_level(self) -> float:
         return self.sig("feedwater_tank.level_pct", 0.0)
 
-    def step(self, dt: float) -> None:
-        # 鍋爐高高水位跳機時禁止繼續補水
+    def flow_inhibited(self) -> tuple[bool, str]:
+        # 鍋爐高高水位跳機時禁止繼續補水：泵浦必須實際停轉，
+        # 只把 MANUAL_OUTPUT 歸零不夠，pump_base 的最低轉速／揚程下限會蓋掉它
         permitted = self.sig("boiler.feedwater_permitted", 1.0) >= 0.5
-        if not permitted and self.hr("MANUAL_OUTPUT") > self.min_speed:
+        return (not permitted), "鍋爐禁止給水（高高水位）"
+
+    def step(self, dt: float) -> None:
+        if self.flow_inhibited()[0] and self.hr("MANUAL_OUTPUT") > 0.0:
             self.set_hr("MANUAL_OUTPUT", 0.0)
         self.step_pump(dt)
         self.alarms.set(CODE + 12, self.cavitation_factor < 0.95 and self.speed > 1.0,
@@ -94,7 +98,7 @@ class FeedwaterPump(PumpDevice):
         )
 
     def publish(self) -> dict[str, float]:
-        flow, _ = self.faults.sensor("flow", self.flow, self.dt)
+        flow, _ = self.sensor_sample("flow", self.flow)
         return {
             "feedwater_pump.flow_kg_s": flow,
             "feedwater_pump.speed_pct": self.speed,

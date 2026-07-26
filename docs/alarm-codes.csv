@@ -88,10 +88,11 @@ generator,TRIP,5302,OVERFREQUENCY,,,frequency,high,Generator overfrequency
 generator,TRIP,5303,UNDERFREQUENCY,,,frequency,low,Generator underfrequency
 generator,TRIP,5304,REVERSE_POWER,,,reverse_power,high,Generator reverse power
 generator,ALARM,5311,OVERCURRENT,1,0,,,發電機過流
-generator,ALARM,5312,FREQUENCY_DEVIATION,1,1,,,頻率偏差
+generator,ALARM,5312,OVERFREQUENCY,1,1,,,頻率過高
 generator,ALARM,5313,REVERSE_POWER,1,2,,,逆功率
 generator,ALARM,5314,SYNC_BLOCKED,1,3,,,同步條件不成立
 generator,ALARM,5315,BREAKER_FAIL,1,4,,,斷路器拒動
+generator,ALARM,5316,UNDERFREQUENCY,1,5,,,頻率過低
 generator,ALARM,5390,COMMAND_REJECTED,2,10,,,命令被拒絕
 generator,ALARM,5391,CONTROL_WATCHDOG_LOST,2,11,,,控制器 watchdog 逾時
 generator,ALARM,5392,SIM_BUS_BAD,2,12,,,模擬匯流排資料品質不良

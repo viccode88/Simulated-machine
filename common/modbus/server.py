@@ -26,6 +26,9 @@ MAX_READ_REGS = 125
 MAX_WRITE_BITS = 1968
 MAX_WRITE_REGS = 123
 
+# 可由 safety_allowlist 來源直接寫入的線圈（不受單一寫入者租約限制）
+SAFETY_COILS = ("EMERGENCY_STOP", "FORCE_SAFE")
+
 
 @dataclass(frozen=True)
 class RegisterImage:
@@ -408,14 +411,28 @@ class ModbusTcpServer:
             return ModbusException.SERVER_DEVICE_BUSY
         return self.access.check_write(ip, time.monotonic(), is_safety=is_safety)
 
+    def _safety_coil_offsets(self) -> set[int]:
+        offsets = set()
+        for name in SAFETY_COILS:
+            try:
+                offsets.add(self.rmap.offset_of(Table.COIL, name))
+            except KeyError:
+                continue
+        return offsets
+
     def _is_safety_write(self, table: Table, offset: int, count: int) -> bool:
-        if table is not Table.COIL:
+        """整批位址「全部」都是安全線圈時才算 safety write。
+
+        只要批次內混進 START／RESET_TRIP 等非安全線圈，就不能沿用安全來源的
+        特權；否則具 E-STOP 權限的來源可以用 FC15 一次寫入整段線圈區，
+        繞過 write_allowlist 與單一寫入者租約。
+        """
+        if table is not Table.COIL or count < 1:
             return False
-        try:
-            estop = self.rmap.offset_of(Table.COIL, "EMERGENCY_STOP")
-        except KeyError:
+        safety = self._safety_coil_offsets()
+        if not safety:
             return False
-        return offset <= estop < offset + count
+        return all(addr in safety for addr in range(offset, offset + count))
 
     def _validate_values(self, table: Table, offset: int, values: list[int]) -> ModbusException | None:
         specs = self.rmap.table(table)

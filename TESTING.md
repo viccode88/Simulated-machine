@@ -3,7 +3,7 @@
 從零到完整驗收的每一道指令。分兩條路線：
 
 * **路線 A（離線）**：只跑 `pytest`，不需要 Docker，約 20 秒，驗證物理模型、Modbus 規格、保護邏輯、快照往返。
-* **路線 B（容器）**：啟動 8 台設備容器，做整廠情境、故障注入、模糊測試、TLS。
+* **路線 B（容器）**：啟動 8 台設備容器，做整廠情境、故障注入、TLS。
 
 ---
 
@@ -53,7 +53,7 @@ MODBUS_TRACE=false   # 需要逐筆封包日誌時改 true
 pytest -q
 ```
 
-**預期輸出**：`130 passed in ~18s`
+**預期輸出**：`180 passed in ~40s`
 
 ### 分層執行與各層驗證內容
 
@@ -61,10 +61,10 @@ pytest -q
 | --- | ---: | --- |
 | `pytest tests/unit -q` | 43 | PID（積分抗飽和、bumpless 切換）、保護門檻與延遲、暫存器映射建構、u32/i16/縮放編碼、警報鎖存與確認狀態機、控制器啟動路徑 |
 | `pytest tests/physics -q` | 21 | 各設備物理模型的方向性與守恆：加熱→壓力升、進水→水位升、質量/能量不憑空產生 |
-| `pytest tests/modbus -q` | 21 | Modbus 規格驗收：支援的功能碼、Exception 01/02/03/04/06 的觸發條件、例外後連線不關閉、無撕裂讀取 |
+| `pytest tests/modbus -q` | 22 | Modbus 規格驗收：支援的功能碼、Exception 01/02/03/04/06 的觸發條件、例外後連線不關閉、無撕裂讀取 |
 | `pytest tests/integration -q` | 24 | 整廠閉迴路、快照存還原往返、跳機鎖存不被還原清掉、持久化、事件與 metrics |
 | `pytest tests/scenarios -q` | 17 | `scenarios/*.yaml` 8 個情境檔的結構、訊號名稱、門檻合法性（靜態檢查，不需執行中環境） |
-| `pytest tests/fuzz -q` | 4 | 畸形 Modbus frame 的解析不會崩潰 |
+| `pytest tests/regression -q` | 53 | 已修缺陷的回歸測試：DCS 時間基準、回報過的錯誤行為不再重現 |
 
 ### 常用旗標
 
@@ -91,7 +91,6 @@ docker compose --profile standalone up --build -d
 | --- | --- |
 | `standalone` | 8 台設備 + plant-bus + **內建 DCS** + HMI + historian |
 | `external-plc` | 同上但**不啟動內建 DCS**，讓外部 PLC 接管（串接方式見 `docs/plc-integration.md`） |
-| `fuzz` | 加掛 fuzzer，關閉 restart、開啟封包日誌與 core dump |
 | `secure` | 加掛 stunnel sidecar，802 埠提供 Modbus Security（TLS） |
 
 設備服務不綁 profile，任何模式都會啟動；只有控制器、HMI、工具受 profile 控制。
@@ -363,42 +362,36 @@ plantctl signal boiler.level_pct --release   # 釋放
 
 ---
 
-## 9. 模糊測試
+## 9. 外部協定測試工具的搭配
+
+本專案不內建協定測試工具；設備只負責「被打了還要活著且守規格」。
+用外部工具（自製 client、Modbus 測試軟體等）驗證時，建議這樣配置環境：
 
 ```bash
-docker compose down
-docker compose -f compose.yaml -f compose.fuzz.yaml --profile fuzz up --build
+# 讓崩潰能被外部工具觀察到（不自動重啟）、並開啟逐筆封包日誌
+LAB_MODE=true MODBUS_TRACE=true DEVICE_RESTART=no \
+  docker compose --profile external-plc up --build -d
 ```
 
-fuzz 覆蓋檔會：`LAB_MODE=true`、`MODBUS_TRACE=true`、`restart: "no"`（讓崩潰能被觀察）、保留 core dump。
-harness 每一輪先還原同一個基準快照（`fuzz-baseline`，不存在會自動建立），
-再送畸形封包，最後檢查設備存活、Modbus 規格一致性、物理安全不變量，失敗輸出 crash artifact。
-
-調整參數（改 `.env` 或前置環境變數）：
+每一輪從同一個起點重複測試（毫秒級，不需重啟容器）：
 
 ```bash
-FUZZ_DURATION=60 FUZZ_RATE=200 FUZZ_TARGETS=boiler:502,turbine:502 \
-  docker compose -f compose.yaml -f compose.fuzz.yaml --profile fuzz up
+plantctl snapshot save test-baseline -d "測試基準"
+plantctl snapshot restore test-baseline --clean   # 每輪開始前，順便清掉跳機鎖存
 ```
 
-在主機直接跑 harness（設備仍在容器內）：
+送完封包後檢查設備是否仍存活、物理安全不變量是否仍成立：
 
 ```bash
-BUS_API=http://127.0.0.1:15080 python -m tools.fuzz.harness \
-  --targets 127.0.0.1:15025,127.0.0.1:15027 \
-  --duration 60 --rate-limit 200 --seed 1337 \
-  --baseline fuzz-baseline --frames-per-round 400
+plantctl status                                  # 設備存活與 offline_devices
+curl -s http://127.0.0.1:15080/state | head -40  # 匯流排狀態
+curl -s "http://127.0.0.1:15080/events?limit=200"
 ```
 
-取出 crash artifact：
+`tools/invariants.py` 的 `InvariantChecker` 可直接餵 `/state` 的內容，
+用同一組不變量（質量守恆、壓力／轉速上限、跳機鎖存不得自行解除）做判定。
 
-```bash
-docker logs fuzzer | tail -40
-docker cp fuzzer:/var/lib/crash ./crash-artifacts
-ls -l ./crash-artifacts
-```
-
-### 封包錄製與回放（重現崩潰）
+### 封包錄製與回放（重現問題序列）
 
 ```bash
 # 以中間人模式錄製：測試工具連 1502，實際轉送到 boiler
@@ -439,7 +432,7 @@ docker compose logs --tail 100 boiler             # 單一設備日誌
 
 ```bash
 # 1. 離線（20 秒）
-pip install -e ".[dev]" && pytest -q                  # 期望 127 passed
+pip install -e ".[dev]" && pytest -q                  # 期望 180 passed
 
 # 2. 啟動（LAB_MODE=true）
 sed -i '' 's/^LAB_MODE=.*/LAB_MODE=true/' .env

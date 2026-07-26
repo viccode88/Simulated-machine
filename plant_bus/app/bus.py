@@ -15,6 +15,8 @@ from typing import Any
 from common.simbus.protocol import MsgType, Role, SignalQuality, decode, encode
 from common.util import EventLogger, cfg_get, wall_time_iso
 
+from .snapshot_store import SnapshotIntegrityError
+
 
 @dataclass
 class Participant:
@@ -271,7 +273,10 @@ class PlantBus:
             if self.step_budget > 0:
                 self.step_budget -= 1
                 if self.step_budget == 0:
-                    self.paused = True
+                    # 走 pause()：必須廣播 PAUSE，否則設備會自行 free-run
+                    # 而 plant-bus 仍顯示 paused（暫停狀態分裂）
+                    await self.pause(reason="step_complete")
+                    continue
             elapsed = time.monotonic() - started
             target = self.dt / max(0.01, self.speed)
             if elapsed < target:
@@ -325,8 +330,14 @@ class PlantBus:
                 participant.missed_ticks = 0
                 participant.last_latency_ms = latency
         del self._tick_waiters[self.tick]
-        # 觀察者（historian / HMI）取得完整程序影像
-        if any(p.role == Role.OBSERVER.value for p in self.participants.values()):
+        # 觀察者（historian / HMI）取得完整程序影像；
+        # 控制器一定要收到 tick——它的 PID 掃描與 watchdog 都靠這個時間基準，
+        # 不能因為沒有 observer 連線就收不到（否則 DCS 會失去模擬時間）
+        listeners = tuple(
+            role for role in (Role.OBSERVER.value, Role.CONTROLLER.value)
+            if any(p.role == role for p in self.participants.values())
+        )
+        if listeners:
             await self.broadcast(
                 {
                     "type": MsgType.TICK.value,
@@ -339,7 +350,7 @@ class PlantBus:
                         for name, s in self.signals.items()
                     },
                 },
-                roles=(Role.OBSERVER.value, Role.CONTROLLER.value),
+                roles=listeners,
             )
 
     # ------------------------------------------------------------------
@@ -365,8 +376,23 @@ class PlantBus:
             self._record_event({"device": "plant-bus", "event": "SIM_RESUMED", "reason": reason})
 
     async def step(self, ticks: int = 1) -> None:
+        """單步執行 N 個 tick。
+
+        必須廣播 RESUME／PAUSE，讓設備與 plant-bus 的暫停狀態保持一致；
+        否則 `pause; step N` 之後設備會以為模擬仍在執行而自行 free-run。
+        """
+        count = max(1, int(ticks))
+        # 先設定預算再解除暫停，避免 tick loop 在中間看到「未暫停且無預算」而失控執行
+        self.step_budget = count
+        was_paused = self.paused
         self.paused = False
-        self.step_budget = max(1, ticks)
+        if was_paused:
+            await self.broadcast(
+                {"type": MsgType.RESUME.value, "reason": "step"},
+                roles=(Role.DEVICE.value, Role.CONTROLLER.value, Role.OBSERVER.value),
+            )
+        self._record_event({"device": "plant-bus", "event": "SIM_STEP", "ticks": count,
+                            "tick": self.tick})
 
     def set_speed(self, factor: float) -> None:
         self.speed = max(0.01, min(50.0, float(factor)))
@@ -376,14 +402,25 @@ class PlantBus:
     # 請求/回應（快照、故障注入）
     # ------------------------------------------------------------------
     async def _request(self, message: dict, expected: list[str], timeout: float = 5.0,
-                       roles: tuple[str, ...] = (Role.DEVICE.value, Role.CONTROLLER.value)) -> dict:
+                       roles: tuple[str, ...] = (Role.DEVICE.value, Role.CONTROLLER.value),
+                       broadcast: bool | None = None) -> dict:
+        """對 expected 送出請求並等待回應。
+
+        broadcast=None 時，只有「目標不只一個」才廣播。單一目標一律點對點傳送；
+        目標不存在時直接回傳空結果，絕不可退回廣播（否則打錯字的故障目標會打到全廠）。
+        """
         request_id = uuid.uuid4().hex
         message = dict(message, request_id=request_id)
         waiter = {"expected": list(expected), "results": {}, "event": asyncio.Event()}
         self._request_waiters[request_id] = waiter
         try:
-            if len(expected) == 1 and expected[0] in self.participants:
-                await self._send(self.participants[expected[0]], message)
+            if broadcast is None:
+                broadcast = len(expected) != 1
+            if not broadcast:
+                participant = self.participants.get(expected[0])
+                if participant is None:
+                    return {}
+                await self._send(participant, message)
             else:
                 await self.broadcast(message, roles=roles)
             with contextlib.suppress(asyncio.TimeoutError):
@@ -424,11 +461,18 @@ class PlantBus:
                     if message.get("state")
                 }
                 missing = sorted(set(expected) - set(participants))
-                meta = self.store.save(name, self.bus_state(), participants, description, tags)
-                meta["missing"] = missing
-                self.last_snapshot = name
+                meta = self.store.save(name, self.bus_state(), participants, description, tags,
+                                       missing=missing)
+                if missing:
+                    # 不完整的快照不得成為預設還原目標，否則後續 restore 會做出混合機組
+                    self._record_event({"device": "plant-bus", "event": "SNAPSHOT_INCOMPLETE",
+                                        "name": name, "missing": missing,
+                                        "devices": meta["devices"]})
+                else:
+                    self.last_snapshot = name
                 self._record_event({"device": "plant-bus", "event": "SNAPSHOT_SAVED", "name": name,
                                     "devices": meta["devices"], "missing": missing,
+                                    "complete": meta["complete"],
                                     "sim_time": self.sim_time, "tick": self.tick})
                 return meta
             finally:
@@ -441,7 +485,15 @@ class PlantBus:
                                timeout: float = 5.0) -> dict:
         options = options or {}
         async with self._snapshot_lock:
-            document = self.store.load(name)
+            # 還原前先驗格式與 checksum：損毀的快照絕不可套用到機組上
+            document = self.store.load(name, verify=True)
+            meta = document.get("meta") or {}
+            if not meta.get("complete", True) and not options.get("allow_incomplete", False):
+                raise SnapshotIntegrityError(
+                    f"快照 {name} 不完整（缺少 {', '.join(meta.get('missing') or [])}），"
+                    "還原會造成部分設備新狀態、部分設備舊狀態；"
+                    "如確定要繼續請指定 allow_incomplete=true"
+                )
             was_paused = self.paused
             self.busy_reason = "SNAPSHOT_RESTORE"
             started = time.monotonic()
@@ -512,12 +564,20 @@ class PlantBus:
 
     # -- 故障注入路由 ------------------------------------------------------
     async def inject_fault(self, target: str, payload: dict, timeout: float = 3.0) -> dict:
-        if target in ("*", "all"):
+        broadcast = target in ("*", "all")
+        if broadcast:
             expected = [p.name for p in self.participants.values() if p.is_device]
         else:
+            # 未知目標必須明確失敗；打錯字絕不可退化成全廠廣播
+            if target not in self.participants:
+                known = sorted(p.name for p in self.participants.values() if p.is_device)
+                self._record_event({"device": "plant-bus", "event": "FAULT_TARGET_UNKNOWN",
+                                    "target": target, "known": known})
+                return {"target": target, "acked": [], "results": {},
+                        "error": f"未知的故障目標 {target}", "known_targets": known}
             expected = [target]
         results = await self._request({"type": MsgType.FAULT.value, "payload": payload},
-                                      expected, timeout)
+                                      expected, timeout, broadcast=broadcast)
         self._record_event({"device": "plant-bus", "event": "FAULT_INJECTED", "target": target,
                             "payload": payload, "acked": sorted(results.keys())})
         return {"target": target, "acked": sorted(results.keys()),

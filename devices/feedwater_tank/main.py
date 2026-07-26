@@ -138,11 +138,11 @@ class FeedwaterTank(BaseDevice):
         return
 
     def protection_values(self) -> dict[str, float]:
-        level, _ = self.faults.sensor("level", self.level, self.dt)
+        level, _ = self.sensor_sample("level", self.level)
         return {"level": level, "inflow": self.inflow, "outflow": self.outflow}
 
     def publish(self) -> dict[str, float]:
-        level, _ = self.faults.sensor("level", self.level, self.dt)
+        level, _ = self.sensor_sample("level", self.level)
         return {
             "feedwater_tank.level_pct": level,
             "feedwater_tank.pressure_bar_abs": self.pressure,
@@ -151,7 +151,7 @@ class FeedwaterTank(BaseDevice):
         }
 
     def fill_registers(self, regs: list[int]) -> None:
-        level, _ = self.faults.sensor("level", self.level, self.dt)
+        level, _ = self.sensor_sample("level", self.level)
         regs[9] = enc_u16(max(0.0, level), 100)
         regs[10], regs[11] = enc_u32(self.water_mass)
         regs[12] = enc_u16(self.inflow, 100)

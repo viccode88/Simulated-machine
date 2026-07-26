@@ -6,6 +6,7 @@
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import os
 import time
 from typing import Any
@@ -167,6 +168,11 @@ class DeviceLink:
 
 
 class DCS:
+    # 模擬時間落後超過這個倍數就直接對齊，不做無上限補算
+    MAX_CATCHUP_PERIODS = 5
+    # 已連線但模擬時間停滯超過這麼久（真實秒）就退回真實時間，避免 DCS 停擺
+    SIM_TIME_STALL_TIMEOUT = 10.0
+
     def __init__(self, config_dir: str = "/app/configs") -> None:
         self.cfg = load_config(os.path.join(config_dir, "plant.yaml"),
                                os.path.join(config_dir, "dcs.yaml"))
@@ -216,6 +222,8 @@ class DCS:
 
         self.sequencer = Sequencer()
         self.trip_matrix = TripMatrix(emit=self.emit)
+        self._background: list[asyncio.Task] = []
+        self._running = True
         self.mode = "AUTO"
         self.sim_time = 0.0
         self.bus = SimBusClient(
@@ -274,14 +282,31 @@ class DCS:
         for link in self.devices.values():
             await link.connect()
         self.bus.start()
-        asyncio.ensure_future(self._bus_loop())
-        asyncio.ensure_future(self._poll_loop())
-        asyncio.ensure_future(self._watchdog_loop())
-        asyncio.ensure_future(self._control_loop())
-        asyncio.ensure_future(self._sequence_loop())
+        # 背景工作要留著參照，shutdown() 才能乾淨地取消（也避免任務被 GC 提前回收）
+        self._background = [
+            asyncio.ensure_future(coro()) for coro in (
+                self._bus_loop, self._poll_loop, self._watchdog_loop,
+                self._control_loop, self._sequence_loop,
+            )
+        ]
         self.emit("DCS_STARTED", devices=sorted(self.devices), auto_start=self.auto_start)
-        while True:
-            await asyncio.sleep(3600)
+        while self._running:
+            await asyncio.sleep(1.0)
+
+    async def shutdown(self) -> None:
+        """停止背景工作並關閉連線（優雅關機與測試用）。"""
+        self._running = False
+        for task in self._background:
+            task.cancel()
+        if self._background:
+            await asyncio.gather(*self._background, return_exceptions=True)
+        self._background.clear()
+        for link in self.devices.values():
+            if link.client is not None:
+                with contextlib.suppress(Exception):
+                    link.client.close()
+                link.client = None
+        await self.bus.close()
 
     async def _poll_loop(self) -> None:
         period = float(cfg_get(self.cfg, "dcs.poll_s", 0.25))
@@ -290,47 +315,117 @@ class DCS:
                                  return_exceptions=True)
             await asyncio.sleep(period)
 
+    # -- 模擬時間排程 ------------------------------------------------------
+    async def _wait_sim_period(self, period: float, last: float) -> float:
+        """等待模擬時間前進 period 秒，回傳新的時間標記。
+
+        PID 掃描、啟動順序與 watchdog 都必須以「模擬時間」而非真實時間計時：
+        設備端的 watchdog_age 與物理積分都是以 dt 累加的，若控制器依真實時間
+        執行，`speed 5` 時 watchdog 每 5 模擬秒才更新一次，會超過 3 秒門檻而
+        產生假的通訊逾時，PID 也會因為實際 dt 與假設 dt 不符而行為改變。
+
+        plant-bus 未連線時（單機/離線）退回真實時間，讓 DCS 仍可獨立運轉；
+        一旦連上線就立刻回到模擬時間基準，避免啟動期間模擬時間跑在前面。
+        """
+        poll = min(0.05, max(0.005, period / 10.0))
+        stalled = 0.0
+        waited_wall = 0.0
+        was_connected = self.bus.connected.is_set()
+        while True:
+            if self.bus.connected.is_set():
+                if not was_connected:
+                    # 剛連上 plant-bus：模擬時間可能已經跑掉一大段
+                    # （高速模擬下，連線這段真實時間相當於好幾模擬秒），
+                    # 立刻重新對齊並讓呼叫端執行一次，不要繼續依真實時間等待
+                    return self.sim_time
+                if self.sim_time < last:
+                    # 快照還原到較早的時間軸：重新對齊，不要枯等追上舊時間
+                    last = self.sim_time
+                elapsed = self.sim_time - last
+                if elapsed >= period:
+                    if elapsed > period * self.MAX_CATCHUP_PERIODS:
+                        # 落後太多（例如高速模擬或長時間暫停）：直接跳到現在，
+                        # 避免累積無上限的補算次數
+                        return self.sim_time
+                    await asyncio.sleep(0)      # 讓出控制權，避免補算時空轉
+                    return last + period
+                # 安全網：模擬時間停滯（且不是因為暫停）時退回真實時間，
+                # 確保 DCS 永遠不會因為收不到 tick 而完全停擺
+                if self.paused:
+                    stalled = 0.0
+                else:
+                    stalled += poll
+                    if stalled >= self.SIM_TIME_STALL_TIMEOUT:
+                        self.emit("DCS_SIM_TIME_STALLED", period=period,
+                                  sim_time=round(self.sim_time, 3),
+                                  waited_s=round(stalled, 1))
+                        return self.sim_time
+            else:
+                # 尚未連線：以真實時間計時，但每個 poll 都重新檢查連線狀態，
+                # 不要一次 sleep 整個週期而錯過連線時機
+                was_connected = False
+                waited_wall += poll
+                if waited_wall >= period:
+                    return self.sim_time
+            await asyncio.sleep(poll)
+
     async def _watchdog_loop(self) -> None:
+        period = float(cfg_get(self.cfg, "dcs.watchdog_period_s", 1.0))
+        last = self.sim_time
         while True:
             for link in self.devices.values():
                 if link.online:
                     await link.kick_watchdog()
-            await asyncio.sleep(1.0)
+            last = await self._wait_sim_period(period, last)
 
     async def _sequence_loop(self) -> None:
-        await asyncio.sleep(float(cfg_get(self.cfg, "dcs.start_delay_s", 8.0)))
+        period = 1.0
+        delay = float(cfg_get(self.cfg, "dcs.start_delay_s", 8.0))
+        # 先給 plant-bus 一點時間完成連線，再以模擬時間計算啟動延遲
+        with contextlib.suppress(asyncio.TimeoutError):
+            await asyncio.wait_for(self.bus.connected.wait(), timeout=5.0)
+        last = self.sim_time
+        while self.sim_time - last < delay:
+            if not self.bus.connected.is_set():
+                await asyncio.sleep(delay)
+                break
+            await asyncio.sleep(0.05)
+        last = self.sim_time
         if self.auto_start and not self.sequencer.running:
             self.sequencer.start()
             self.emit("STARTUP_SEQUENCE_STARTED")
         while True:
             if not self.paused:
                 try:
-                    await self.sequencer.update(self, 1.0)
+                    await self.sequencer.update(self, period)
                 except Exception as exc:
                     self.emit("SEQUENCE_ERROR", error=repr(exc))
-            await asyncio.sleep(1.0)
+            last = await self._wait_sim_period(period, last)
 
     async def _control_loop(self) -> None:
         dt = self.scan_time
+        last = self.sim_time
         while True:
-            started = time.monotonic()
             if not self.paused:
                 try:
                     await self._control_step(dt)
                 except Exception as exc:
                     self.emit("CONTROL_ERROR", error=repr(exc))
-            elapsed = time.monotonic() - started
-            await asyncio.sleep(max(0.0, dt - elapsed))
+            last = await self._wait_sim_period(dt, last)
 
     async def _control_step(self, dt: float) -> None:
         tripped = {
             name: link.di("TRIPPED") for name, link in self.devices.items() if link.online
         }
         for action in self.trip_matrix.evaluate(tripped):
+            # 必須回報結果：寫入失敗的連鎖動作要在下一次掃描重試，不能靜默漏掉
             if action.action == "write_holding":
-                await self.write(action.device, action.target, action.value)
+                ok = await self.write(action.device, action.target, action.value)
             elif action.action == "pulse_coil":
-                await self.pulse(action.device, action.target)
+                ok = await self.pulse(action.device, action.target)
+            else:
+                ok = False
+            self.trip_matrix.confirm(action, ok)
 
         # --- 8.1 鍋爐壓力控制 ---
         boiler = self.devices["boiler"]
@@ -373,23 +468,35 @@ class DCS:
         turbine = self.devices["turbine"]
         valve = self.devices["steam_valve"]
         generator = self.devices["generator"]
-        if turbine.online and valve.online and self.turbine_speed.auto:
+        if turbine.online and valve.online and (self.turbine_speed.auto or self.load_control.auto):
             speed_rpm = turbine.ir("SPEED_RPM")
-            grid_mode = generator.online and generator.ir("OPERATING_MODE") >= 1
+            breaker_closed = generator.online and generator.ir("BREAKER_STATUS") >= 1
+            # 負載控制只有在「強電網模式且已併聯」時才有意義；
+            # 併聯前仍必須用轉速控制，否則閥門會被壓到 0 而無法升速
+            grid_mode = (generator.online and generator.ir("OPERATING_MODE") >= 1
+                         and breaker_closed)
             load_ff = 0.0
             if generator.online:
                 # 負載前饋：以額定負載換算閥門開度
                 load_ff = 0.8 * generator.ir("ELECTRICAL_POWER")
+            current_position = valve.hr("MANUAL_OUTPUT") if valve.online else 0.0
             if grid_mode:
-                self.load_control.setpoint = generator.ir("LOAD_DEMAND") if generator.online else 0.0
-                position = self.load_control.update(
-                    generator.ir("ELECTRICAL_POWER") if generator.online else 0.0, dt
-                )
+                if not self.load_control.auto:
+                    # 轉速控制 -> 負載控制：以目前閥位無擾動接手（bumpless transfer）
+                    self.load_control.to_auto(current_position)
+                    self.turbine_speed.to_manual(current_position)
+                    self.emit("LOAD_CONTROL_ENGAGED", position=round(current_position, 2))
+                self.load_control.setpoint = generator.ir("LOAD_DEMAND")
+                position = self.load_control.update(generator.ir("ELECTRICAL_POWER"), dt)
             else:
+                if self.load_control.auto:
+                    # 解列/退出強電網：把控制權交還轉速迴圈，同樣不得跳變
+                    self.load_control.to_manual(current_position)
+                    self.turbine_speed.to_auto(current_position)
+                    self.emit("SPEED_CONTROL_ENGAGED", position=round(current_position, 2))
                 position = self.turbine_speed.update(speed_rpm, dt, feedforward=load_ff)
 
             # 升速期間限制閥門開度，避免瞬間超速
-            breaker_closed = generator.online and generator.ir("BREAKER_STATUS") >= 1
             if speed_rpm < self.turbine_speed.setpoint * 0.97 and not breaker_closed:
                 position = min(position, self.startup_valve_max)
 

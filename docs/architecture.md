@@ -120,7 +120,8 @@ plant-bus 每個 tick：
 
 * 多控制器衝突：`single_writer` 啟用時，只有取得 lease 的來源 IP 可寫入，
   其他 client 仍可讀取，寫入回傳 `Server Device Busy`；
-  緊急停止可另外由 `safety_allowlist` 指定的 Safety PLC 來源寫入。
+  緊急停止可另外由 `safety_allowlist` 指定的 Safety PLC 來源寫入
+  （僅限整批都是安全線圈的寫入，混合批次不適用此特權）。
 
 ## 7. 持久化與快照的差別
 
@@ -132,3 +133,14 @@ plant-bus 每個 tick：
 | 還原時機 | 容器啟動 | 任何時候，不重啟容器 |
 
 容器重新啟動後：跳機不會自動清除、設備回到安全輸出、需要操作員執行 reset 與 start。
+
+### 7.1 快照完整性
+
+還原前 plant-bus 一定會檢查快照的格式版本、結構與 SHA-256 checksum，任一項不符就
+拒絕還原並回傳 HTTP 409，不會把損毀的內容套到機組上。
+
+儲存當下若有設備離線，該快照會被標記為 `complete: false` 並記下 `missing` 清單：
+
+* 不會成為 `last_snapshot`（`plantctl rollback` 不會挑到它）。
+* 還原時預設拒絕，避免產生「部分設備新狀態、部分設備舊狀態」的混合機組。
+* 確定要繼續時才用 `--allow-incomplete`（API 為 `allow_incomplete: true`）。

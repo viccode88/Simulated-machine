@@ -131,6 +131,9 @@ class BaseDevice:
         # 故障注入
         self.faults = FaultInjector(enabled=self.lab_mode)
         self.comm_faults = CommFaults()
+        # 感測器故障每個 scan cycle 只取樣一次（見 sensor_sample）
+        self._sensor_epoch = 0
+        self._sensor_cache: dict[str, tuple[int, float, int]] = {}
 
         # 暫存器
         self.rmap = RegisterMap.build(self.NAME, self.PROCESS_INPUTS, self.EXTRA_HOLDINGS, self.EXTRA_COILS)
@@ -343,6 +346,21 @@ class BaseDevice:
         signal = self.inputs.get(name)
         return bool(signal and signal.good)
 
+    # -- 感測器取樣 --------------------------------------------------------
+    def sensor_sample(self, name: str, true_value: float) -> tuple[float, int]:
+        """套用感測器故障，且每個 scan cycle 只取樣一次。
+
+        保護邏輯、Modbus 暫存器映像與 SimBus 發佈值必須看到同一個讀值；
+        若各自呼叫 faults.sensor()，drift 會依呼叫次數倍增，noise/intermittent
+        則會讓三處數值互相矛盾。
+        """
+        cached = self._sensor_cache.get(name)
+        if cached is not None and cached[0] == self._sensor_epoch:
+            return cached[1], cached[2]
+        value, quality = self.faults.sensor(name, true_value, self.dt)
+        self._sensor_cache[name] = (self._sensor_epoch, value, quality)
+        return value, quality
+
     # -- 命令處理 ----------------------------------------------------------
     def _reject(self, reason: str, **fields: Any) -> None:
         self.rejected_commands += 1
@@ -475,6 +493,8 @@ class BaseDevice:
     def scan(self, dt: float) -> None:
         started = time.perf_counter()
         self._busy = True
+        # 新的 scan cycle：感測器故障重新取樣一次，之後同一 tick 內共用同一讀值
+        self._sensor_epoch += 1
         try:
             self._apply_commands()
             self._update_comm_status(dt)
@@ -717,10 +737,19 @@ class BaseDevice:
             self.coil[index] = bool(value)
         if not options.get("keep_faults", False):
             self.faults.from_dict(data.get("faults") or {})
-            comm = data.get("comm_faults") or {}
-            for key, value in comm.items():
-                if hasattr(self.comm_faults, key):
-                    setattr(self.comm_faults, key, value)
+            # 故障注入開關永遠由本機 LAB_MODE 決定，不得由快照內容重新啟用：
+            # 否則 LAB_MODE=false 的機組會帶著故障運轉，且無法再由 API 清除
+            self.faults.enabled = self.lab_mode
+            if not self.lab_mode:
+                self.faults.clear()
+                self.comm_faults.reset()
+                if data.get("faults") or data.get("comm_faults"):
+                    self._emit("SNAPSHOT_FAULTS_DISCARDED", reason="LAB_MODE 未開啟")
+            else:
+                comm = data.get("comm_faults") or {}
+                for key, value in comm.items():
+                    if hasattr(self.comm_faults, key):
+                        setattr(self.comm_faults, key, value)
         totals = data.get("totalizers") or {}
         if not options.get("preserve_totalizers", False):
             self.run_seconds = float(totals.get("run_seconds", 0.0))
@@ -873,7 +902,11 @@ class BaseDevice:
                 }
             )
         elif kind == MsgType.FAULT.value:
-            self._handle_fault(message)
+            try:
+                self._handle_fault(message)
+            except Exception as exc:  # 故障注入永遠不得使設備主迴圈退出
+                self._emit("FAULT_HANDLER_ERROR", error=repr(exc),
+                           payload=message.get("payload"))
             await self.bus.send(
                 {
                     "type": MsgType.FAULT_ACK.value,
@@ -920,8 +953,19 @@ class BaseDevice:
         payload = message.get("payload") or {}
         action = payload.get("action", "set")
         if action == "clear":
-            self.faults.clear(payload.get("category"), payload.get("name"))
-            self.comm_faults.reset()
+            category = payload.get("category")
+            name = payload.get("name")
+            # 只有「全部清除」或明確指定 comm 時才重置協定層故障；
+            # 清單一 sensor/process 故障不應把通訊故障一併清掉
+            if category in (None, "comm"):
+                self.comm_faults.reset()
+            if category != "comm":
+                try:
+                    self.faults.clear(category, name)
+                except ValueError as exc:
+                    # 未知類別必須回報，不可讓例外沿著匯流排迴圈冒泡把設備打掛
+                    self._emit("FAULT_CLEAR_FAILED", error=repr(exc), **payload)
+                    return
             self._emit("FAULT_CLEARED", **payload)
             return
         category = payload.get("category")

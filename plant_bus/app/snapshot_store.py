@@ -18,6 +18,10 @@ from typing import Any
 SNAPSHOT_FORMAT = 1
 
 
+class SnapshotIntegrityError(Exception):
+    """快照損毀、格式不符或內容不完整，不得用於還原。"""
+
+
 class SnapshotStore:
     def __init__(self, directory: str) -> None:
         self.directory = directory
@@ -35,7 +39,8 @@ class SnapshotStore:
         return hashlib.sha256(blob).hexdigest()[:16]
 
     def save(self, name: str, bus_state: dict, participants: dict[str, Any],
-             description: str = "", tags: list[str] | None = None) -> dict:
+             description: str = "", tags: list[str] | None = None,
+             missing: list[str] | None = None) -> dict:
         payload = {"format": SNAPSHOT_FORMAT, "bus": bus_state, "participants": participants}
         meta = {
             "name": name,
@@ -46,6 +51,10 @@ class SnapshotStore:
             "devices": sorted(participants.keys()),
             "description": description,
             "tags": tags or [],
+            # 離線設備造成的 partial snapshot 必須留下記號，還原時才能拒絕，
+            # 避免出現「部分設備新狀態、部分設備舊狀態」的混合機組
+            "missing": sorted(missing or []),
+            "complete": not missing,
             "checksum": self._checksum(payload),
         }
         document = {"meta": meta, **payload}
@@ -58,9 +67,43 @@ class SnapshotStore:
         os.replace(tmp, path)  # 原子寫入
         return meta
 
-    def load(self, name: str) -> dict:
-        with open(self._path(name), "r", encoding="utf-8") as handle:
-            return json.load(handle)
+    def load(self, name: str, verify: bool = False) -> dict:
+        """讀取快照。verify=True 時會檢查格式與 checksum，不通過則拋出例外。"""
+        try:
+            with open(self._path(name), "r", encoding="utf-8") as handle:
+                document = json.load(handle)
+        except json.JSONDecodeError as exc:
+            raise SnapshotIntegrityError(f"快照 {name} 不是合法 JSON：{exc}") from exc
+        if verify:
+            self.check(name, document)
+        return document
+
+    def check(self, name: str, document: dict | None = None) -> dict:
+        """驗證快照可用於還原；回傳 document，不通過則拋出 SnapshotIntegrityError。"""
+        if document is None:
+            document = self.load(name)
+        if not isinstance(document, dict):
+            raise SnapshotIntegrityError(f"快照 {name} 結構不正確")
+        meta = document.get("meta")
+        if not isinstance(meta, dict):
+            raise SnapshotIntegrityError(f"快照 {name} 缺少 meta")
+        if document.get("format") != SNAPSHOT_FORMAT:
+            raise SnapshotIntegrityError(
+                f"快照 {name} 格式版本不符（{document.get('format')} != {SNAPSHOT_FORMAT}）"
+            )
+        for key in ("bus", "participants"):
+            if not isinstance(document.get(key), dict):
+                raise SnapshotIntegrityError(f"快照 {name} 缺少 {key} 區段")
+        expected = meta.get("checksum")
+        if not expected:
+            raise SnapshotIntegrityError(f"快照 {name} 沒有 checksum")
+        payload = {k: v for k, v in document.items() if k != "meta"}
+        actual = self._checksum(payload)
+        if actual != expected:
+            raise SnapshotIntegrityError(
+                f"快照 {name} checksum 不符（檔案 {expected}，實際 {actual}），內容可能已損毀"
+            )
+        return document
 
     def exists(self, name: str) -> bool:
         return os.path.exists(self._path(name))
@@ -89,7 +132,8 @@ class SnapshotStore:
         return items
 
     def verify(self, name: str) -> bool:
-        document = self.load(name)
-        meta = document.get("meta", {})
-        payload = {k: v for k, v in document.items() if k != "meta"}
-        return self._checksum(payload) == meta.get("checksum")
+        try:
+            self.check(name)
+        except (SnapshotIntegrityError, OSError):
+            return False
+        return True
