@@ -1,0 +1,25 @@
+name: cooling_loss
+description: |
+  §19.4 冷卻能力喪失 100% -> 30%。冷凝器壓力上升 -> 汽輪機效率下降 ->
+  高壓警報 -> 超過 0.25 bar(a) 汽輪機跳機 -> 斷路器開啟 -> 主蒸汽閥關閉，
+  且跳機不因壓力恢復而解除。
+snapshot:
+  restore: steady-60mw
+  clean: true
+speed: 2.0
+steps:
+  - wait: 5
+  - fault:
+      target: condenser
+      category: process
+      name: cooling_water_availability
+      spec: 0.3
+  - expect: {signal: condenser.pressure_bar_abs, min: 0.15, max: 2.0, within: 300}
+  - expect_event: {device: turbine, event: TRIP_LATCHED, within: 300}
+  - expect_tripped: {device: turbine, tripped: true, within: 60}
+  - expect: {signal: generator.breaker_closed, min: 0, max: 0.5, within: 30}
+  - expect: {signal: steam_valve.position_pct, min: 0, max: 2, within: 30}
+  - fault_clear: {target: condenser, category: process, name: cooling_water_availability}
+  - wait: 60
+  - expect_tripped: {device: turbine, tripped: true, within: 10}
+  - check_invariants: {}

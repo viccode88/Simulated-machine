@@ -1,0 +1,209 @@
+# 簡化火力發電廠工業控制模擬器
+#
+#   docker compose --profile standalone up --build      # 全部設備 + 內建 DCS + HMI + 歷史資料
+#   docker compose --profile external-plc up --build    # 全部設備，不啟動內建 DCS
+#
+# 設備服務不設 profile，因此任何 profile 都會啟動；只有控制器/HMI/工具受 profile 控制。
+
+x-device: &device
+  build:
+    context: .
+    dockerfile: Dockerfile
+  image: thermal-plant-simulator:latest
+  restart: ${DEVICE_RESTART:-unless-stopped}
+  environment: &device-env
+    LAB_MODE: ${LAB_MODE:-false}
+    MODBUS_TRACE: ${MODBUS_TRACE:-false}
+    SIM_BUS_HOST: plant-bus
+    SIM_BUS_PORT: "7000"
+    CONFIG_DIR: /app/configs
+    STATE_DIR: /var/lib/plant-device
+    TZ: ${TZ:-Asia/Taipei}
+  depends_on:
+    plant-bus:
+      condition: service_healthy
+  healthcheck:
+    test: ["CMD", "python", "-m", "tools.healthcheck", "modbus", "127.0.0.1", "502"]
+    interval: 10s
+    timeout: 5s
+    retries: 5
+    start_period: 15s
+
+networks:
+  control_net:      # Modbus TCP：外部 PLC / HMI / 測試工具 / 封包擷取 / fuzzer
+    name: plant_control_net
+  sim_net:          # 設備之間的物理量交換（外部 PLC 不應直接使用）
+    name: plant_sim_net
+    internal: true
+  management_net:   # metrics / 日誌 / 歷史資料 / 健康檢查
+    name: plant_management_net
+
+volumes:
+  plant-bus-state:
+  condenser-state:
+  condensate-pump-state:
+  feedwater-tank-state:
+  feedwater-pump-state:
+  boiler-state:
+  steam-valve-state:
+  turbine-state:
+  generator-state:
+  dcs-state:
+  historian-data:
+
+services:
+  # ---------------------------------------------------------------- plant-bus
+  plant-bus:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: thermal-plant-simulator:latest
+    container_name: plant-bus
+    command: ["python", "-m", "plant_bus.app.main"]
+    restart: ${DEVICE_RESTART:-unless-stopped}
+    environment:
+      CONFIG_DIR: /app/configs
+      STATE_DIR: /var/lib/plant-bus
+      HTTP_PORT: "8080"
+      RESTORE_ON_BOOT: ${RESTORE_ON_BOOT:-}
+      TZ: ${TZ:-Asia/Taipei}
+    networks: [sim_net, management_net]
+    ports:
+      - "${BIND_ADDR:-127.0.0.1}:15080:8080"   # 快照 / 模擬控制 / metrics API
+    volumes:
+      - plant-bus-state:/var/lib/plant-bus
+    healthcheck:
+      test: ["CMD", "python", "-m", "tools.healthcheck", "http", "http://127.0.0.1:8080/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 5s
+
+  # ---------------------------------------------------------------- 設備
+  condenser:
+    <<: *device
+    container_name: condenser
+    command: ["python", "-m", "devices.condenser.main"]
+    networks: [control_net, sim_net]
+    ports: ["${BIND_ADDR:-127.0.0.1}:15021:502"]
+    volumes: [condenser-state:/var/lib/plant-device]
+
+  condensate-pump:
+    <<: *device
+    container_name: condensate-pump
+    command: ["python", "-m", "devices.condensate_pump.main"]
+    networks: [control_net, sim_net]
+    ports: ["${BIND_ADDR:-127.0.0.1}:15022:502"]
+    volumes: [condensate-pump-state:/var/lib/plant-device]
+
+  feedwater-tank:
+    <<: *device
+    container_name: feedwater-tank
+    command: ["python", "-m", "devices.feedwater_tank.main"]
+    networks: [control_net, sim_net]
+    ports: ["${BIND_ADDR:-127.0.0.1}:15023:502"]
+    volumes: [feedwater-tank-state:/var/lib/plant-device]
+
+  feedwater-pump:
+    <<: *device
+    container_name: feedwater-pump
+    command: ["python", "-m", "devices.feedwater_pump.main"]
+    networks: [control_net, sim_net]
+    ports: ["${BIND_ADDR:-127.0.0.1}:15024:502"]
+    volumes: [feedwater-pump-state:/var/lib/plant-device]
+
+  boiler:
+    <<: *device
+    container_name: boiler
+    command: ["python", "-m", "devices.boiler.main"]
+    networks: [control_net, sim_net]
+    ports: ["${BIND_ADDR:-127.0.0.1}:15025:502"]
+    volumes: [boiler-state:/var/lib/plant-device]
+
+  steam-valve:
+    <<: *device
+    container_name: steam-valve
+    command: ["python", "-m", "devices.steam_valve.main"]
+    networks: [control_net, sim_net]
+    ports: ["${BIND_ADDR:-127.0.0.1}:15026:502"]
+    volumes: [steam-valve-state:/var/lib/plant-device]
+
+  turbine:
+    <<: *device
+    container_name: turbine
+    command: ["python", "-m", "devices.turbine.main"]
+    networks: [control_net, sim_net]
+    ports: ["${BIND_ADDR:-127.0.0.1}:15027:502"]
+    volumes: [turbine-state:/var/lib/plant-device]
+
+  generator:
+    <<: *device
+    container_name: generator
+    command: ["python", "-m", "devices.generator.main"]
+    networks: [control_net, sim_net]
+    ports: ["${BIND_ADDR:-127.0.0.1}:15028:502"]
+    volumes: [generator-state:/var/lib/plant-device]
+
+  # ---------------------------------------------------------------- 內建 DCS
+  dcs-plc:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: thermal-plant-simulator:latest
+    container_name: dcs-plc
+    profiles: ["standalone"]
+    command: ["python", "-m", "controller.dcs.main"]
+    restart: ${DEVICE_RESTART:-unless-stopped}
+    environment:
+      <<: *device-env
+      AUTO_START: ${AUTO_START:-true}
+      STATE_DIR: /var/lib/plant-device
+    networks: [control_net, sim_net, management_net]
+    ports: ["${BIND_ADDR:-127.0.0.1}:15020:502"]
+    volumes: [dcs-state:/var/lib/plant-device]
+    depends_on:
+      plant-bus: {condition: service_healthy}
+      boiler: {condition: service_started}
+      turbine: {condition: service_started}
+      generator: {condition: service_started}
+
+  # ---------------------------------------------------------------- 觀測
+  historian:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: thermal-plant-simulator:latest
+    container_name: historian
+    profiles: ["standalone", "external-plc"]
+    command: ["python", "-m", "historian.main"]
+    restart: ${DEVICE_RESTART:-unless-stopped}
+    environment:
+      SIM_BUS_HOST: plant-bus
+      SIM_BUS_PORT: "7000"
+      STATE_DIR: /var/lib/historian
+      HTTP_PORT: "8081"
+      TZ: ${TZ:-Asia/Taipei}
+    networks: [sim_net, management_net]
+    ports: ["${BIND_ADDR:-127.0.0.1}:15081:8081"]
+    volumes: [historian-data:/var/lib/historian]
+    depends_on:
+      plant-bus: {condition: service_healthy}
+
+  hmi:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: thermal-plant-simulator:latest
+    container_name: hmi
+    profiles: ["standalone", "external-plc"]
+    command: ["python", "-m", "hmi.main"]
+    restart: ${DEVICE_RESTART:-unless-stopped}
+    environment:
+      BUS_API: http://plant-bus:8080
+      HISTORIAN_API: http://historian:8081
+      HTTP_PORT: "8082"
+      TZ: ${TZ:-Asia/Taipei}
+    networks: [management_net]
+    ports: ["${BIND_ADDR:-127.0.0.1}:15082:8082"]
+    depends_on:
+      plant-bus: {condition: service_healthy}

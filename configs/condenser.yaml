@@ -1,0 +1,32 @@
+condenser:
+  rated_capacity_kg_s: 110.0
+  k_overload: 0.02          # 排汽超過能力時壓力快速上升
+  k_vacuum: 0.05
+  min_pressure_bar: 0.04
+  min_pressure_per_flow: 0.0004   # 100 kg/s 時最低壓力約 0.08 bar(a)
+  mass_min_kg: 5000
+  mass_max_kg: 25000        # 熱井有效水量約 20,000 kg
+  initial_mass_kg: 15000
+  initial_pressure_bar: 1.0
+  heat_transfer_factor: 1.0
+  vacuum_pull_time_s: 60.0
+  max_makeup_kg_s: 20.0
+  air_leak_gain: 0.05
+  hotwell_setpoint_pct: 55.0
+
+comm:
+  failure_policy: LOCAL_FALLBACK
+
+protections:
+  HIGH_PRESSURE:
+    alarm: 0.15
+    trip: null              # 冷凝器本身只警報，跳機由汽輪機 LOW_VACUUM 執行
+    delay: 2.0
+  LOW_HOTWELL_LEVEL:
+    alarm: 20.0
+    trip: null
+    delay: 2.0
+  HIGH_HOTWELL_LEVEL:
+    alarm: 90.0
+    trip: null
+    delay: 2.0

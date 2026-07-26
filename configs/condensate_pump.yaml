@@ -1,0 +1,35 @@
+condensate_pump:
+  rated_flow_kg_s: 120.0
+  shutoff_head_bar: 25.0
+  speed_rate_pct_s: 15.0
+  min_speed_pct: 20.0
+  rated_current_a: 180.0
+  cavitation_level_low_pct: 10.0
+  cavitation_level_ok_pct: 22.0
+  cavitation_trip_time_s: 20.0
+  vibration_base_mm_s: 1.0
+  start_level_min_pct: 20.0
+  has_outlet_valve: false
+
+comm:
+  failure_policy: LOCAL_FALLBACK
+
+protections:
+  LOW_LOW_SUCTION:
+    alarm: 20.0
+    trip: 10.0
+    delay: 2.0
+    reset: 25.0
+    reset_delay: 5.0
+  CAVITATION_TRIP:
+    alarm: 10.0
+    trip: 20.0
+    delay: 0.5
+    reset: 1.0
+    reset_delay: 5.0
+  MOTOR_OVERCURRENT:
+    alarm: 1.1
+    trip: 1.3
+    delay: 2.0
+    reset: 1.0
+    reset_delay: 5.0

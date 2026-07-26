@@ -1,0 +1,26 @@
+steam_valve:
+  rated_flow_kg_s: 120.0
+  rated_pressure_bar: 100.0
+  reference_temp_c: 500.0
+  critical_ratio: 0.55
+  open_time_s: 5.0
+  close_time_s: 3.0
+  fast_close_time_s: 0.4
+  deviation_alarm_pct: 5.0
+  fail_to_close_delay_s: 3.0
+  local_speed_gain: 0.02
+
+comm:
+  failure_policy: FAIL_CLOSE   # 預設失效位置 FAIL_CLOSE
+
+protections:
+  POSITION_DEVIATION_TRIP:
+    alarm: 5.0
+    trip: null
+    delay: 2.0
+  FAIL_TO_CLOSE:
+    alarm: 0.5
+    trip: 0.5
+    delay: 0.5
+    reset: 0.5
+    reset_delay: 5.0

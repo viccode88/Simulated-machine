@@ -1,0 +1,26 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+*.egg-info/
+build/
+dist/
+
+# 測試 / 工具快取
+.pytest_cache/
+pytest-cache-files-*/
+.hypothesis/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# 執行期資料
+.env
+*.db
+*.jsonl
+
+# macOS
+.DS_Store

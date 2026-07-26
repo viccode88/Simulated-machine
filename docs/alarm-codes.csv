@@ -1,0 +1,136 @@
+device,type,code,name,alarm_word,bit,signal,direction,message
+boiler,TRIP,5101,LOW_LOW_LEVEL,,,level_indicated,low,Boiler low-low water level
+boiler,TRIP,5102,HIGH_HIGH_LEVEL,,,level_indicated,high,Boiler high-high water level
+boiler,TRIP,5103,HIGH_PRESSURE,,,pressure,high,Boiler overpressure
+boiler,TRIP,5104,FLAME_FAILURE,,,flame_fail,high,Boiler flame failure
+boiler,ALARM,5111,LOW_LEVEL,1,0,,,鍋爐水位低
+boiler,ALARM,5112,HIGH_LEVEL,1,1,,,鍋爐水位高
+boiler,ALARM,5113,HIGH_PRESSURE,1,2,,,鍋爐壓力高
+boiler,ALARM,5114,FLAME_UNSTABLE,1,3,,,火焰不穩
+boiler,ALARM,5115,FEEDWATER_MISMATCH,1,4,,,給水與蒸汽流量偏差過大
+boiler,ALARM,5116,LOW_PRESSURE,1,5,,,鍋爐壓力低
+boiler,ALARM,5117,RELIEF_VALVE_OPEN,1,6,,,安全閥動作
+boiler,ALARM,5190,COMMAND_REJECTED,2,10,,,命令被拒絕
+boiler,ALARM,5191,CONTROL_WATCHDOG_LOST,2,11,,,控制器 watchdog 逾時
+boiler,ALARM,5192,SIM_BUS_BAD,2,12,,,模擬匯流排資料品質不良
+boiler,ALARM,5193,SENSOR_FAULT,2,13,,,感測器故障
+boiler,ALARM,5194,ACTUATOR_FAULT,2,14,,,執行器故障
+boiler,ALARM,5195,FAULT_INJECTED,2,15,,,實驗模式故障注入啟用中
+boiler,TRIP,5197,COMM_TIMEOUT_TRIP,,,__manual__,high,控制通訊逾時跳機
+boiler,TRIP,5198,TRIP_TEST,,,__manual__,high,實驗模式跳機測試
+boiler,TRIP,5199,EMERGENCY_STOP,,,__manual__,high,緊急停止
+condensate_pump,TRIP,5501,LOW_LOW_SUCTION,,,source_level,low,Condensate pump low-low hotwell level
+condensate_pump,TRIP,5502,CAVITATION_TRIP,,,cavitation_time,high,Condensate pump prolonged cavitation
+condensate_pump,TRIP,5503,MOTOR_OVERCURRENT,,,motor_current_pu,high,Condensate pump motor overcurrent
+condensate_pump,ALARM,5511,LOW_SUCTION_LEVEL,1,0,,,熱井水位低
+condensate_pump,ALARM,5512,CAVITATION,1,1,,,泵浦汽蝕
+condensate_pump,ALARM,5513,MOTOR_OVERCURRENT,1,2,,,馬達過流
+condensate_pump,ALARM,5514,LOW_FLOW,1,3,,,流量低
+condensate_pump,ALARM,5590,COMMAND_REJECTED,2,10,,,命令被拒絕
+condensate_pump,ALARM,5591,CONTROL_WATCHDOG_LOST,2,11,,,控制器 watchdog 逾時
+condensate_pump,ALARM,5592,SIM_BUS_BAD,2,12,,,模擬匯流排資料品質不良
+condensate_pump,ALARM,5593,SENSOR_FAULT,2,13,,,感測器故障
+condensate_pump,ALARM,5594,ACTUATOR_FAULT,2,14,,,執行器故障
+condensate_pump,ALARM,5595,FAULT_INJECTED,2,15,,,實驗模式故障注入啟用中
+condensate_pump,TRIP,5597,COMM_TIMEOUT_TRIP,,,__manual__,high,控制通訊逾時跳機
+condensate_pump,TRIP,5598,TRIP_TEST,,,__manual__,high,實驗模式跳機測試
+condensate_pump,TRIP,5599,EMERGENCY_STOP,,,__manual__,high,緊急停止
+condenser,TRIP,5401,HIGH_PRESSURE,,,pressure,high,Condenser pressure high
+condenser,TRIP,5402,LOW_HOTWELL_LEVEL,,,hotwell_level,low,Hotwell level low
+condenser,TRIP,5403,HIGH_HOTWELL_LEVEL,,,hotwell_level,high,Hotwell level high
+condenser,ALARM,5411,HIGH_PRESSURE,1,0,,,冷凝器壓力高
+condenser,ALARM,5412,LOW_HOTWELL_LEVEL,1,1,,,熱井水位低
+condenser,ALARM,5413,HIGH_HOTWELL_LEVEL,1,2,,,熱井水位高
+condenser,ALARM,5414,COOLING_WATER_LOW,1,3,,,冷卻水能力不足
+condenser,ALARM,5415,VACUUM_SYSTEM_FAULT,1,4,,,真空系統異常
+condenser,ALARM,5490,COMMAND_REJECTED,2,10,,,命令被拒絕
+condenser,ALARM,5491,CONTROL_WATCHDOG_LOST,2,11,,,控制器 watchdog 逾時
+condenser,ALARM,5492,SIM_BUS_BAD,2,12,,,模擬匯流排資料品質不良
+condenser,ALARM,5493,SENSOR_FAULT,2,13,,,感測器故障
+condenser,ALARM,5494,ACTUATOR_FAULT,2,14,,,執行器故障
+condenser,ALARM,5495,FAULT_INJECTED,2,15,,,實驗模式故障注入啟用中
+condenser,TRIP,5497,COMM_TIMEOUT_TRIP,,,__manual__,high,控制通訊逾時跳機
+condenser,TRIP,5498,TRIP_TEST,,,__manual__,high,實驗模式跳機測試
+condenser,TRIP,5499,EMERGENCY_STOP,,,__manual__,high,緊急停止
+feedwater_pump,TRIP,5701,LOW_LOW_SUCTION,,,source_level,low,Feedwater pump low-low tank level
+feedwater_pump,TRIP,5702,CAVITATION_TRIP,,,cavitation_time,high,Feedwater pump prolonged cavitation
+feedwater_pump,TRIP,5703,MOTOR_OVERCURRENT,,,motor_current_pu,high,Feedwater pump motor overcurrent
+feedwater_pump,ALARM,5711,LOW_SUCTION_LEVEL,1,0,,,給水槽水位低
+feedwater_pump,ALARM,5712,CAVITATION,1,1,,,泵浦汽蝕
+feedwater_pump,ALARM,5713,MOTOR_OVERCURRENT,1,2,,,馬達過流
+feedwater_pump,ALARM,5714,NO_FLOW_HIGH_PRESSURE,1,3,,,排出壓力不足以進水
+feedwater_pump,ALARM,5790,COMMAND_REJECTED,2,10,,,命令被拒絕
+feedwater_pump,ALARM,5791,CONTROL_WATCHDOG_LOST,2,11,,,控制器 watchdog 逾時
+feedwater_pump,ALARM,5792,SIM_BUS_BAD,2,12,,,模擬匯流排資料品質不良
+feedwater_pump,ALARM,5793,SENSOR_FAULT,2,13,,,感測器故障
+feedwater_pump,ALARM,5794,ACTUATOR_FAULT,2,14,,,執行器故障
+feedwater_pump,ALARM,5795,FAULT_INJECTED,2,15,,,實驗模式故障注入啟用中
+feedwater_pump,TRIP,5797,COMM_TIMEOUT_TRIP,,,__manual__,high,控制通訊逾時跳機
+feedwater_pump,TRIP,5798,TRIP_TEST,,,__manual__,high,實驗模式跳機測試
+feedwater_pump,TRIP,5799,EMERGENCY_STOP,,,__manual__,high,緊急停止
+feedwater_tank,TRIP,5601,LOW_LEVEL,,,level,low,Feedwater tank level low
+feedwater_tank,TRIP,5602,HIGH_LEVEL,,,level,high,Feedwater tank level high
+feedwater_tank,ALARM,5611,LOW_LEVEL,1,0,,,給水槽水位低
+feedwater_tank,ALARM,5612,LOW_LOW_LEVEL,1,1,,,給水槽水位低低
+feedwater_tank,ALARM,5613,HIGH_LEVEL,1,2,,,給水槽水位高
+feedwater_tank,ALARM,5614,OVERFLOW,1,3,,,給水槽溢流
+feedwater_tank,ALARM,5690,COMMAND_REJECTED,2,10,,,命令被拒絕
+feedwater_tank,ALARM,5691,CONTROL_WATCHDOG_LOST,2,11,,,控制器 watchdog 逾時
+feedwater_tank,ALARM,5692,SIM_BUS_BAD,2,12,,,模擬匯流排資料品質不良
+feedwater_tank,ALARM,5693,SENSOR_FAULT,2,13,,,感測器故障
+feedwater_tank,ALARM,5694,ACTUATOR_FAULT,2,14,,,執行器故障
+feedwater_tank,ALARM,5695,FAULT_INJECTED,2,15,,,實驗模式故障注入啟用中
+feedwater_tank,TRIP,5697,COMM_TIMEOUT_TRIP,,,__manual__,high,控制通訊逾時跳機
+feedwater_tank,TRIP,5698,TRIP_TEST,,,__manual__,high,實驗模式跳機測試
+feedwater_tank,TRIP,5699,EMERGENCY_STOP,,,__manual__,high,緊急停止
+generator,TRIP,5301,OVERCURRENT,,,current_pu,high,Generator overcurrent
+generator,TRIP,5302,OVERFREQUENCY,,,frequency,high,Generator overfrequency
+generator,TRIP,5303,UNDERFREQUENCY,,,frequency,low,Generator underfrequency
+generator,TRIP,5304,REVERSE_POWER,,,reverse_power,high,Generator reverse power
+generator,ALARM,5311,OVERCURRENT,1,0,,,發電機過流
+generator,ALARM,5312,FREQUENCY_DEVIATION,1,1,,,頻率偏差
+generator,ALARM,5313,REVERSE_POWER,1,2,,,逆功率
+generator,ALARM,5314,SYNC_BLOCKED,1,3,,,同步條件不成立
+generator,ALARM,5315,BREAKER_FAIL,1,4,,,斷路器拒動
+generator,ALARM,5390,COMMAND_REJECTED,2,10,,,命令被拒絕
+generator,ALARM,5391,CONTROL_WATCHDOG_LOST,2,11,,,控制器 watchdog 逾時
+generator,ALARM,5392,SIM_BUS_BAD,2,12,,,模擬匯流排資料品質不良
+generator,ALARM,5393,SENSOR_FAULT,2,13,,,感測器故障
+generator,ALARM,5394,ACTUATOR_FAULT,2,14,,,執行器故障
+generator,ALARM,5395,FAULT_INJECTED,2,15,,,實驗模式故障注入啟用中
+generator,TRIP,5397,COMM_TIMEOUT_TRIP,,,__manual__,high,控制通訊逾時跳機
+generator,TRIP,5398,TRIP_TEST,,,__manual__,high,實驗模式跳機測試
+generator,TRIP,5399,EMERGENCY_STOP,,,__manual__,high,緊急停止
+steam_valve,TRIP,5801,POSITION_DEVIATION_TRIP,,,deviation,high,Steam valve position deviation
+steam_valve,TRIP,5802,FAIL_TO_CLOSE,,,fail_to_close,high,Steam valve failed to close on demand
+steam_valve,ALARM,5811,POSITION_DEVIATION,1,0,,,閥門位置偏差
+steam_valve,ALARM,5812,FAST_CLOSE_ACTIVE,1,1,,,主蒸汽閥快關動作
+steam_valve,ALARM,5813,ACTUATOR_FAULT,1,2,,,執行器故障
+steam_valve,ALARM,5814,FAIL_TO_CLOSE,1,3,,,閥門無法關閉
+steam_valve,ALARM,5890,COMMAND_REJECTED,2,10,,,命令被拒絕
+steam_valve,ALARM,5891,CONTROL_WATCHDOG_LOST,2,11,,,控制器 watchdog 逾時
+steam_valve,ALARM,5892,SIM_BUS_BAD,2,12,,,模擬匯流排資料品質不良
+steam_valve,ALARM,5893,SENSOR_FAULT,2,13,,,感測器故障
+steam_valve,ALARM,5894,ACTUATOR_FAULT,2,14,,,執行器故障
+steam_valve,ALARM,5895,FAULT_INJECTED,2,15,,,實驗模式故障注入啟用中
+steam_valve,TRIP,5897,COMM_TIMEOUT_TRIP,,,__manual__,high,控制通訊逾時跳機
+steam_valve,TRIP,5898,TRIP_TEST,,,__manual__,high,實驗模式跳機測試
+steam_valve,TRIP,5899,EMERGENCY_STOP,,,__manual__,high,緊急停止
+turbine,TRIP,5201,OVERSPEED,,,speed_rpm,high,Turbine overspeed
+turbine,TRIP,5202,HIGH_VIBRATION,,,vibration,high,Turbine high vibration
+turbine,TRIP,5203,LOW_VACUUM,,,exhaust_pressure,high,Turbine low condenser vacuum
+turbine,TRIP,5204,HIGH_BEARING_TEMP,,,bearing_temp,high,Turbine bearing temperature high
+turbine,ALARM,5211,HIGH_SPEED,1,0,,,汽輪機轉速高
+turbine,ALARM,5212,HIGH_VIBRATION,1,1,,,汽輪機振動高
+turbine,ALARM,5213,LOW_VACUUM,1,2,,,排汽壓力高（真空不良）
+turbine,ALARM,5214,HIGH_BEARING_TEMP,1,3,,,軸承溫度高
+turbine,ALARM,5215,LOW_SPEED,1,4,,,汽輪機轉速低
+turbine,ALARM,5290,COMMAND_REJECTED,2,10,,,命令被拒絕
+turbine,ALARM,5291,CONTROL_WATCHDOG_LOST,2,11,,,控制器 watchdog 逾時
+turbine,ALARM,5292,SIM_BUS_BAD,2,12,,,模擬匯流排資料品質不良
+turbine,ALARM,5293,SENSOR_FAULT,2,13,,,感測器故障
+turbine,ALARM,5294,ACTUATOR_FAULT,2,14,,,執行器故障
+turbine,ALARM,5295,FAULT_INJECTED,2,15,,,實驗模式故障注入啟用中
+turbine,TRIP,5297,COMM_TIMEOUT_TRIP,,,__manual__,high,控制通訊逾時跳機
+turbine,TRIP,5298,TRIP_TEST,,,__manual__,high,實驗模式跳機測試
+turbine,TRIP,5299,EMERGENCY_STOP,,,__manual__,high,緊急停止

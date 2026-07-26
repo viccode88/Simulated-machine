@@ -1,0 +1,36 @@
+# Modbus Security（TLS + X.509）示範覆蓋檔
+#
+#   docker compose -f compose.yaml -f compose.secure.yaml --profile secure up --build
+#
+# Modbus Security 規格使用 802 埠，以 TLS 提供驗證與訊息完整性。
+# 實驗室預設仍保留普通 Modbus TCP profile，以便相容性測試與協定模糊測試。
+#
+# 這裡以 stunnel sidecar 提供 TLS 終結，設備本身仍是標準 Modbus TCP，
+# 因此協定 gateway 不會重新實作物理模型。
+
+services:
+  boiler:
+    environment:
+      LAB_MODE: "false"
+    # 只允許 TLS 前端與 DCS 寫入
+    command: ["python", "-m", "devices.boiler.main"]
+
+  modbus-tls:
+    build:
+      context: ./secure
+      dockerfile: Dockerfile
+    container_name: modbus-tls
+    profiles: ["secure"]
+    environment:
+      TLS_TARGET: ${TLS_TARGET:-boiler:502}
+      TLS_ACCEPT_PORT: "802"
+    networks: [control_net]
+    ports:
+      - "${BIND_ADDR:-127.0.0.1}:15802:802"
+    volumes:
+      - tls-certs:/etc/stunnel/certs
+    depends_on:
+      boiler: {condition: service_started}
+
+volumes:
+  tls-certs:

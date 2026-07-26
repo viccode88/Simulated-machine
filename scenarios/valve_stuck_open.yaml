@@ -1,0 +1,17 @@
+name: valve_stuck_open
+description: |
+  §19.6 主蒸汽閥卡開：位置偏差警報 -> 鍋爐壓力下降 -> 汽輪機持續加速 ->
+  超速保護動作，並記錄 FAIL_TO_CLOSE 與 TURBINE_OVERSPEED 的先後順序。
+snapshot:
+  restore: steady-60mw
+  clean: true
+speed: 1.0
+steps:
+  - wait: 5
+  - fault: {target: steam_valve, category: actuator, name: valve_mode, spec: STUCK_OPEN}
+  - write: {device: generator, register: BREAKER_OPEN, value: 1, coil: true}
+  - expect_event: {device: steam_valve, event: VALVE_FAIL_TO_CLOSE, within: 120}
+  - expect: {signal: turbine.speed_rpm, min: 3300, max: 5000, within: 120}
+  - expect_event: {device: turbine, event: FIRST_OUT, within: 180}
+  - expect_tripped: {device: turbine, tripped: true, within: 30}
+  - check_invariants: {}

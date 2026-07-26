@@ -1,0 +1,17 @@
+name: load_rejection
+description: |
+  §19.3 發電機甩載 90 MW -> 0 MW。調速器正常時轉速應恢復；
+  若閥門卡住則超速跳機並鎖存。
+snapshot:
+  restore: steady-60mw
+  clean: true
+speed: 1.0
+steps:
+  - wait: 10
+  - write: {device: generator, register: PRIMARY_SETPOINT, value: 90}
+  - expect: {signal: generator.electrical_power_mw, min: 88, max: 92, within: 180}
+  - write: {device: generator, register: BREAKER_OPEN, value: 1, coil: true}
+  - expect: {signal: turbine.speed_rpm, min: 3010, max: 3400, within: 20}
+  - expect: {signal: steam_valve.position_pct, min: 0, max: 20, within: 30}
+  - expect: {signal: turbine.speed_rpm, min: 2900, max: 3160, within: 180, hold: 10}
+  - check_invariants: {}

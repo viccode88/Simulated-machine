@@ -1,0 +1,79 @@
+# 全廠共用設定。所有門檻與參數一律由 YAML 提供，程式中不硬編碼。
+lab_mode: false
+
+simulation:
+  dt: 0.1                 # 物理模型與安全邏輯週期（秒）
+  speed: 1.0              # 模擬速度倍率（1.0 = 即時）
+  tick_timeout: 0.35      # lockstep 等待設備回應上限
+  stale_seconds: 1.0      # 超過此時間未更新 -> STALE
+  bad_seconds: 3.0        # 超過此時間未更新 -> BAD
+  start_paused: false
+  bus_host: plant-bus
+  bus_port: 7000
+  devices:
+    - condenser
+    - condensate_pump
+    - feedwater_tank
+    - feedwater_pump
+    - boiler
+    - steam_valve
+    - turbine
+    - generator
+
+bus:
+  http_port: 8080
+  event_ring: 2000
+
+snapshot:
+  auto_name: autosave
+  auto_period: 0          # >0 時每 N 秒自動存檔，供「快速恢復」用
+
+modbus:
+  port: 502
+  unit_id: 1
+  max_clients: 32
+  single_writer: true     # 同一時間只允許一個有效寫入控制器
+  lease_seconds: 5
+  write_allowlist: []     # 空 = 允許所有來源寫入
+  safety_allowlist: []    # 緊急停止專用來源 IP
+  trace: false
+
+comm:
+  watchdog_timeout: 3.0   # 超過 3 秒未更新 40003 -> CONTROL_WATCHDOG_OK = false
+  hold_seconds: 2.0
+  failure_policy: HOLD_LAST
+
+persistence:
+  period: 1.0
+
+control:
+  default_mode: 3         # 3 = REMOTE_AUTO
+
+# --- 額定運轉條件（§6），供多個設備交叉引用 ---
+ratings:
+  generator_mw: 100
+  boiler_pressure_bar: 100
+  main_steam_temp_c: 500
+  rated_steam_flow_kg_s: 100
+  boiler_level_pct: 66.7
+  feedwater_tank_level_pct: 60
+  condenser_pressure_bar: 0.08
+  turbine_speed_rpm: 3000
+
+boiler:
+  pressure_setpoint_bar: 100.0
+  level_setpoint_pct: 66.7
+  min_turbine_pressure_bar: 30.0
+
+turbine:
+  speed_setpoint_rpm: 3000.0
+  rated_speed_rpm: 3000.0
+
+feedwater_tank:
+  level_setpoint_pct: 60.0
+
+feedwater_pump:
+  rated_flow_kg_s: 120.0
+
+condenser:
+  pressure_setpoint_bar: 0.08

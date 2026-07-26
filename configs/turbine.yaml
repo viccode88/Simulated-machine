@@ -1,0 +1,42 @@
+turbine:
+  k_turbine_mw_per_kg_s: 1.0
+  rated_pressure_bar: 100.0
+  rated_speed_rpm: 3000.0
+  equivalent_inertia: 3.18       # MW·s²/rad（H≈5 s，100 MW 機組）
+  damping: 0.02
+  exhaust_tau_s: 2.0
+  design_exhaust_bar: 0.08
+  vacuum_penalty_per_bar: 1.2
+  bearing_tau_s: 60.0
+  vibration_base_mm_s: 1.2
+  min_admission_pressure_bar: 10.0
+  start_max_exhaust_bar: 0.15
+
+comm:
+  failure_policy: FAIL_LOW       # 進入安全減速
+
+protections:
+  OVERSPEED:
+    alarm: 3150.0
+    trip: 3300.0
+    delay: 0.2
+    reset: 3050.0
+    reset_delay: 5.0
+  HIGH_VIBRATION:
+    alarm: 7.0
+    trip: 11.0
+    delay: 1.0
+    reset: 6.0
+    reset_delay: 5.0
+  LOW_VACUUM:
+    alarm: 0.15
+    trip: 0.25
+    delay: 2.0
+    reset: 0.12
+    reset_delay: 10.0
+  HIGH_BEARING_TEMP:
+    alarm: 95.0
+    trip: 110.0
+    delay: 5.0
+    reset: 90.0
+    reset_delay: 10.0

@@ -1,0 +1,20 @@
+name: sensor_bias
+description: |
+  感測器偏差：鍋爐水位量測 +10%，控制器誤以為水位偏高而減少給水，
+  實際水位下降並最終觸發低低水位跳機（顯示值與實際值分開驗證）。
+snapshot:
+  restore: steady-60mw
+  clean: true
+speed: 5.0
+steps:
+  - wait: 5
+  - fault:
+      target: boiler
+      category: sensor
+      name: level
+      spec: {mode: bias, bias: 10.0}
+  - expect: {signal: boiler.level_actual_pct, min: -10, max: 60, within: 900}
+  - expect_event: {device: boiler, event: ALARM_SET, within: 900}
+  - fault_clear: {target: boiler, category: sensor, name: level}
+  - wait: 30
+  - check_invariants: {}

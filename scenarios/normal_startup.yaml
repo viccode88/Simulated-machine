@@ -1,0 +1,14 @@
+name: normal_startup
+description: |
+  §19.1 正常穩態驗收。由冷態開始，等待內建 DCS 完成冷啟動順序，
+  檢查各項驗收範圍。
+speed: 5.0
+steps:
+  - expect_event: {event: SEQUENCE_STEP_DONE, within: 600}
+  - expect: {signal: condenser.pressure_bar_abs, min: 0.06, max: 0.10, within: 900, hold: 5}
+  - expect: {signal: boiler.pressure_bar_abs, min: 98.0, max: 102.0, within: 1800, hold: 10}
+  - expect: {signal: boiler.level_pct, min: 63.7, max: 69.7, within: 300, hold: 10}
+  - expect: {signal: feedwater_tank.level_pct, min: 57.0, max: 63.0, within: 300, hold: 10}
+  - expect: {signal: turbine.speed_rpm, min: 2990, max: 3010, within: 600, hold: 10}
+  - check_invariants: {}
+  - snapshot_save: {name: steady-60mw, description: "60 MW 穩態基準"}

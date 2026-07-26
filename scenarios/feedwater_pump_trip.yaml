@@ -1,0 +1,20 @@
+name: feedwater_pump_trip
+description: |
+  §19.5 給水泵跳機：給水流量歸零 -> 鍋爐水量下降 -> 低水位警報 ->
+  低低水位鍋爐跳機 -> 燃燒器關閉 -> 不允許自動重新點火。
+snapshot:
+  restore: steady-60mw
+  clean: true
+speed: 5.0
+steps:
+  - wait: 5
+  - fault: {target: feedwater_pump, category: actuator, name: pump_trip, spec: true}
+  - expect: {signal: feedwater_pump.flow_kg_s, min: 0, max: 1, within: 60}
+  - expect: {signal: boiler.level_pct, min: -10, max: 30, within: 900}
+  - expect_event: {device: boiler, event: TRIP_LATCHED, within: 900}
+  - expect: {signal: boiler.burner_output_pct, min: 0, max: 0.5, within: 60}
+  - expect_tripped: {device: boiler, tripped: true, within: 10}
+  - fault_clear: {target: feedwater_pump, category: actuator, name: pump_trip}
+  - wait: 60
+  - expect: {signal: boiler.burner_output_pct, min: 0, max: 0.5, within: 10}
+  - check_invariants: {}

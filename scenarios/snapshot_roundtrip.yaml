@@ -1,0 +1,21 @@
+name: snapshot_roundtrip
+description: |
+  快速恢復狀態功能驗收：跳機後存快照 -> 還原 -> 鎖存仍在；
+  再以 clean 模式還原 -> 得到未跳機的乾淨測試起點。整個過程不重啟容器。
+snapshot:
+  restore: steady-60mw
+  clean: true
+speed: 5.0
+steps:
+  - wait: 5
+  - fault: {target: condenser, category: process, name: cooling_water_availability, spec: 0.2}
+  - expect_tripped: {device: turbine, tripped: true, within: 300}
+  - snapshot_save: {name: tripped-state, description: "汽輪機跳機鎖存狀態"}
+  - fault_clear: {target: condenser, category: process, name: cooling_water_availability}
+  - snapshot_restore: {name: tripped-state, clean: false}
+  - expect_tripped: {device: turbine, tripped: true, within: 20}
+  - snapshot_restore: {name: tripped-state, clean: true}
+  - expect_tripped: {device: turbine, tripped: false, within: 20}
+  - snapshot_restore: {name: steady-60mw, clean: true}
+  - expect: {signal: turbine.speed_rpm, min: 2900, max: 3100, within: 60}
+  - check_invariants: {}

@@ -1,0 +1,51 @@
+boiler:
+  mass_min_kg: 20000        # 水位 0%
+  mass_max_kg: 50000        # 水位 100%（有效水量約 30,000 kg）
+  initial_mass_kg: 40010    # 66.7%
+  initial_pressure_bar: 1.0
+  rated_steam_kg_s: 100.0
+  tau_boiler_s: 20.0        # 15～30 秒
+  k_pressure: 0.02          # bar/(kg/s)/s
+  k_loss: 0.0002
+  ambient_pressure_bar: 1.0
+  k_swell: 0.15             # %/(kg/s)
+  burner_up_rate_pct_s: 5.0
+  burner_down_rate_pct_s: 10.0
+  purge_time_s: 30.0
+  ignition_time_s: 5.0
+  min_fire_pct: 8.0
+  min_turbine_pressure_bar: 30.0
+  superheat_max_c: 190.0
+  max_blowdown_kg_s: 2.0
+  relief_setpoint_bar: 113.0     # 安全閥（超壓的第一道防線）
+  relief_capacity_kg_s: 40.0
+  blowdown_default_pct: 5.0
+
+comm:
+  failure_policy: FAIL_LOW  # 燃燒器立即降至 0%
+
+protections:
+  LOW_LOW_LEVEL:
+    alarm: 30.0
+    trip: 20.0
+    delay: 2.0
+    reset: 30.0
+    reset_delay: 5.0
+  HIGH_HIGH_LEVEL:
+    alarm: 85.0
+    trip: 90.0
+    delay: 2.0
+    reset: 80.0
+    reset_delay: 5.0
+  HIGH_PRESSURE:
+    alarm: 108.0
+    trip: 115.0
+    delay: 1.0
+    reset: 105.0
+    reset_delay: 5.0
+  FLAME_FAILURE:
+    alarm: 0.5
+    trip: 0.5
+    delay: 1.0
+    reset: 0.5
+    reset_delay: 3.0

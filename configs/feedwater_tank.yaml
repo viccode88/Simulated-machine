@@ -1,0 +1,23 @@
+feedwater_tank:
+  mass_min_kg: 5000
+  mass_max_kg: 35000          # 有效水量約 30,000 kg
+  initial_mass_kg: 23000      # 60%
+  initial_temp_c: 40.0
+  heating_tau_s: 60.0
+  heating_setpoint_c: 150.0
+  overflow_gain_kg_s_per_pct: 5.0
+  low_low_level_pct: 15.0
+  level_setpoint_pct: 60.0
+
+comm:
+  failure_policy: HOLD_LAST
+
+protections:
+  LOW_LEVEL:
+    alarm: 25.0
+    trip: null
+    delay: 3.0
+  HIGH_LEVEL:
+    alarm: 85.0
+    trip: null
+    delay: 3.0

@@ -1,0 +1,17 @@
+name: load_step
+description: |
+  §19.2 負載增加 60 MW -> 90 MW。
+  預期：轉速短暫下降 -> 蒸汽閥開大 -> 壓力短暫下降 -> 燃燒器提高 -> 水位脹縮 -> 重新穩定。
+snapshot:
+  restore: steady-60mw
+  clean: true
+speed: 2.0
+steps:
+  - wait: 10
+  - write: {device: generator, register: PRIMARY_SETPOINT, value: 90}
+  - expect: {signal: generator.electrical_power_mw, min: 88, max: 92, within: 120, hold: 5}
+  - expect: {signal: steam_valve.position_pct, min: 60, max: 100, within: 120}
+  - expect: {signal: turbine.speed_rpm, min: 2980, max: 3020, within: 300, hold: 20}
+  - expect: {signal: boiler.pressure_bar_abs, min: 96, max: 104, within: 600, hold: 20}
+  - expect: {signal: boiler.level_pct, min: 60, max: 73, within: 600, hold: 20}
+  - check_invariants: {}
