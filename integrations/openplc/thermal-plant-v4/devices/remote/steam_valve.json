@@ -1,0 +1,985 @@
+{
+  "name": "steam_valve",
+  "protocol": "modbus-tcp",
+  "modbusTcpConfig": {
+    "host": "127.0.0.1",
+    "port": 15026,
+    "slaveId": 1,
+    "timeout": 1000,
+    "ioGroups": [
+      {
+        "id": "bdada5c1-a5d0-55d7-b678-0a7546d60f52",
+        "name": "steam_valve_input_0_49",
+        "functionCode": "4",
+        "cycleTime": 250,
+        "offset": "0",
+        "length": 50,
+        "errorHandling": "keep-last-value",
+        "ioPoints": [
+          {
+            "id": "966b09af-e5cd-53c8-8976-899a9cf87890",
+            "name": "steam_valve__input__status_word",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW320",
+            "alias": "steam_valve__input__status_word"
+          },
+          {
+            "id": "42310526-db45-5427-8470-b76e8614f62c",
+            "name": "steam_valve__input__alarm_word_1",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW321",
+            "alias": "steam_valve__input__alarm_word_1"
+          },
+          {
+            "id": "f0a32edc-7bb5-5c29-81bb-e1c204e0f0b9",
+            "name": "steam_valve__input__alarm_word_2",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW322",
+            "alias": "steam_valve__input__alarm_word_2"
+          },
+          {
+            "id": "d243e069-a226-55f8-996f-94ae6a1d7c11",
+            "name": "steam_valve__input__trip_word",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW323",
+            "alias": "steam_valve__input__trip_word"
+          },
+          {
+            "id": "1b16d949-07da-5e3b-8a28-2614f913a000",
+            "name": "steam_valve__input__device_state",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW324",
+            "alias": "steam_valve__input__device_state"
+          },
+          {
+            "id": "eb73d0cc-0f38-5559-a6e2-dd50583421b6",
+            "name": "steam_valve__input__first_out_code",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW325",
+            "alias": "steam_valve__input__first_out_code"
+          },
+          {
+            "id": "ecaacffa-7a09-5ac3-ba78-42f3ec45f13e",
+            "name": "steam_valve__input__overall_quality",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW326",
+            "alias": "steam_valve__input__overall_quality"
+          },
+          {
+            "id": "fa92a6f5-83cf-56b1-932b-ca2a31bae037",
+            "name": "steam_valve__input__register_map_version",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW327",
+            "alias": "steam_valve__input__register_map_version"
+          },
+          {
+            "id": "4266d353-4236-522a-a103-10804fcbc7b0",
+            "name": "steam_valve__input__firmware_version",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW328",
+            "alias": "steam_valve__input__firmware_version"
+          },
+          {
+            "id": "1f6d266d-62b8-512d-9695-f4329f46bef1",
+            "name": "steam_valve__input__command_position",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW329",
+            "alias": "steam_valve__input__command_position"
+          },
+          {
+            "id": "4bb7b8fe-01fa-5aa6-8f3c-0c89b4ebe7d4",
+            "name": "steam_valve__input__actual_position",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW330",
+            "alias": "steam_valve__input__actual_position"
+          },
+          {
+            "id": "e3ae39a3-91bb-567f-a96e-ec2741ef25cd",
+            "name": "steam_valve__input__upstream_pressure",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW331",
+            "alias": "steam_valve__input__upstream_pressure"
+          },
+          {
+            "id": "6e710a8b-1ca1-58e2-b428-29df6c90b281",
+            "name": "steam_valve__input__downstream_pressure",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW332",
+            "alias": "steam_valve__input__downstream_pressure"
+          },
+          {
+            "id": "d109d182-ac02-5268-8b6e-1fcf0bc19ac8",
+            "name": "steam_valve__input__steam_flow",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW333",
+            "alias": "steam_valve__input__steam_flow"
+          },
+          {
+            "id": "45504c48-b975-5859-93e7-8f0000df059b",
+            "name": "steam_valve__input__steam_temperature",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW334",
+            "alias": "steam_valve__input__steam_temperature"
+          },
+          {
+            "id": "ca4a05a1-4cbb-586b-8e7a-540373372682",
+            "name": "steam_valve__input__actuator_speed",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW335",
+            "alias": "steam_valve__input__actuator_speed"
+          },
+          {
+            "id": "e570ed60-37c2-589c-8244-7c1b818a64b3",
+            "name": "steam_valve__input__position_deviation",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW336",
+            "alias": "steam_valve__input__position_deviation"
+          },
+          {
+            "id": "6855c1d8-d0a5-53b5-bbe9-f709e42a8c9b",
+            "name": "steam_valve__input__fast_close_status",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW337",
+            "alias": "steam_valve__input__fast_close_status"
+          },
+          {
+            "id": "4e0f3adf-3287-5a3e-ae76-de561df41fc9",
+            "name": "steam_valve__input__valve_fault_code",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW338",
+            "alias": "steam_valve__input__valve_fault_code"
+          },
+          {
+            "id": "85f09c88-3646-5897-b38f-3ea9364d46ca",
+            "name": "steam_valve__input__reserved_19",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW339",
+            "alias": "steam_valve__input__reserved_19"
+          },
+          {
+            "id": "06f9448d-64dd-57b8-b568-23866ab863f3",
+            "name": "steam_valve__input__reserved_20",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW340",
+            "alias": "steam_valve__input__reserved_20"
+          },
+          {
+            "id": "90ea756e-5977-5030-931a-dacb945ae183",
+            "name": "steam_valve__input__reserved_21",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW341",
+            "alias": "steam_valve__input__reserved_21"
+          },
+          {
+            "id": "8ed12ed3-a624-5041-9f03-9b1a9e209e36",
+            "name": "steam_valve__input__reserved_22",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW342",
+            "alias": "steam_valve__input__reserved_22"
+          },
+          {
+            "id": "b3f3ff8a-5838-5b5a-aa2c-f90e23f28bea",
+            "name": "steam_valve__input__reserved_23",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW343",
+            "alias": "steam_valve__input__reserved_23"
+          },
+          {
+            "id": "10e0981d-382b-5d5e-a5b0-7f424515994e",
+            "name": "steam_valve__input__reserved_24",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW344",
+            "alias": "steam_valve__input__reserved_24"
+          },
+          {
+            "id": "d7a853fe-dfee-5976-9262-3527d5af7d9d",
+            "name": "steam_valve__input__reserved_25",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW345",
+            "alias": "steam_valve__input__reserved_25"
+          },
+          {
+            "id": "a8557fcd-27ed-5cfa-941a-fad70d849ce4",
+            "name": "steam_valve__input__reserved_26",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW346",
+            "alias": "steam_valve__input__reserved_26"
+          },
+          {
+            "id": "58b07a62-6a9c-53d9-9bc7-3b664280df4f",
+            "name": "steam_valve__input__reserved_27",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW347",
+            "alias": "steam_valve__input__reserved_27"
+          },
+          {
+            "id": "038f8fbe-35d9-51c1-a1df-52ead9e658af",
+            "name": "steam_valve__input__reserved_28",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW348",
+            "alias": "steam_valve__input__reserved_28"
+          },
+          {
+            "id": "b050c0fa-4bfd-59ca-9a61-93b939dae816",
+            "name": "steam_valve__input__watchdog_echo",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW349",
+            "alias": "steam_valve__input__watchdog_echo"
+          },
+          {
+            "id": "ae7e4504-63ca-5990-accd-ea2e6d12c33f",
+            "name": "steam_valve__input__scan_time_ms",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW350",
+            "alias": "steam_valve__input__scan_time_ms"
+          },
+          {
+            "id": "0c8c1be6-e721-55ff-9ab9-706c61e0e675",
+            "name": "steam_valve__input__modbus_request_count",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW351",
+            "alias": "steam_valve__input__modbus_request_count"
+          },
+          {
+            "id": "748dfa9b-dbbd-5470-9cc5-78e3663eff36",
+            "name": "steam_valve__input__rejected_command_count",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW352",
+            "alias": "steam_valve__input__rejected_command_count"
+          },
+          {
+            "id": "6588c837-85d7-55e2-927c-c5a5044603cd",
+            "name": "steam_valve__input__exception_count",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW353",
+            "alias": "steam_valve__input__exception_count"
+          },
+          {
+            "id": "2cb8ead9-52fa-5e05-be3d-202ab16b64ca",
+            "name": "steam_valve__input__sim_quality_word",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW354",
+            "alias": "steam_valve__input__sim_quality_word"
+          },
+          {
+            "id": "a3fe9df1-ca98-5311-9417-5f8c518d8b51",
+            "name": "steam_valve__input__sim_tick_low",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW355",
+            "alias": "steam_valve__input__sim_tick_low"
+          },
+          {
+            "id": "24f5ed4f-97b7-535b-b017-871014be4406",
+            "name": "steam_valve__input__comm_loss_seconds",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW356",
+            "alias": "steam_valve__input__comm_loss_seconds"
+          },
+          {
+            "id": "50cd392e-c8e8-53ac-bc4d-48cd4e1c5aff",
+            "name": "steam_valve__input__fault_inject_word",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW357",
+            "alias": "steam_valve__input__fault_inject_word"
+          },
+          {
+            "id": "cca068cb-2880-5725-80d8-d4cf18427e26",
+            "name": "steam_valve__input__snapshot_generation",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW358",
+            "alias": "steam_valve__input__snapshot_generation"
+          },
+          {
+            "id": "878ef052-3979-5e1c-9241-81e24eb9fa6f",
+            "name": "steam_valve__input__run_seconds_hi",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW359",
+            "alias": "steam_valve__input__run_seconds_hi"
+          },
+          {
+            "id": "09bb4541-a457-510c-a2b2-429ce9992fa6",
+            "name": "steam_valve__input__run_seconds_lo",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW360",
+            "alias": "steam_valve__input__run_seconds_lo"
+          },
+          {
+            "id": "a2e04bec-56b8-5ce1-9d7a-ef3c83fc2840",
+            "name": "steam_valve__input__start_count",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW361",
+            "alias": "steam_valve__input__start_count"
+          },
+          {
+            "id": "ab5b19e7-321f-5423-9526-36963c8b1f5b",
+            "name": "steam_valve__input__trip_count",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW362",
+            "alias": "steam_valve__input__trip_count"
+          },
+          {
+            "id": "4e577e7f-0bf6-5b28-a2f5-e8fb1eff408e",
+            "name": "steam_valve__input__mass_total_hi",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW363",
+            "alias": "steam_valve__input__mass_total_hi"
+          },
+          {
+            "id": "2f9749ae-9c75-5e4f-8654-5f182012ea5c",
+            "name": "steam_valve__input__mass_total_lo",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW364",
+            "alias": "steam_valve__input__mass_total_lo"
+          },
+          {
+            "id": "198606fe-27f0-5bfe-89e7-13e2f4b76797",
+            "name": "steam_valve__input__energy_total_hi",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW365",
+            "alias": "steam_valve__input__energy_total_hi"
+          },
+          {
+            "id": "5c83c403-2f0a-505b-a79b-1471691583ed",
+            "name": "steam_valve__input__energy_total_lo",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW366",
+            "alias": "steam_valve__input__energy_total_lo"
+          },
+          {
+            "id": "f1d24402-a0a4-5694-9f90-52ebd2e14f0f",
+            "name": "steam_valve__input__alarm_count",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW367",
+            "alias": "steam_valve__input__alarm_count"
+          },
+          {
+            "id": "a91a63ff-dc96-521c-8fad-2245f5d033af",
+            "name": "steam_valve__input__accepted_command_count",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW368",
+            "alias": "steam_valve__input__accepted_command_count"
+          },
+          {
+            "id": "149188d2-0cc2-5785-84ab-8b1542c65442",
+            "name": "steam_valve__input__reserved_49",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW369",
+            "alias": "steam_valve__input__reserved_49"
+          }
+        ]
+      },
+      {
+        "id": "5f0ba47c-f446-5400-9814-87bfabd98df0",
+        "name": "steam_valve_discrete_0_15",
+        "functionCode": "2",
+        "cycleTime": 250,
+        "offset": "0",
+        "length": 16,
+        "errorHandling": "keep-last-value",
+        "ioPoints": [
+          {
+            "id": "8fe19929-36a2-54f5-978f-441abd05e2a8",
+            "name": "steam_valve__discrete__ready",
+            "type": "Digital Input (Discrete Input)",
+            "iecLocation": "%IX10.0",
+            "alias": "steam_valve__discrete__ready"
+          },
+          {
+            "id": "07f27837-d56b-5518-9f16-3433e1b83c8f",
+            "name": "steam_valve__discrete__running",
+            "type": "Digital Input (Discrete Input)",
+            "iecLocation": "%IX10.1",
+            "alias": "steam_valve__discrete__running"
+          },
+          {
+            "id": "0ad118a1-8091-5c25-970a-c467b7eeeb59",
+            "name": "steam_valve__discrete__starting",
+            "type": "Digital Input (Discrete Input)",
+            "iecLocation": "%IX10.2",
+            "alias": "steam_valve__discrete__starting"
+          },
+          {
+            "id": "b7894748-1833-58b7-a1ee-ced410c9f54e",
+            "name": "steam_valve__discrete__stopping",
+            "type": "Digital Input (Discrete Input)",
+            "iecLocation": "%IX10.3",
+            "alias": "steam_valve__discrete__stopping"
+          },
+          {
+            "id": "fcac32a3-a21c-5cc3-a2e0-bca861c55223",
+            "name": "steam_valve__discrete__tripped",
+            "type": "Digital Input (Discrete Input)",
+            "iecLocation": "%IX10.4",
+            "alias": "steam_valve__discrete__tripped"
+          },
+          {
+            "id": "dd8be2f7-8910-5d89-a1e2-75f8e0935e85",
+            "name": "steam_valve__discrete__alarm_active",
+            "type": "Digital Input (Discrete Input)",
+            "iecLocation": "%IX10.5",
+            "alias": "steam_valve__discrete__alarm_active"
+          },
+          {
+            "id": "afa827fe-8874-55e2-bc37-1e21edb21194",
+            "name": "steam_valve__discrete__local_mode",
+            "type": "Digital Input (Discrete Input)",
+            "iecLocation": "%IX10.6",
+            "alias": "steam_valve__discrete__local_mode"
+          },
+          {
+            "id": "c76e86a9-0f14-50b4-8a90-40a535fadba3",
+            "name": "steam_valve__discrete__remote_mode",
+            "type": "Digital Input (Discrete Input)",
+            "iecLocation": "%IX10.7",
+            "alias": "steam_valve__discrete__remote_mode"
+          },
+          {
+            "id": "0b78a90b-97a7-5df5-86d7-b416c3e1bf16",
+            "name": "steam_valve__discrete__auto_mode",
+            "type": "Digital Input (Discrete Input)",
+            "iecLocation": "%IX11.0",
+            "alias": "steam_valve__discrete__auto_mode"
+          },
+          {
+            "id": "5734003b-ad83-5a73-89db-e12c2534b730",
+            "name": "steam_valve__discrete__manual_mode",
+            "type": "Digital Input (Discrete Input)",
+            "iecLocation": "%IX11.1",
+            "alias": "steam_valve__discrete__manual_mode"
+          },
+          {
+            "id": "c69501f5-3b9b-575b-adcb-bdbbfe6b2ae9",
+            "name": "steam_valve__discrete__control_watchdog_ok",
+            "type": "Digital Input (Discrete Input)",
+            "iecLocation": "%IX11.2",
+            "alias": "steam_valve__discrete__control_watchdog_ok"
+          },
+          {
+            "id": "4e862900-8901-5226-ac68-53bc8c7a1604",
+            "name": "steam_valve__discrete__sim_bus_ok",
+            "type": "Digital Input (Discrete Input)",
+            "iecLocation": "%IX11.3",
+            "alias": "steam_valve__discrete__sim_bus_ok"
+          },
+          {
+            "id": "8db748b5-5ea8-5bcf-a8d2-05a0318eac6c",
+            "name": "steam_valve__discrete__interlocks_ok",
+            "type": "Digital Input (Discrete Input)",
+            "iecLocation": "%IX11.4",
+            "alias": "steam_valve__discrete__interlocks_ok"
+          },
+          {
+            "id": "04f9034a-ab2e-55d3-ae24-663e490bd534",
+            "name": "steam_valve__discrete__sensor_fault",
+            "type": "Digital Input (Discrete Input)",
+            "iecLocation": "%IX11.5",
+            "alias": "steam_valve__discrete__sensor_fault"
+          },
+          {
+            "id": "23f11b43-1b81-51a3-af42-055085f88c59",
+            "name": "steam_valve__discrete__actuator_fault",
+            "type": "Digital Input (Discrete Input)",
+            "iecLocation": "%IX11.6",
+            "alias": "steam_valve__discrete__actuator_fault"
+          },
+          {
+            "id": "4f838185-64be-5226-9310-f5d6940a7128",
+            "name": "steam_valve__discrete__maintenance_mode",
+            "type": "Digital Input (Discrete Input)",
+            "iecLocation": "%IX11.7",
+            "alias": "steam_valve__discrete__maintenance_mode"
+          }
+        ]
+      },
+      {
+        "id": "bd144809-292b-5224-a4fb-9082472a939a",
+        "name": "steam_valve_holding_readback_0_31",
+        "functionCode": "3",
+        "cycleTime": 250,
+        "offset": "0",
+        "length": 32,
+        "errorHandling": "keep-last-value",
+        "ioPoints": [
+          {
+            "id": "064000d4-7ba4-5dc5-bf8a-2b3e38ca76d8",
+            "name": "steam_valve__holding_readback__control_mode",
+            "type": "Analog Input (Holding Register)",
+            "iecLocation": "%IW832",
+            "alias": "steam_valve__holding_readback__control_mode"
+          },
+          {
+            "id": "8d90a880-8b01-56b6-8364-91833e5bd39b",
+            "name": "steam_valve__holding_readback__command_sequence",
+            "type": "Analog Input (Holding Register)",
+            "iecLocation": "%IW833",
+            "alias": "steam_valve__holding_readback__command_sequence"
+          },
+          {
+            "id": "2407386e-7340-59d2-9346-e1489a2497df",
+            "name": "steam_valve__holding_readback__watchdog_counter",
+            "type": "Analog Input (Holding Register)",
+            "iecLocation": "%IW834",
+            "alias": "steam_valve__holding_readback__watchdog_counter"
+          },
+          {
+            "id": "87f3989c-e974-592c-bfdb-d37be5b2d72f",
+            "name": "steam_valve__holding_readback__reset_key",
+            "type": "Analog Input (Holding Register)",
+            "iecLocation": "%IW835",
+            "alias": "steam_valve__holding_readback__reset_key"
+          },
+          {
+            "id": "0ee35a23-7520-52ee-92b9-5079d24b71fd",
+            "name": "steam_valve__holding_readback__simulation_flags",
+            "type": "Analog Input (Holding Register)",
+            "iecLocation": "%IW836",
+            "alias": "steam_valve__holding_readback__simulation_flags"
+          },
+          {
+            "id": "30c9de36-d22e-550a-bd85-16cf4a80c354",
+            "name": "steam_valve__holding_readback__active_controller_id",
+            "type": "Analog Input (Holding Register)",
+            "iecLocation": "%IW837",
+            "alias": "steam_valve__holding_readback__active_controller_id"
+          },
+          {
+            "id": "79705de5-6570-5707-bf71-264b354d7b4a",
+            "name": "steam_valve__holding_readback__command_lease_time",
+            "type": "Analog Input (Holding Register)",
+            "iecLocation": "%IW838",
+            "alias": "steam_valve__holding_readback__command_lease_time"
+          },
+          {
+            "id": "6f798d2f-9884-58aa-a815-c29076968517",
+            "name": "steam_valve__holding_readback__output_rate_limit",
+            "type": "Analog Input (Holding Register)",
+            "iecLocation": "%IW839",
+            "alias": "steam_valve__holding_readback__output_rate_limit"
+          },
+          {
+            "id": "5e5d655f-d994-53b1-8ca0-633e160071e5",
+            "name": "steam_valve__holding_readback__reserved",
+            "type": "Analog Input (Holding Register)",
+            "iecLocation": "%IW840",
+            "alias": "steam_valve__holding_readback__reserved"
+          },
+          {
+            "id": "55eeac5e-a57d-5e10-88c2-d1c405156502",
+            "name": "steam_valve__holding_readback__primary_setpoint",
+            "type": "Analog Input (Holding Register)",
+            "iecLocation": "%IW841",
+            "alias": "steam_valve__holding_readback__primary_setpoint"
+          },
+          {
+            "id": "5378f6d4-016f-525a-b03b-dba0c9d58ac5",
+            "name": "steam_valve__holding_readback__secondary_setpoint",
+            "type": "Analog Input (Holding Register)",
+            "iecLocation": "%IW842",
+            "alias": "steam_valve__holding_readback__secondary_setpoint"
+          },
+          {
+            "id": "d816b9b0-ea20-5466-8cac-58b9a3ab5704",
+            "name": "steam_valve__holding_readback__manual_output",
+            "type": "Analog Input (Holding Register)",
+            "iecLocation": "%IW843",
+            "alias": "steam_valve__holding_readback__manual_output"
+          },
+          {
+            "id": "f705a099-39bb-5dfb-8586-722ffb6845f2",
+            "name": "steam_valve__holding_readback__output_high_limit",
+            "type": "Analog Input (Holding Register)",
+            "iecLocation": "%IW844",
+            "alias": "steam_valve__holding_readback__output_high_limit"
+          },
+          {
+            "id": "6ed98b00-d3b1-542d-b82c-c5ef40ac67ba",
+            "name": "steam_valve__holding_readback__output_low_limit",
+            "type": "Analog Input (Holding Register)",
+            "iecLocation": "%IW845",
+            "alias": "steam_valve__holding_readback__output_low_limit"
+          },
+          {
+            "id": "5abac880-a956-5064-b5f9-d5954061df0d",
+            "name": "steam_valve__holding_readback__reserved_14",
+            "type": "Analog Input (Holding Register)",
+            "iecLocation": "%IW846",
+            "alias": "steam_valve__holding_readback__reserved_14"
+          },
+          {
+            "id": "376d5f34-79e2-582f-9f87-ebe7de06d592",
+            "name": "steam_valve__holding_readback__reserved_15",
+            "type": "Analog Input (Holding Register)",
+            "iecLocation": "%IW847",
+            "alias": "steam_valve__holding_readback__reserved_15"
+          },
+          {
+            "id": "5ac42ca2-f721-52ab-9ab1-5a6bd090cbbf",
+            "name": "steam_valve__holding_readback__reserved_16",
+            "type": "Analog Input (Holding Register)",
+            "iecLocation": "%IW848",
+            "alias": "steam_valve__holding_readback__reserved_16"
+          },
+          {
+            "id": "d5f03ee0-ae92-5828-9f60-0a1e958e92b1",
+            "name": "steam_valve__holding_readback__reserved_17",
+            "type": "Analog Input (Holding Register)",
+            "iecLocation": "%IW849",
+            "alias": "steam_valve__holding_readback__reserved_17"
+          },
+          {
+            "id": "11dc34df-ca35-5b63-afb5-6a06326e11b2",
+            "name": "steam_valve__holding_readback__reserved_18",
+            "type": "Analog Input (Holding Register)",
+            "iecLocation": "%IW850",
+            "alias": "steam_valve__holding_readback__reserved_18"
+          },
+          {
+            "id": "0f719077-4666-56d1-8d56-0fc0905c30fb",
+            "name": "steam_valve__holding_readback__pid_kp",
+            "type": "Analog Input (Holding Register)",
+            "iecLocation": "%IW851",
+            "alias": "steam_valve__holding_readback__pid_kp"
+          },
+          {
+            "id": "408a525c-2db0-5dcc-b0b2-cd4610d44c46",
+            "name": "steam_valve__holding_readback__pid_ki",
+            "type": "Analog Input (Holding Register)",
+            "iecLocation": "%IW852",
+            "alias": "steam_valve__holding_readback__pid_ki"
+          },
+          {
+            "id": "fca5f93d-9888-5020-a75e-54115dc637bc",
+            "name": "steam_valve__holding_readback__pid_kd",
+            "type": "Analog Input (Holding Register)",
+            "iecLocation": "%IW853",
+            "alias": "steam_valve__holding_readback__pid_kd"
+          },
+          {
+            "id": "5b23b1d7-86fd-5437-abc5-899faafeab5d",
+            "name": "steam_valve__holding_readback__deadband",
+            "type": "Analog Input (Holding Register)",
+            "iecLocation": "%IW854",
+            "alias": "steam_valve__holding_readback__deadband"
+          },
+          {
+            "id": "c744f272-a404-5634-8930-476c56c40705",
+            "name": "steam_valve__holding_readback__integral_limit",
+            "type": "Analog Input (Holding Register)",
+            "iecLocation": "%IW855",
+            "alias": "steam_valve__holding_readback__integral_limit"
+          },
+          {
+            "id": "3019cce5-f53e-5b4f-8938-80cb4eb8d73a",
+            "name": "steam_valve__holding_readback__controller_scan_time",
+            "type": "Analog Input (Holding Register)",
+            "iecLocation": "%IW856",
+            "alias": "steam_valve__holding_readback__controller_scan_time"
+          },
+          {
+            "id": "9593fc54-0778-53ca-9652-841e7601f90b",
+            "name": "steam_valve__holding_readback__reserved_25",
+            "type": "Analog Input (Holding Register)",
+            "iecLocation": "%IW857",
+            "alias": "steam_valve__holding_readback__reserved_25"
+          },
+          {
+            "id": "1035c003-ff77-5256-9d3a-28984917339c",
+            "name": "steam_valve__holding_readback__reserved_26",
+            "type": "Analog Input (Holding Register)",
+            "iecLocation": "%IW858",
+            "alias": "steam_valve__holding_readback__reserved_26"
+          },
+          {
+            "id": "93e9ee0d-f904-56bc-91c9-972b2c2184e5",
+            "name": "steam_valve__holding_readback__reserved_27",
+            "type": "Analog Input (Holding Register)",
+            "iecLocation": "%IW859",
+            "alias": "steam_valve__holding_readback__reserved_27"
+          },
+          {
+            "id": "23b35b46-272e-5966-bc13-c9af868e7575",
+            "name": "steam_valve__holding_readback__reserved_28",
+            "type": "Analog Input (Holding Register)",
+            "iecLocation": "%IW860",
+            "alias": "steam_valve__holding_readback__reserved_28"
+          },
+          {
+            "id": "e21d5afa-c37f-5f5a-93b9-fed34931f0e2",
+            "name": "steam_valve__holding_readback__open_rate",
+            "type": "Analog Input (Holding Register)",
+            "iecLocation": "%IW861",
+            "alias": "steam_valve__holding_readback__open_rate"
+          },
+          {
+            "id": "b04436e6-aece-556a-8aa8-d94f24bcab50",
+            "name": "steam_valve__holding_readback__close_rate",
+            "type": "Analog Input (Holding Register)",
+            "iecLocation": "%IW862",
+            "alias": "steam_valve__holding_readback__close_rate"
+          },
+          {
+            "id": "88891a80-5a66-5147-b0c3-46d15c88708c",
+            "name": "steam_valve__holding_readback__reserved_31",
+            "type": "Analog Input (Holding Register)",
+            "iecLocation": "%IW863",
+            "alias": "steam_valve__holding_readback__reserved_31"
+          }
+        ]
+      },
+      {
+        "id": "0534f0fb-6e2a-5957-82d5-8ae6cd9bca7b",
+        "name": "steam_valve_coil_0_7",
+        "functionCode": "15",
+        "cycleTime": 100,
+        "offset": "0",
+        "length": 8,
+        "errorHandling": "keep-last-value",
+        "ioPoints": [
+          {
+            "id": "a521c73a-6971-56d7-821a-b6d32886b885",
+            "name": "steam_valve__coil__start",
+            "type": "Digital Output (Multiple Coils)",
+            "iecLocation": "%QX10.0",
+            "alias": "steam_valve__coil__start"
+          },
+          {
+            "id": "b3e83375-cdb1-570f-b809-bf8e4fc8f32a",
+            "name": "steam_valve__coil__stop",
+            "type": "Digital Output (Multiple Coils)",
+            "iecLocation": "%QX10.1",
+            "alias": "steam_valve__coil__stop"
+          },
+          {
+            "id": "854d5fc1-a83a-5a69-b390-e58b72b794f0",
+            "name": "steam_valve__coil__reset_trip",
+            "type": "Digital Output (Multiple Coils)",
+            "iecLocation": "%QX10.2",
+            "alias": "steam_valve__coil__reset_trip"
+          },
+          {
+            "id": "026b8ee9-13f2-5274-ba28-79e5ef1dd032",
+            "name": "steam_valve__coil__ack_alarm",
+            "type": "Digital Output (Multiple Coils)",
+            "iecLocation": "%QX10.3",
+            "alias": "steam_valve__coil__ack_alarm"
+          },
+          {
+            "id": "98f4f7cb-6bb0-540f-a281-fa54a014b989",
+            "name": "steam_valve__coil__emergency_stop",
+            "type": "Digital Output (Multiple Coils)",
+            "iecLocation": "%QX10.4",
+            "alias": "steam_valve__coil__emergency_stop"
+          },
+          {
+            "id": "0c70de11-8383-5cbf-8690-23f70a58bc83",
+            "name": "steam_valve__coil__force_safe",
+            "type": "Digital Output (Multiple Coils)",
+            "iecLocation": "%QX10.5",
+            "alias": "steam_valve__coil__force_safe"
+          },
+          {
+            "id": "f25eae2e-e246-558d-bd4d-a7fe0ad88667",
+            "name": "steam_valve__coil__trip_test",
+            "type": "Digital Output (Multiple Coils)",
+            "iecLocation": "%QX10.6",
+            "alias": "steam_valve__coil__trip_test"
+          },
+          {
+            "id": "043d73a4-b84a-55a9-9779-f17cf5b14164",
+            "name": "steam_valve__coil__clear_totalizer",
+            "type": "Digital Output (Multiple Coils)",
+            "iecLocation": "%QX10.7",
+            "alias": "steam_valve__coil__clear_totalizer"
+          }
+        ]
+      },
+      {
+        "id": "7c05030d-812e-55d8-97ac-4202aec71dd4",
+        "name": "steam_valve_holding_0_13",
+        "functionCode": "16",
+        "cycleTime": 100,
+        "offset": "0",
+        "length": 14,
+        "errorHandling": "keep-last-value",
+        "ioPoints": [
+          {
+            "id": "cc361370-e0d8-5c76-89fb-52fc6bf58903",
+            "name": "steam_valve__holding__control_mode",
+            "type": "Analog Output (Multiple Registers)",
+            "iecLocation": "%QW320",
+            "alias": "steam_valve__holding__control_mode"
+          },
+          {
+            "id": "71267448-daa1-54fa-ba23-53d186018b35",
+            "name": "steam_valve__holding__command_sequence",
+            "type": "Analog Output (Multiple Registers)",
+            "iecLocation": "%QW321",
+            "alias": "steam_valve__holding__command_sequence"
+          },
+          {
+            "id": "41d7a051-8900-5133-81d4-f7e261b73b2a",
+            "name": "steam_valve__holding__watchdog_counter",
+            "type": "Analog Output (Multiple Registers)",
+            "iecLocation": "%QW322",
+            "alias": "steam_valve__holding__watchdog_counter"
+          },
+          {
+            "id": "0d1e0e0b-f83e-50fc-90c1-f1818497fe05",
+            "name": "steam_valve__holding__reset_key",
+            "type": "Analog Output (Multiple Registers)",
+            "iecLocation": "%QW323",
+            "alias": "steam_valve__holding__reset_key"
+          },
+          {
+            "id": "4ba3cbd1-9c8c-5df4-b146-e9d3ba552d0c",
+            "name": "steam_valve__holding__simulation_flags",
+            "type": "Analog Output (Multiple Registers)",
+            "iecLocation": "%QW324",
+            "alias": "steam_valve__holding__simulation_flags"
+          },
+          {
+            "id": "72e9370e-88bf-5973-ac46-e85d389f48e9",
+            "name": "steam_valve__holding__active_controller_id",
+            "type": "Analog Output (Multiple Registers)",
+            "iecLocation": "%QW325",
+            "alias": "steam_valve__holding__active_controller_id"
+          },
+          {
+            "id": "1de59687-2960-5121-a12f-98d5073b2123",
+            "name": "steam_valve__holding__command_lease_time",
+            "type": "Analog Output (Multiple Registers)",
+            "iecLocation": "%QW326",
+            "alias": "steam_valve__holding__command_lease_time"
+          },
+          {
+            "id": "2100cf04-eb0e-5b0a-a674-c2feae9adaf7",
+            "name": "steam_valve__holding__output_rate_limit",
+            "type": "Analog Output (Multiple Registers)",
+            "iecLocation": "%QW327",
+            "alias": "steam_valve__holding__output_rate_limit"
+          },
+          {
+            "id": "81671090-e4b8-5c60-a06e-6fb2e0d58d3e",
+            "name": "steam_valve__holding__reserved",
+            "type": "Analog Output (Multiple Registers)",
+            "iecLocation": "%QW328",
+            "alias": "steam_valve__holding__reserved"
+          },
+          {
+            "id": "ae4eff58-748c-5018-9033-65af3c8034a7",
+            "name": "steam_valve__holding__primary_setpoint",
+            "type": "Analog Output (Multiple Registers)",
+            "iecLocation": "%QW329",
+            "alias": "steam_valve__holding__primary_setpoint"
+          },
+          {
+            "id": "c4256876-e352-5704-b9f3-0e179d3b887f",
+            "name": "steam_valve__holding__secondary_setpoint",
+            "type": "Analog Output (Multiple Registers)",
+            "iecLocation": "%QW330",
+            "alias": "steam_valve__holding__secondary_setpoint"
+          },
+          {
+            "id": "426fafdd-2447-5972-b3d5-366da786ade3",
+            "name": "steam_valve__holding__manual_output",
+            "type": "Analog Output (Multiple Registers)",
+            "iecLocation": "%QW331",
+            "alias": "steam_valve__holding__manual_output"
+          },
+          {
+            "id": "8365c310-5ebc-5798-9d6c-abd026eb1f64",
+            "name": "steam_valve__holding__output_high_limit",
+            "type": "Analog Output (Multiple Registers)",
+            "iecLocation": "%QW332",
+            "alias": "steam_valve__holding__output_high_limit"
+          },
+          {
+            "id": "0144a8aa-9e83-51ef-ae00-a88fad0b3b5a",
+            "name": "steam_valve__holding__output_low_limit",
+            "type": "Analog Output (Multiple Registers)",
+            "iecLocation": "%QW333",
+            "alias": "steam_valve__holding__output_low_limit"
+          }
+        ]
+      },
+      {
+        "id": "c2029ef3-8920-596f-bd54-8dbe6433a807",
+        "name": "steam_valve_holding_19_24",
+        "functionCode": "16",
+        "cycleTime": 100,
+        "offset": "19",
+        "length": 6,
+        "errorHandling": "keep-last-value",
+        "ioPoints": [
+          {
+            "id": "3e7007e3-ea53-52f5-9134-c14090ce2032",
+            "name": "steam_valve__holding__pid_kp",
+            "type": "Analog Output (Multiple Registers)",
+            "iecLocation": "%QW339",
+            "alias": "steam_valve__holding__pid_kp"
+          },
+          {
+            "id": "6b5d7b65-486b-5ebd-a461-4467a6eae564",
+            "name": "steam_valve__holding__pid_ki",
+            "type": "Analog Output (Multiple Registers)",
+            "iecLocation": "%QW340",
+            "alias": "steam_valve__holding__pid_ki"
+          },
+          {
+            "id": "8c378aec-8a61-532b-bc18-bfa51640978b",
+            "name": "steam_valve__holding__pid_kd",
+            "type": "Analog Output (Multiple Registers)",
+            "iecLocation": "%QW341",
+            "alias": "steam_valve__holding__pid_kd"
+          },
+          {
+            "id": "70bd4045-9bd1-57dd-b8fc-01d60bd65604",
+            "name": "steam_valve__holding__deadband",
+            "type": "Analog Output (Multiple Registers)",
+            "iecLocation": "%QW342",
+            "alias": "steam_valve__holding__deadband"
+          },
+          {
+            "id": "35af0f2f-965e-57fd-a035-10500bf6e294",
+            "name": "steam_valve__holding__integral_limit",
+            "type": "Analog Output (Multiple Registers)",
+            "iecLocation": "%QW343",
+            "alias": "steam_valve__holding__integral_limit"
+          },
+          {
+            "id": "32273c53-a4b6-581d-99c9-c18df553c80e",
+            "name": "steam_valve__holding__controller_scan_time",
+            "type": "Analog Output (Multiple Registers)",
+            "iecLocation": "%QW344",
+            "alias": "steam_valve__holding__controller_scan_time"
+          }
+        ]
+      },
+      {
+        "id": "2cf083a5-072d-5fb9-b88b-0b3e28d7a1fb",
+        "name": "steam_valve_holding_29_30",
+        "functionCode": "16",
+        "cycleTime": 100,
+        "offset": "29",
+        "length": 2,
+        "errorHandling": "keep-last-value",
+        "ioPoints": [
+          {
+            "id": "ace0e0ea-f8b7-5f4d-bf40-60577d9d043f",
+            "name": "steam_valve__holding__open_rate",
+            "type": "Analog Output (Multiple Registers)",
+            "iecLocation": "%QW349",
+            "alias": "steam_valve__holding__open_rate"
+          },
+          {
+            "id": "fc4f3e9f-9fa2-5002-9892-26234a9d45f8",
+            "name": "steam_valve__holding__close_rate",
+            "type": "Analog Output (Multiple Registers)",
+            "iecLocation": "%QW350",
+            "alias": "steam_valve__holding__close_rate"
+          }
+        ]
+      }
+    ]
+  }
+}

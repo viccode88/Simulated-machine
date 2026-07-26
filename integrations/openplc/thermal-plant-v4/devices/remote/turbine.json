@@ -1,0 +1,985 @@
+{
+  "name": "turbine",
+  "protocol": "modbus-tcp",
+  "modbusTcpConfig": {
+    "host": "127.0.0.1",
+    "port": 15027,
+    "slaveId": 1,
+    "timeout": 1000,
+    "ioGroups": [
+      {
+        "id": "ab34b3d3-4ac6-5e27-af2d-3cf13d5c825e",
+        "name": "turbine_input_0_49",
+        "functionCode": "4",
+        "cycleTime": 250,
+        "offset": "0",
+        "length": 50,
+        "errorHandling": "keep-last-value",
+        "ioPoints": [
+          {
+            "id": "809e53dc-98bd-5942-b1f8-a0737c73cdf6",
+            "name": "turbine__input__status_word",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW384",
+            "alias": "turbine__input__status_word"
+          },
+          {
+            "id": "5c10385c-951f-5c9e-8668-98678e401731",
+            "name": "turbine__input__alarm_word_1",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW385",
+            "alias": "turbine__input__alarm_word_1"
+          },
+          {
+            "id": "0cbca2cb-dec6-58a6-b36b-85c63c748c71",
+            "name": "turbine__input__alarm_word_2",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW386",
+            "alias": "turbine__input__alarm_word_2"
+          },
+          {
+            "id": "5e128391-9217-5b5b-b0d6-d8345242d79b",
+            "name": "turbine__input__trip_word",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW387",
+            "alias": "turbine__input__trip_word"
+          },
+          {
+            "id": "146685cc-651e-53ac-bf03-56fb9c5a23e4",
+            "name": "turbine__input__device_state",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW388",
+            "alias": "turbine__input__device_state"
+          },
+          {
+            "id": "0248e469-3d67-54cc-a83c-8c0b525d212b",
+            "name": "turbine__input__first_out_code",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW389",
+            "alias": "turbine__input__first_out_code"
+          },
+          {
+            "id": "7bac1726-9cb0-5295-9a0b-4f07860875ed",
+            "name": "turbine__input__overall_quality",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW390",
+            "alias": "turbine__input__overall_quality"
+          },
+          {
+            "id": "ca0d5f6c-5f22-51e1-886e-ffc12f1c2da7",
+            "name": "turbine__input__register_map_version",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW391",
+            "alias": "turbine__input__register_map_version"
+          },
+          {
+            "id": "bb5d5596-415a-5602-951d-7f8184edf398",
+            "name": "turbine__input__firmware_version",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW392",
+            "alias": "turbine__input__firmware_version"
+          },
+          {
+            "id": "6da8a441-e0c1-5142-beb6-425018bd5f90",
+            "name": "turbine__input__speed_rpm",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW393",
+            "alias": "turbine__input__speed_rpm"
+          },
+          {
+            "id": "cedd41ba-001c-563e-9415-4c763fb04516",
+            "name": "turbine__input__mechanical_power",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW394",
+            "alias": "turbine__input__mechanical_power"
+          },
+          {
+            "id": "ab233be3-25db-56bd-b38d-b1b2e7e96bbd",
+            "name": "turbine__input__steam_flow",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW395",
+            "alias": "turbine__input__steam_flow"
+          },
+          {
+            "id": "352a8f4c-1c13-5553-a7fa-d984125ff877",
+            "name": "turbine__input__exhaust_flow",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW396",
+            "alias": "turbine__input__exhaust_flow"
+          },
+          {
+            "id": "5cd0a563-69c2-560c-890b-8eeea9f60d8b",
+            "name": "turbine__input__main_steam_pressure",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW397",
+            "alias": "turbine__input__main_steam_pressure"
+          },
+          {
+            "id": "ecc24970-9b3d-5263-834a-4cfa2cf605cd",
+            "name": "turbine__input__exhaust_pressure",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW398",
+            "alias": "turbine__input__exhaust_pressure"
+          },
+          {
+            "id": "a405ddb8-4256-505d-b0fd-2e0d763c8ca6",
+            "name": "turbine__input__vibration",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW399",
+            "alias": "turbine__input__vibration"
+          },
+          {
+            "id": "4e1d46e1-eaf5-5b16-8a7e-38630a1d48e8",
+            "name": "turbine__input__bearing_temperature",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW400",
+            "alias": "turbine__input__bearing_temperature"
+          },
+          {
+            "id": "7e9ec353-d7bf-5d64-ad0b-2d8128014cb9",
+            "name": "turbine__input__governor_output",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW401",
+            "alias": "turbine__input__governor_output"
+          },
+          {
+            "id": "df62d201-db2a-577c-a14c-8b3fff3ea72b",
+            "name": "turbine__input__acceleration",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW402",
+            "alias": "turbine__input__acceleration"
+          },
+          {
+            "id": "43e5f546-17ef-577d-964d-6fa2b9d8331d",
+            "name": "turbine__input__efficiency",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW403",
+            "alias": "turbine__input__efficiency"
+          },
+          {
+            "id": "864ed6cb-8df5-58ca-9ebd-0cc690147e07",
+            "name": "turbine__input__reserved_20",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW404",
+            "alias": "turbine__input__reserved_20"
+          },
+          {
+            "id": "f0a1a12c-2708-5a82-9c92-e2f79e633bc8",
+            "name": "turbine__input__reserved_21",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW405",
+            "alias": "turbine__input__reserved_21"
+          },
+          {
+            "id": "a6f4cd34-7d9a-58eb-9e52-b758f3cc9326",
+            "name": "turbine__input__reserved_22",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW406",
+            "alias": "turbine__input__reserved_22"
+          },
+          {
+            "id": "7c27820c-bd47-5921-86f0-b19c6674c44f",
+            "name": "turbine__input__reserved_23",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW407",
+            "alias": "turbine__input__reserved_23"
+          },
+          {
+            "id": "97900542-3fc3-52f5-9fbe-3e579bb2fc07",
+            "name": "turbine__input__reserved_24",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW408",
+            "alias": "turbine__input__reserved_24"
+          },
+          {
+            "id": "cb7ad99f-8832-5dc6-95a4-aefb39840b30",
+            "name": "turbine__input__reserved_25",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW409",
+            "alias": "turbine__input__reserved_25"
+          },
+          {
+            "id": "c7f83905-68d8-5172-a8a2-a89ee5f6fcac",
+            "name": "turbine__input__reserved_26",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW410",
+            "alias": "turbine__input__reserved_26"
+          },
+          {
+            "id": "aefeac74-9e0b-5606-82c7-dfed7b92f4eb",
+            "name": "turbine__input__reserved_27",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW411",
+            "alias": "turbine__input__reserved_27"
+          },
+          {
+            "id": "57292269-eb0a-57fd-bf53-a51ce84e61a7",
+            "name": "turbine__input__reserved_28",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW412",
+            "alias": "turbine__input__reserved_28"
+          },
+          {
+            "id": "bfcca58c-9ff8-5c71-8add-f7b03f2d5897",
+            "name": "turbine__input__watchdog_echo",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW413",
+            "alias": "turbine__input__watchdog_echo"
+          },
+          {
+            "id": "f86fe56f-650c-55f3-b40d-43fd8fc36d35",
+            "name": "turbine__input__scan_time_ms",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW414",
+            "alias": "turbine__input__scan_time_ms"
+          },
+          {
+            "id": "7fa93d78-724e-58d2-bbb7-2028476056bf",
+            "name": "turbine__input__modbus_request_count",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW415",
+            "alias": "turbine__input__modbus_request_count"
+          },
+          {
+            "id": "5c4ccd83-9654-5959-af17-2ecda2777acf",
+            "name": "turbine__input__rejected_command_count",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW416",
+            "alias": "turbine__input__rejected_command_count"
+          },
+          {
+            "id": "f186de99-3128-540f-9fcb-0564423031e2",
+            "name": "turbine__input__exception_count",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW417",
+            "alias": "turbine__input__exception_count"
+          },
+          {
+            "id": "ba14cc92-6647-5f28-8d83-210022f4e2fa",
+            "name": "turbine__input__sim_quality_word",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW418",
+            "alias": "turbine__input__sim_quality_word"
+          },
+          {
+            "id": "d60cf792-2b38-5977-9334-137e6e214e43",
+            "name": "turbine__input__sim_tick_low",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW419",
+            "alias": "turbine__input__sim_tick_low"
+          },
+          {
+            "id": "a1e3d120-8e51-530f-91d3-503b381c2ab8",
+            "name": "turbine__input__comm_loss_seconds",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW420",
+            "alias": "turbine__input__comm_loss_seconds"
+          },
+          {
+            "id": "e1b70b55-3416-57c8-b27a-87aec895863f",
+            "name": "turbine__input__fault_inject_word",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW421",
+            "alias": "turbine__input__fault_inject_word"
+          },
+          {
+            "id": "eace6efd-bb46-5add-a448-8be8adeb4826",
+            "name": "turbine__input__snapshot_generation",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW422",
+            "alias": "turbine__input__snapshot_generation"
+          },
+          {
+            "id": "6c83118b-d4b4-57b4-8a0f-295a49082406",
+            "name": "turbine__input__run_seconds_hi",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW423",
+            "alias": "turbine__input__run_seconds_hi"
+          },
+          {
+            "id": "69600dd5-27c0-5bc8-9e64-b73c7ee662be",
+            "name": "turbine__input__run_seconds_lo",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW424",
+            "alias": "turbine__input__run_seconds_lo"
+          },
+          {
+            "id": "c772ac3a-6402-523c-9b22-4783d8262712",
+            "name": "turbine__input__start_count",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW425",
+            "alias": "turbine__input__start_count"
+          },
+          {
+            "id": "1c1f126a-f2e3-52ec-8ffb-77df0e5d0e7d",
+            "name": "turbine__input__trip_count",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW426",
+            "alias": "turbine__input__trip_count"
+          },
+          {
+            "id": "664c213d-6e12-5b3f-9b81-c2e22ee0e89c",
+            "name": "turbine__input__mass_total_hi",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW427",
+            "alias": "turbine__input__mass_total_hi"
+          },
+          {
+            "id": "d0a9463f-3e20-57d6-929a-c2e9f09c4835",
+            "name": "turbine__input__mass_total_lo",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW428",
+            "alias": "turbine__input__mass_total_lo"
+          },
+          {
+            "id": "b927d224-d4a0-5aa7-8633-a1bc5e596b66",
+            "name": "turbine__input__energy_total_hi",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW429",
+            "alias": "turbine__input__energy_total_hi"
+          },
+          {
+            "id": "46ce6422-7ec5-5dae-b7ea-ef0122560afd",
+            "name": "turbine__input__energy_total_lo",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW430",
+            "alias": "turbine__input__energy_total_lo"
+          },
+          {
+            "id": "c1524a4b-c148-5d25-9e9e-693815f2ab58",
+            "name": "turbine__input__alarm_count",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW431",
+            "alias": "turbine__input__alarm_count"
+          },
+          {
+            "id": "c2431d3c-7d2d-54d6-be62-76de1ff048c4",
+            "name": "turbine__input__accepted_command_count",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW432",
+            "alias": "turbine__input__accepted_command_count"
+          },
+          {
+            "id": "c4c2caf4-90b8-5dab-aa95-dc10ca11872b",
+            "name": "turbine__input__reserved_49",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW433",
+            "alias": "turbine__input__reserved_49"
+          }
+        ]
+      },
+      {
+        "id": "f99d6d34-aa90-5c1b-b08b-4bac885e257f",
+        "name": "turbine_discrete_0_15",
+        "functionCode": "2",
+        "cycleTime": 250,
+        "offset": "0",
+        "length": 16,
+        "errorHandling": "keep-last-value",
+        "ioPoints": [
+          {
+            "id": "c0b14004-0cad-5050-b3eb-82da07ec4b67",
+            "name": "turbine__discrete__ready",
+            "type": "Digital Input (Discrete Input)",
+            "iecLocation": "%IX12.0",
+            "alias": "turbine__discrete__ready"
+          },
+          {
+            "id": "95d11d32-6f55-598a-b625-6388128d9e75",
+            "name": "turbine__discrete__running",
+            "type": "Digital Input (Discrete Input)",
+            "iecLocation": "%IX12.1",
+            "alias": "turbine__discrete__running"
+          },
+          {
+            "id": "a331f596-5cec-5e47-9d1c-cf486bb0d3c4",
+            "name": "turbine__discrete__starting",
+            "type": "Digital Input (Discrete Input)",
+            "iecLocation": "%IX12.2",
+            "alias": "turbine__discrete__starting"
+          },
+          {
+            "id": "0dc2da0f-5560-5fd7-830c-664cd34d14ef",
+            "name": "turbine__discrete__stopping",
+            "type": "Digital Input (Discrete Input)",
+            "iecLocation": "%IX12.3",
+            "alias": "turbine__discrete__stopping"
+          },
+          {
+            "id": "a1ccc595-4c8e-537a-8be7-46d266de7083",
+            "name": "turbine__discrete__tripped",
+            "type": "Digital Input (Discrete Input)",
+            "iecLocation": "%IX12.4",
+            "alias": "turbine__discrete__tripped"
+          },
+          {
+            "id": "0e0f9ebc-ec1e-55bf-8a00-3ca0b0b9d083",
+            "name": "turbine__discrete__alarm_active",
+            "type": "Digital Input (Discrete Input)",
+            "iecLocation": "%IX12.5",
+            "alias": "turbine__discrete__alarm_active"
+          },
+          {
+            "id": "f74c1ef8-8a5f-5ccf-a1fc-fdcde88a6b60",
+            "name": "turbine__discrete__local_mode",
+            "type": "Digital Input (Discrete Input)",
+            "iecLocation": "%IX12.6",
+            "alias": "turbine__discrete__local_mode"
+          },
+          {
+            "id": "343e7ebd-ea4f-5462-a6f9-a6e1377611cb",
+            "name": "turbine__discrete__remote_mode",
+            "type": "Digital Input (Discrete Input)",
+            "iecLocation": "%IX12.7",
+            "alias": "turbine__discrete__remote_mode"
+          },
+          {
+            "id": "f1c3eb98-4334-5e88-bd59-520a287c18f7",
+            "name": "turbine__discrete__auto_mode",
+            "type": "Digital Input (Discrete Input)",
+            "iecLocation": "%IX13.0",
+            "alias": "turbine__discrete__auto_mode"
+          },
+          {
+            "id": "4f7c6b47-2502-54ea-8a8d-c9bf91037687",
+            "name": "turbine__discrete__manual_mode",
+            "type": "Digital Input (Discrete Input)",
+            "iecLocation": "%IX13.1",
+            "alias": "turbine__discrete__manual_mode"
+          },
+          {
+            "id": "04022230-5935-5966-b368-cbd10f1fb726",
+            "name": "turbine__discrete__control_watchdog_ok",
+            "type": "Digital Input (Discrete Input)",
+            "iecLocation": "%IX13.2",
+            "alias": "turbine__discrete__control_watchdog_ok"
+          },
+          {
+            "id": "0c91f2f0-6b57-5fe0-86ef-3c70a0819874",
+            "name": "turbine__discrete__sim_bus_ok",
+            "type": "Digital Input (Discrete Input)",
+            "iecLocation": "%IX13.3",
+            "alias": "turbine__discrete__sim_bus_ok"
+          },
+          {
+            "id": "bb3908c8-e154-5568-b212-89f745bd3506",
+            "name": "turbine__discrete__interlocks_ok",
+            "type": "Digital Input (Discrete Input)",
+            "iecLocation": "%IX13.4",
+            "alias": "turbine__discrete__interlocks_ok"
+          },
+          {
+            "id": "457ad30c-da94-5b5d-ad8d-3ffa165485aa",
+            "name": "turbine__discrete__sensor_fault",
+            "type": "Digital Input (Discrete Input)",
+            "iecLocation": "%IX13.5",
+            "alias": "turbine__discrete__sensor_fault"
+          },
+          {
+            "id": "24c35067-e6b4-510e-b924-dae709365e8d",
+            "name": "turbine__discrete__actuator_fault",
+            "type": "Digital Input (Discrete Input)",
+            "iecLocation": "%IX13.6",
+            "alias": "turbine__discrete__actuator_fault"
+          },
+          {
+            "id": "ef0c6e66-fefe-5352-8444-03645ee0b7f6",
+            "name": "turbine__discrete__maintenance_mode",
+            "type": "Digital Input (Discrete Input)",
+            "iecLocation": "%IX13.7",
+            "alias": "turbine__discrete__maintenance_mode"
+          }
+        ]
+      },
+      {
+        "id": "0e78d7cf-efb1-597b-ba7d-2e3a3718a616",
+        "name": "turbine_holding_readback_0_31",
+        "functionCode": "3",
+        "cycleTime": 250,
+        "offset": "0",
+        "length": 32,
+        "errorHandling": "keep-last-value",
+        "ioPoints": [
+          {
+            "id": "b5a2f8f0-8311-55e1-9d57-91e6cc4c7277",
+            "name": "turbine__holding_readback__control_mode",
+            "type": "Analog Input (Holding Register)",
+            "iecLocation": "%IW896",
+            "alias": "turbine__holding_readback__control_mode"
+          },
+          {
+            "id": "445943ee-d4e9-5956-ac53-e2c166229d8e",
+            "name": "turbine__holding_readback__command_sequence",
+            "type": "Analog Input (Holding Register)",
+            "iecLocation": "%IW897",
+            "alias": "turbine__holding_readback__command_sequence"
+          },
+          {
+            "id": "c5f4786d-0e3c-5fe0-8689-b325d8f935d2",
+            "name": "turbine__holding_readback__watchdog_counter",
+            "type": "Analog Input (Holding Register)",
+            "iecLocation": "%IW898",
+            "alias": "turbine__holding_readback__watchdog_counter"
+          },
+          {
+            "id": "f3ec6cb7-076e-56e2-93ae-24562ef511d4",
+            "name": "turbine__holding_readback__reset_key",
+            "type": "Analog Input (Holding Register)",
+            "iecLocation": "%IW899",
+            "alias": "turbine__holding_readback__reset_key"
+          },
+          {
+            "id": "85ff25dd-b172-58d7-b205-ea754d25e371",
+            "name": "turbine__holding_readback__simulation_flags",
+            "type": "Analog Input (Holding Register)",
+            "iecLocation": "%IW900",
+            "alias": "turbine__holding_readback__simulation_flags"
+          },
+          {
+            "id": "6ebf66be-7505-5533-b02c-66e7bf5d1c16",
+            "name": "turbine__holding_readback__active_controller_id",
+            "type": "Analog Input (Holding Register)",
+            "iecLocation": "%IW901",
+            "alias": "turbine__holding_readback__active_controller_id"
+          },
+          {
+            "id": "a75ee899-f250-5296-ab7e-369befa8ad14",
+            "name": "turbine__holding_readback__command_lease_time",
+            "type": "Analog Input (Holding Register)",
+            "iecLocation": "%IW902",
+            "alias": "turbine__holding_readback__command_lease_time"
+          },
+          {
+            "id": "57f1d326-f4be-55a6-89a1-4a094c4f8d5e",
+            "name": "turbine__holding_readback__output_rate_limit",
+            "type": "Analog Input (Holding Register)",
+            "iecLocation": "%IW903",
+            "alias": "turbine__holding_readback__output_rate_limit"
+          },
+          {
+            "id": "fb00406a-1ea1-56a9-acbf-08dfc8c68cea",
+            "name": "turbine__holding_readback__reserved",
+            "type": "Analog Input (Holding Register)",
+            "iecLocation": "%IW904",
+            "alias": "turbine__holding_readback__reserved"
+          },
+          {
+            "id": "26cb0065-a49b-59f9-bd6d-726b9d8c250e",
+            "name": "turbine__holding_readback__primary_setpoint",
+            "type": "Analog Input (Holding Register)",
+            "iecLocation": "%IW905",
+            "alias": "turbine__holding_readback__primary_setpoint"
+          },
+          {
+            "id": "d6248c4b-4c44-5c67-9c85-38991a402b6b",
+            "name": "turbine__holding_readback__secondary_setpoint",
+            "type": "Analog Input (Holding Register)",
+            "iecLocation": "%IW906",
+            "alias": "turbine__holding_readback__secondary_setpoint"
+          },
+          {
+            "id": "af158af0-4be4-5ea8-8102-820608adb1f8",
+            "name": "turbine__holding_readback__manual_output",
+            "type": "Analog Input (Holding Register)",
+            "iecLocation": "%IW907",
+            "alias": "turbine__holding_readback__manual_output"
+          },
+          {
+            "id": "03e87241-f47a-5525-b61a-2348ec07b108",
+            "name": "turbine__holding_readback__output_high_limit",
+            "type": "Analog Input (Holding Register)",
+            "iecLocation": "%IW908",
+            "alias": "turbine__holding_readback__output_high_limit"
+          },
+          {
+            "id": "e1dd088c-f075-5322-9987-5f7f75b7ba8a",
+            "name": "turbine__holding_readback__output_low_limit",
+            "type": "Analog Input (Holding Register)",
+            "iecLocation": "%IW909",
+            "alias": "turbine__holding_readback__output_low_limit"
+          },
+          {
+            "id": "9636bc2a-ae42-5bd7-938e-318c8e9d0f7a",
+            "name": "turbine__holding_readback__reserved_14",
+            "type": "Analog Input (Holding Register)",
+            "iecLocation": "%IW910",
+            "alias": "turbine__holding_readback__reserved_14"
+          },
+          {
+            "id": "ae2c398d-6870-5494-b870-da5011c009d8",
+            "name": "turbine__holding_readback__reserved_15",
+            "type": "Analog Input (Holding Register)",
+            "iecLocation": "%IW911",
+            "alias": "turbine__holding_readback__reserved_15"
+          },
+          {
+            "id": "9f113db3-d65b-5ea2-a831-e9373ca1c737",
+            "name": "turbine__holding_readback__reserved_16",
+            "type": "Analog Input (Holding Register)",
+            "iecLocation": "%IW912",
+            "alias": "turbine__holding_readback__reserved_16"
+          },
+          {
+            "id": "692f7938-f101-5563-bbe8-fb6bc9789c09",
+            "name": "turbine__holding_readback__reserved_17",
+            "type": "Analog Input (Holding Register)",
+            "iecLocation": "%IW913",
+            "alias": "turbine__holding_readback__reserved_17"
+          },
+          {
+            "id": "03a1db3d-2601-59aa-a1a9-e1cdfee215e2",
+            "name": "turbine__holding_readback__reserved_18",
+            "type": "Analog Input (Holding Register)",
+            "iecLocation": "%IW914",
+            "alias": "turbine__holding_readback__reserved_18"
+          },
+          {
+            "id": "bacc6511-fe65-5bca-8722-c9e948a90a98",
+            "name": "turbine__holding_readback__pid_kp",
+            "type": "Analog Input (Holding Register)",
+            "iecLocation": "%IW915",
+            "alias": "turbine__holding_readback__pid_kp"
+          },
+          {
+            "id": "e4616a0f-bd7e-56e9-a172-d2d4c2930f4e",
+            "name": "turbine__holding_readback__pid_ki",
+            "type": "Analog Input (Holding Register)",
+            "iecLocation": "%IW916",
+            "alias": "turbine__holding_readback__pid_ki"
+          },
+          {
+            "id": "1c501c9d-094d-5a4b-b4e0-8fa402da14cf",
+            "name": "turbine__holding_readback__pid_kd",
+            "type": "Analog Input (Holding Register)",
+            "iecLocation": "%IW917",
+            "alias": "turbine__holding_readback__pid_kd"
+          },
+          {
+            "id": "5633c16e-eb82-5c9e-9a79-b5c16bb4557e",
+            "name": "turbine__holding_readback__deadband",
+            "type": "Analog Input (Holding Register)",
+            "iecLocation": "%IW918",
+            "alias": "turbine__holding_readback__deadband"
+          },
+          {
+            "id": "d8c27489-b681-5701-b60d-a1df1a43cd3c",
+            "name": "turbine__holding_readback__integral_limit",
+            "type": "Analog Input (Holding Register)",
+            "iecLocation": "%IW919",
+            "alias": "turbine__holding_readback__integral_limit"
+          },
+          {
+            "id": "6c645b84-dd80-5541-a0a1-92f91ee5d37c",
+            "name": "turbine__holding_readback__controller_scan_time",
+            "type": "Analog Input (Holding Register)",
+            "iecLocation": "%IW920",
+            "alias": "turbine__holding_readback__controller_scan_time"
+          },
+          {
+            "id": "b322b0ab-d146-5354-a508-1ac363da0de7",
+            "name": "turbine__holding_readback__reserved_25",
+            "type": "Analog Input (Holding Register)",
+            "iecLocation": "%IW921",
+            "alias": "turbine__holding_readback__reserved_25"
+          },
+          {
+            "id": "089d3e9a-9295-5d61-ba97-a4b4a39d2c87",
+            "name": "turbine__holding_readback__reserved_26",
+            "type": "Analog Input (Holding Register)",
+            "iecLocation": "%IW922",
+            "alias": "turbine__holding_readback__reserved_26"
+          },
+          {
+            "id": "6803076e-747a-562f-9685-f8d24371df93",
+            "name": "turbine__holding_readback__reserved_27",
+            "type": "Analog Input (Holding Register)",
+            "iecLocation": "%IW923",
+            "alias": "turbine__holding_readback__reserved_27"
+          },
+          {
+            "id": "09e00c60-548d-5f37-9a11-5512d0ce17e8",
+            "name": "turbine__holding_readback__reserved_28",
+            "type": "Analog Input (Holding Register)",
+            "iecLocation": "%IW924",
+            "alias": "turbine__holding_readback__reserved_28"
+          },
+          {
+            "id": "e539cd9d-b2ee-5746-ad57-b8f45a4f8afa",
+            "name": "turbine__holding_readback__inertia_param",
+            "type": "Analog Input (Holding Register)",
+            "iecLocation": "%IW925",
+            "alias": "turbine__holding_readback__inertia_param"
+          },
+          {
+            "id": "ce3c4e93-2ecb-569f-ad42-dd586a949894",
+            "name": "turbine__holding_readback__damping_param",
+            "type": "Analog Input (Holding Register)",
+            "iecLocation": "%IW926",
+            "alias": "turbine__holding_readback__damping_param"
+          },
+          {
+            "id": "b35cf1a6-816b-527e-826d-4a377510c9ff",
+            "name": "turbine__holding_readback__reserved_31",
+            "type": "Analog Input (Holding Register)",
+            "iecLocation": "%IW927",
+            "alias": "turbine__holding_readback__reserved_31"
+          }
+        ]
+      },
+      {
+        "id": "d85f6a46-9737-56e0-8f68-1f180c4d2ba9",
+        "name": "turbine_coil_0_7",
+        "functionCode": "15",
+        "cycleTime": 100,
+        "offset": "0",
+        "length": 8,
+        "errorHandling": "keep-last-value",
+        "ioPoints": [
+          {
+            "id": "db740852-ce82-5150-afb1-46d0ba837461",
+            "name": "turbine__coil__start",
+            "type": "Digital Output (Multiple Coils)",
+            "iecLocation": "%QX12.0",
+            "alias": "turbine__coil__start"
+          },
+          {
+            "id": "5873e648-54dd-58c2-b3ba-11ce21629b57",
+            "name": "turbine__coil__stop",
+            "type": "Digital Output (Multiple Coils)",
+            "iecLocation": "%QX12.1",
+            "alias": "turbine__coil__stop"
+          },
+          {
+            "id": "a3e5bab2-1113-5e42-a5c2-fb6a02515193",
+            "name": "turbine__coil__reset_trip",
+            "type": "Digital Output (Multiple Coils)",
+            "iecLocation": "%QX12.2",
+            "alias": "turbine__coil__reset_trip"
+          },
+          {
+            "id": "e81d50ad-a269-563b-87ce-c8f0e35cc460",
+            "name": "turbine__coil__ack_alarm",
+            "type": "Digital Output (Multiple Coils)",
+            "iecLocation": "%QX12.3",
+            "alias": "turbine__coil__ack_alarm"
+          },
+          {
+            "id": "650deacc-7095-5992-a620-3f9599fc79bd",
+            "name": "turbine__coil__emergency_stop",
+            "type": "Digital Output (Multiple Coils)",
+            "iecLocation": "%QX12.4",
+            "alias": "turbine__coil__emergency_stop"
+          },
+          {
+            "id": "6707328d-5a45-5b59-8b99-a3d39cc7d2f6",
+            "name": "turbine__coil__force_safe",
+            "type": "Digital Output (Multiple Coils)",
+            "iecLocation": "%QX12.5",
+            "alias": "turbine__coil__force_safe"
+          },
+          {
+            "id": "1cb67dab-4911-5639-bb83-d3be1a157d20",
+            "name": "turbine__coil__trip_test",
+            "type": "Digital Output (Multiple Coils)",
+            "iecLocation": "%QX12.6",
+            "alias": "turbine__coil__trip_test"
+          },
+          {
+            "id": "3e4a34a2-d3d4-5548-9319-4f63162d6701",
+            "name": "turbine__coil__clear_totalizer",
+            "type": "Digital Output (Multiple Coils)",
+            "iecLocation": "%QX12.7",
+            "alias": "turbine__coil__clear_totalizer"
+          }
+        ]
+      },
+      {
+        "id": "ecbfb35f-99a9-54e4-8610-a18ce8c2d3b5",
+        "name": "turbine_holding_0_13",
+        "functionCode": "16",
+        "cycleTime": 100,
+        "offset": "0",
+        "length": 14,
+        "errorHandling": "keep-last-value",
+        "ioPoints": [
+          {
+            "id": "1f36e798-595e-577a-b64b-c0a954aa69af",
+            "name": "turbine__holding__control_mode",
+            "type": "Analog Output (Multiple Registers)",
+            "iecLocation": "%QW384",
+            "alias": "turbine__holding__control_mode"
+          },
+          {
+            "id": "f480443a-828f-5250-b010-4adf5c6d5fdd",
+            "name": "turbine__holding__command_sequence",
+            "type": "Analog Output (Multiple Registers)",
+            "iecLocation": "%QW385",
+            "alias": "turbine__holding__command_sequence"
+          },
+          {
+            "id": "25e2fb3b-7d32-56bd-ab94-9a37277cf29a",
+            "name": "turbine__holding__watchdog_counter",
+            "type": "Analog Output (Multiple Registers)",
+            "iecLocation": "%QW386",
+            "alias": "turbine__holding__watchdog_counter"
+          },
+          {
+            "id": "488bb787-7110-5bba-82de-794f58d3255c",
+            "name": "turbine__holding__reset_key",
+            "type": "Analog Output (Multiple Registers)",
+            "iecLocation": "%QW387",
+            "alias": "turbine__holding__reset_key"
+          },
+          {
+            "id": "c1fea6a5-133a-5499-9d13-fb6f323755b1",
+            "name": "turbine__holding__simulation_flags",
+            "type": "Analog Output (Multiple Registers)",
+            "iecLocation": "%QW388",
+            "alias": "turbine__holding__simulation_flags"
+          },
+          {
+            "id": "4a35d320-de67-5fc1-9890-ec9f4b9daa0e",
+            "name": "turbine__holding__active_controller_id",
+            "type": "Analog Output (Multiple Registers)",
+            "iecLocation": "%QW389",
+            "alias": "turbine__holding__active_controller_id"
+          },
+          {
+            "id": "42e5918e-ef0e-5efb-815a-6db7c8252893",
+            "name": "turbine__holding__command_lease_time",
+            "type": "Analog Output (Multiple Registers)",
+            "iecLocation": "%QW390",
+            "alias": "turbine__holding__command_lease_time"
+          },
+          {
+            "id": "1be4dfb6-a02d-5cfd-b42c-552789bdc67e",
+            "name": "turbine__holding__output_rate_limit",
+            "type": "Analog Output (Multiple Registers)",
+            "iecLocation": "%QW391",
+            "alias": "turbine__holding__output_rate_limit"
+          },
+          {
+            "id": "7727ca0d-75e0-539f-b272-5a531c2c63e6",
+            "name": "turbine__holding__reserved",
+            "type": "Analog Output (Multiple Registers)",
+            "iecLocation": "%QW392",
+            "alias": "turbine__holding__reserved"
+          },
+          {
+            "id": "09f330ce-2cdf-5188-8e6f-6fcfb45f98d3",
+            "name": "turbine__holding__primary_setpoint",
+            "type": "Analog Output (Multiple Registers)",
+            "iecLocation": "%QW393",
+            "alias": "turbine__holding__primary_setpoint"
+          },
+          {
+            "id": "e6ee6bfd-d3d1-5eab-8215-c3d61b140686",
+            "name": "turbine__holding__secondary_setpoint",
+            "type": "Analog Output (Multiple Registers)",
+            "iecLocation": "%QW394",
+            "alias": "turbine__holding__secondary_setpoint"
+          },
+          {
+            "id": "d05acd42-1a3b-512a-b925-11fbd9d49642",
+            "name": "turbine__holding__manual_output",
+            "type": "Analog Output (Multiple Registers)",
+            "iecLocation": "%QW395",
+            "alias": "turbine__holding__manual_output"
+          },
+          {
+            "id": "f89de1ef-9942-50fd-b2dc-957b6c92ca23",
+            "name": "turbine__holding__output_high_limit",
+            "type": "Analog Output (Multiple Registers)",
+            "iecLocation": "%QW396",
+            "alias": "turbine__holding__output_high_limit"
+          },
+          {
+            "id": "5765cf06-b6ce-5422-80d5-5e95b394773a",
+            "name": "turbine__holding__output_low_limit",
+            "type": "Analog Output (Multiple Registers)",
+            "iecLocation": "%QW397",
+            "alias": "turbine__holding__output_low_limit"
+          }
+        ]
+      },
+      {
+        "id": "7da1b891-e9a8-50aa-8f4a-472a8eae09ed",
+        "name": "turbine_holding_19_24",
+        "functionCode": "16",
+        "cycleTime": 100,
+        "offset": "19",
+        "length": 6,
+        "errorHandling": "keep-last-value",
+        "ioPoints": [
+          {
+            "id": "37788e20-d356-5c77-890e-f48268196df3",
+            "name": "turbine__holding__pid_kp",
+            "type": "Analog Output (Multiple Registers)",
+            "iecLocation": "%QW403",
+            "alias": "turbine__holding__pid_kp"
+          },
+          {
+            "id": "0a1ba36d-b329-5205-8f4f-232eace0bcf4",
+            "name": "turbine__holding__pid_ki",
+            "type": "Analog Output (Multiple Registers)",
+            "iecLocation": "%QW404",
+            "alias": "turbine__holding__pid_ki"
+          },
+          {
+            "id": "e650b9c4-554e-5fe3-b7b4-f531f4313c9f",
+            "name": "turbine__holding__pid_kd",
+            "type": "Analog Output (Multiple Registers)",
+            "iecLocation": "%QW405",
+            "alias": "turbine__holding__pid_kd"
+          },
+          {
+            "id": "9b8c304e-b3ed-582f-a6a6-8dff18b58458",
+            "name": "turbine__holding__deadband",
+            "type": "Analog Output (Multiple Registers)",
+            "iecLocation": "%QW406",
+            "alias": "turbine__holding__deadband"
+          },
+          {
+            "id": "8409d4d2-1ffc-5fb9-9369-acba9443ad5e",
+            "name": "turbine__holding__integral_limit",
+            "type": "Analog Output (Multiple Registers)",
+            "iecLocation": "%QW407",
+            "alias": "turbine__holding__integral_limit"
+          },
+          {
+            "id": "0ecb81c9-546e-59c8-9b38-28ee814d9c53",
+            "name": "turbine__holding__controller_scan_time",
+            "type": "Analog Output (Multiple Registers)",
+            "iecLocation": "%QW408",
+            "alias": "turbine__holding__controller_scan_time"
+          }
+        ]
+      },
+      {
+        "id": "f725251b-d769-570c-8def-531610401373",
+        "name": "turbine_holding_29_30",
+        "functionCode": "16",
+        "cycleTime": 100,
+        "offset": "29",
+        "length": 2,
+        "errorHandling": "keep-last-value",
+        "ioPoints": [
+          {
+            "id": "04d4c180-9ed3-5b14-b5f3-e66917120090",
+            "name": "turbine__holding__inertia_param",
+            "type": "Analog Output (Multiple Registers)",
+            "iecLocation": "%QW413",
+            "alias": "turbine__holding__inertia_param"
+          },
+          {
+            "id": "51bc50f0-897b-5885-a4ca-01409527033f",
+            "name": "turbine__holding__damping_param",
+            "type": "Analog Output (Multiple Registers)",
+            "iecLocation": "%QW414",
+            "alias": "turbine__holding__damping_param"
+          }
+        ]
+      }
+    ]
+  }
+}

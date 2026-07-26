@@ -126,6 +126,8 @@ RESTORE_ON_BOOT=steady-60mw docker compose --profile standalone up
 詳細說明見 [docs/architecture.md](docs/architecture.md)。
 外部 PLC／DCS 要如何串接這 8 台設備，見 [docs/plc-integration.md](docs/plc-integration.md)
 （含可執行骨架 `examples/external_plc.py`）。
+可直接匯入的 OpenPLC Editor 專案與 ScadaBR HMI，見
+[docs/openplc-scadabr-integration.md](docs/openplc-scadabr-integration.md)。
 
 ---
 
@@ -271,6 +273,7 @@ thermal-plant-simulator/
 ├── devices/          8 台設備的物理模型與暫存器映射
 ├── controller/       PID、三元素水位、啟動順序、跳機矩陣、DCS 主程式
 ├── historian/ hmi/   事件與歷史資料、簡易 HMI
+├── integrations/     OpenPLC Editor 專案與 ScadaBR 匯入檔
 ├── tools/            plantctl、情境執行器、不變量檢查、封包錄製、文件產生
 ├── configs/          全廠與各設備設定（所有門檻）
 ├── scenarios/        8 個驗收情境

@@ -1,0 +1,978 @@
+{
+  "name": "feedwater_tank",
+  "protocol": "modbus-tcp",
+  "modbusTcpConfig": {
+    "host": "127.0.0.1",
+    "port": 15023,
+    "slaveId": 1,
+    "timeout": 1000,
+    "ioGroups": [
+      {
+        "id": "d6ff9a56-6e01-56ea-9da4-1fa435323584",
+        "name": "feedwater_tank_input_0_49",
+        "functionCode": "4",
+        "cycleTime": 250,
+        "offset": "0",
+        "length": 50,
+        "errorHandling": "keep-last-value",
+        "ioPoints": [
+          {
+            "id": "93df7e53-e774-5480-b5f2-8e2b75a12909",
+            "name": "feedwater_tank__input__status_word",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW128",
+            "alias": "feedwater_tank__input__status_word"
+          },
+          {
+            "id": "7bfd67f2-146c-58d9-be14-5e62d98cd821",
+            "name": "feedwater_tank__input__alarm_word_1",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW129",
+            "alias": "feedwater_tank__input__alarm_word_1"
+          },
+          {
+            "id": "71ca09ea-180a-54b1-8754-47dc7f769c56",
+            "name": "feedwater_tank__input__alarm_word_2",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW130",
+            "alias": "feedwater_tank__input__alarm_word_2"
+          },
+          {
+            "id": "19095e80-e6cc-500e-adc5-d50897435470",
+            "name": "feedwater_tank__input__trip_word",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW131",
+            "alias": "feedwater_tank__input__trip_word"
+          },
+          {
+            "id": "1e6d628c-2a36-52c9-bf62-4b96606ce850",
+            "name": "feedwater_tank__input__device_state",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW132",
+            "alias": "feedwater_tank__input__device_state"
+          },
+          {
+            "id": "ea3c08dc-c98e-57bc-8762-9567da3b5b5e",
+            "name": "feedwater_tank__input__first_out_code",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW133",
+            "alias": "feedwater_tank__input__first_out_code"
+          },
+          {
+            "id": "96a9bff6-c55f-57a4-9718-e9026e1d2b59",
+            "name": "feedwater_tank__input__overall_quality",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW134",
+            "alias": "feedwater_tank__input__overall_quality"
+          },
+          {
+            "id": "db3a187e-e8dc-597b-8d24-0a1f1e582e31",
+            "name": "feedwater_tank__input__register_map_version",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW135",
+            "alias": "feedwater_tank__input__register_map_version"
+          },
+          {
+            "id": "f7629739-8c34-5cf6-8506-3434f310a289",
+            "name": "feedwater_tank__input__firmware_version",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW136",
+            "alias": "feedwater_tank__input__firmware_version"
+          },
+          {
+            "id": "768eb593-85c1-57a2-a285-dedffbe83fef",
+            "name": "feedwater_tank__input__tank_level",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW137",
+            "alias": "feedwater_tank__input__tank_level"
+          },
+          {
+            "id": "1dde75a5-a0d2-57c1-8b07-a4234e37dbfa",
+            "name": "feedwater_tank__input__tank_mass_hi",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW138",
+            "alias": "feedwater_tank__input__tank_mass_hi"
+          },
+          {
+            "id": "5d3425bf-df3c-5d70-9f7f-391bbeaec358",
+            "name": "feedwater_tank__input__tank_mass_lo",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW139",
+            "alias": "feedwater_tank__input__tank_mass_lo"
+          },
+          {
+            "id": "ce780f6f-c303-561e-ad13-9688f4de2203",
+            "name": "feedwater_tank__input__condensate_inflow",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW140",
+            "alias": "feedwater_tank__input__condensate_inflow"
+          },
+          {
+            "id": "41a23fa6-a800-519f-a6e7-da1066936c1e",
+            "name": "feedwater_tank__input__feedwater_outflow",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW141",
+            "alias": "feedwater_tank__input__feedwater_outflow"
+          },
+          {
+            "id": "9e2cbdc2-96b8-511f-bb10-e554f84473d8",
+            "name": "feedwater_tank__input__water_temperature",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW142",
+            "alias": "feedwater_tank__input__water_temperature"
+          },
+          {
+            "id": "8fb3dcad-a496-5b74-8dde-18b50e335ffe",
+            "name": "feedwater_tank__input__tank_pressure",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW143",
+            "alias": "feedwater_tank__input__tank_pressure"
+          },
+          {
+            "id": "10d15ac9-2b25-5d5b-a8d3-bbd871006651",
+            "name": "feedwater_tank__input__overflow_flow",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW144",
+            "alias": "feedwater_tank__input__overflow_flow"
+          },
+          {
+            "id": "9be0a5a0-78d2-54c8-8a27-c20b69be1123",
+            "name": "feedwater_tank__input__net_flow",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW145",
+            "alias": "feedwater_tank__input__net_flow"
+          },
+          {
+            "id": "24c0330c-c865-5e4a-8899-27012f1faf65",
+            "name": "feedwater_tank__input__reserved_18",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW146",
+            "alias": "feedwater_tank__input__reserved_18"
+          },
+          {
+            "id": "189e2c11-fb5a-55ab-a9f2-ad624632bf22",
+            "name": "feedwater_tank__input__reserved_19",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW147",
+            "alias": "feedwater_tank__input__reserved_19"
+          },
+          {
+            "id": "4c897f97-71a7-5079-91dc-336eae73c70a",
+            "name": "feedwater_tank__input__reserved_20",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW148",
+            "alias": "feedwater_tank__input__reserved_20"
+          },
+          {
+            "id": "8a336213-ef86-5b6f-abdb-c7557adbd175",
+            "name": "feedwater_tank__input__reserved_21",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW149",
+            "alias": "feedwater_tank__input__reserved_21"
+          },
+          {
+            "id": "3f835cd8-e26e-5ee4-8a3c-ed4a0f96ed5a",
+            "name": "feedwater_tank__input__reserved_22",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW150",
+            "alias": "feedwater_tank__input__reserved_22"
+          },
+          {
+            "id": "04c9dc83-362b-5f67-9735-eec5828b7be5",
+            "name": "feedwater_tank__input__reserved_23",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW151",
+            "alias": "feedwater_tank__input__reserved_23"
+          },
+          {
+            "id": "23136b99-106f-570b-8ae2-1571edc7825e",
+            "name": "feedwater_tank__input__reserved_24",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW152",
+            "alias": "feedwater_tank__input__reserved_24"
+          },
+          {
+            "id": "ab75b7bd-7476-5831-8fe1-065051986828",
+            "name": "feedwater_tank__input__reserved_25",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW153",
+            "alias": "feedwater_tank__input__reserved_25"
+          },
+          {
+            "id": "57f3299a-792c-519b-befa-f7e4f584ef86",
+            "name": "feedwater_tank__input__reserved_26",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW154",
+            "alias": "feedwater_tank__input__reserved_26"
+          },
+          {
+            "id": "e1ecf6bf-95b6-5d5d-8b73-961dd6ef13ca",
+            "name": "feedwater_tank__input__reserved_27",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW155",
+            "alias": "feedwater_tank__input__reserved_27"
+          },
+          {
+            "id": "84942381-b687-583d-b92b-4290f23adcb5",
+            "name": "feedwater_tank__input__reserved_28",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW156",
+            "alias": "feedwater_tank__input__reserved_28"
+          },
+          {
+            "id": "da694631-5943-52ab-8bcf-6958e127300c",
+            "name": "feedwater_tank__input__watchdog_echo",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW157",
+            "alias": "feedwater_tank__input__watchdog_echo"
+          },
+          {
+            "id": "7d999f52-b140-5670-85a3-a721265c4395",
+            "name": "feedwater_tank__input__scan_time_ms",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW158",
+            "alias": "feedwater_tank__input__scan_time_ms"
+          },
+          {
+            "id": "e554b5c4-9700-5fe3-bbed-e050fd2e23f1",
+            "name": "feedwater_tank__input__modbus_request_count",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW159",
+            "alias": "feedwater_tank__input__modbus_request_count"
+          },
+          {
+            "id": "390eaca2-c99c-5559-8283-4511e5682046",
+            "name": "feedwater_tank__input__rejected_command_count",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW160",
+            "alias": "feedwater_tank__input__rejected_command_count"
+          },
+          {
+            "id": "c95ec163-af30-5bf2-b7d8-f1247ae3f1f9",
+            "name": "feedwater_tank__input__exception_count",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW161",
+            "alias": "feedwater_tank__input__exception_count"
+          },
+          {
+            "id": "29160da4-bac9-59fb-82e7-99053d25fc91",
+            "name": "feedwater_tank__input__sim_quality_word",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW162",
+            "alias": "feedwater_tank__input__sim_quality_word"
+          },
+          {
+            "id": "999253e5-6707-59b2-9937-7af19612ad1f",
+            "name": "feedwater_tank__input__sim_tick_low",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW163",
+            "alias": "feedwater_tank__input__sim_tick_low"
+          },
+          {
+            "id": "c7af6d9c-3811-5e26-b43c-7d4d365bf89c",
+            "name": "feedwater_tank__input__comm_loss_seconds",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW164",
+            "alias": "feedwater_tank__input__comm_loss_seconds"
+          },
+          {
+            "id": "c1607401-bf11-52f3-8601-95ea5685bbd1",
+            "name": "feedwater_tank__input__fault_inject_word",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW165",
+            "alias": "feedwater_tank__input__fault_inject_word"
+          },
+          {
+            "id": "6fa6809b-d6a6-5282-9136-313c85ba59c2",
+            "name": "feedwater_tank__input__snapshot_generation",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW166",
+            "alias": "feedwater_tank__input__snapshot_generation"
+          },
+          {
+            "id": "b533f35f-d91c-59be-bd0f-d3f601bb83d2",
+            "name": "feedwater_tank__input__run_seconds_hi",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW167",
+            "alias": "feedwater_tank__input__run_seconds_hi"
+          },
+          {
+            "id": "7d2c7caf-5220-562c-8067-864a4176cbd1",
+            "name": "feedwater_tank__input__run_seconds_lo",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW168",
+            "alias": "feedwater_tank__input__run_seconds_lo"
+          },
+          {
+            "id": "60e9a7b2-95ea-5d21-a5f4-55fdcc729583",
+            "name": "feedwater_tank__input__start_count",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW169",
+            "alias": "feedwater_tank__input__start_count"
+          },
+          {
+            "id": "ce1435dc-248f-5741-acbf-6d9f529cf85b",
+            "name": "feedwater_tank__input__trip_count",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW170",
+            "alias": "feedwater_tank__input__trip_count"
+          },
+          {
+            "id": "5169f9d0-6033-5a2b-907d-b0b97fdb7cec",
+            "name": "feedwater_tank__input__mass_total_hi",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW171",
+            "alias": "feedwater_tank__input__mass_total_hi"
+          },
+          {
+            "id": "296531ef-78ba-547c-bfac-6d52b3f35f24",
+            "name": "feedwater_tank__input__mass_total_lo",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW172",
+            "alias": "feedwater_tank__input__mass_total_lo"
+          },
+          {
+            "id": "e3dcc6ed-755c-50b6-b403-ea491d8fcbc4",
+            "name": "feedwater_tank__input__energy_total_hi",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW173",
+            "alias": "feedwater_tank__input__energy_total_hi"
+          },
+          {
+            "id": "d4d6c0c9-01d4-5b26-a0db-841e004184bb",
+            "name": "feedwater_tank__input__energy_total_lo",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW174",
+            "alias": "feedwater_tank__input__energy_total_lo"
+          },
+          {
+            "id": "5b61cf15-caa1-5b8e-bf53-382fac565ae5",
+            "name": "feedwater_tank__input__alarm_count",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW175",
+            "alias": "feedwater_tank__input__alarm_count"
+          },
+          {
+            "id": "dc3fbd6d-9728-5e38-b8e5-d15156958b32",
+            "name": "feedwater_tank__input__accepted_command_count",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW176",
+            "alias": "feedwater_tank__input__accepted_command_count"
+          },
+          {
+            "id": "5a8a89af-1660-5d6a-8c70-93a7b8e0f306",
+            "name": "feedwater_tank__input__reserved_49",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW177",
+            "alias": "feedwater_tank__input__reserved_49"
+          }
+        ]
+      },
+      {
+        "id": "3018c337-9e96-5bda-9e6c-72976e452ac7",
+        "name": "feedwater_tank_discrete_0_15",
+        "functionCode": "2",
+        "cycleTime": 250,
+        "offset": "0",
+        "length": 16,
+        "errorHandling": "keep-last-value",
+        "ioPoints": [
+          {
+            "id": "cbcd4ece-1a11-51ec-9882-ea829b283395",
+            "name": "feedwater_tank__discrete__ready",
+            "type": "Digital Input (Discrete Input)",
+            "iecLocation": "%IX4.0",
+            "alias": "feedwater_tank__discrete__ready"
+          },
+          {
+            "id": "732e91d7-202d-5453-835d-6cc0db21a03d",
+            "name": "feedwater_tank__discrete__running",
+            "type": "Digital Input (Discrete Input)",
+            "iecLocation": "%IX4.1",
+            "alias": "feedwater_tank__discrete__running"
+          },
+          {
+            "id": "16b1d816-af3d-5906-96fe-b0d7ac62a7b0",
+            "name": "feedwater_tank__discrete__starting",
+            "type": "Digital Input (Discrete Input)",
+            "iecLocation": "%IX4.2",
+            "alias": "feedwater_tank__discrete__starting"
+          },
+          {
+            "id": "d862fcb0-5ad1-5510-9cc6-6ba0d9d15a83",
+            "name": "feedwater_tank__discrete__stopping",
+            "type": "Digital Input (Discrete Input)",
+            "iecLocation": "%IX4.3",
+            "alias": "feedwater_tank__discrete__stopping"
+          },
+          {
+            "id": "45a4eade-dd05-5d92-8473-a7a43722ae36",
+            "name": "feedwater_tank__discrete__tripped",
+            "type": "Digital Input (Discrete Input)",
+            "iecLocation": "%IX4.4",
+            "alias": "feedwater_tank__discrete__tripped"
+          },
+          {
+            "id": "b8cbde7e-9f4e-58c2-8b67-bbbeabb0f9c8",
+            "name": "feedwater_tank__discrete__alarm_active",
+            "type": "Digital Input (Discrete Input)",
+            "iecLocation": "%IX4.5",
+            "alias": "feedwater_tank__discrete__alarm_active"
+          },
+          {
+            "id": "dfcdc551-be7b-527f-9552-d669a931a999",
+            "name": "feedwater_tank__discrete__local_mode",
+            "type": "Digital Input (Discrete Input)",
+            "iecLocation": "%IX4.6",
+            "alias": "feedwater_tank__discrete__local_mode"
+          },
+          {
+            "id": "a1db9929-82e0-50f4-84b7-45e424d8aa2e",
+            "name": "feedwater_tank__discrete__remote_mode",
+            "type": "Digital Input (Discrete Input)",
+            "iecLocation": "%IX4.7",
+            "alias": "feedwater_tank__discrete__remote_mode"
+          },
+          {
+            "id": "54baccb6-495e-5ab5-8725-99226cc94f23",
+            "name": "feedwater_tank__discrete__auto_mode",
+            "type": "Digital Input (Discrete Input)",
+            "iecLocation": "%IX5.0",
+            "alias": "feedwater_tank__discrete__auto_mode"
+          },
+          {
+            "id": "9d3d9cf7-9008-5211-8419-bdbd53b5713a",
+            "name": "feedwater_tank__discrete__manual_mode",
+            "type": "Digital Input (Discrete Input)",
+            "iecLocation": "%IX5.1",
+            "alias": "feedwater_tank__discrete__manual_mode"
+          },
+          {
+            "id": "d9c844b1-ab29-55cd-b356-69da3ded7520",
+            "name": "feedwater_tank__discrete__control_watchdog_ok",
+            "type": "Digital Input (Discrete Input)",
+            "iecLocation": "%IX5.2",
+            "alias": "feedwater_tank__discrete__control_watchdog_ok"
+          },
+          {
+            "id": "1880c2c5-2a5c-5e4c-9b34-f98dfff03695",
+            "name": "feedwater_tank__discrete__sim_bus_ok",
+            "type": "Digital Input (Discrete Input)",
+            "iecLocation": "%IX5.3",
+            "alias": "feedwater_tank__discrete__sim_bus_ok"
+          },
+          {
+            "id": "ef061701-b165-5e4e-ba10-134a89c27d1a",
+            "name": "feedwater_tank__discrete__interlocks_ok",
+            "type": "Digital Input (Discrete Input)",
+            "iecLocation": "%IX5.4",
+            "alias": "feedwater_tank__discrete__interlocks_ok"
+          },
+          {
+            "id": "3d221bbe-fe93-5ba5-9b11-ee8c66dbfbdd",
+            "name": "feedwater_tank__discrete__sensor_fault",
+            "type": "Digital Input (Discrete Input)",
+            "iecLocation": "%IX5.5",
+            "alias": "feedwater_tank__discrete__sensor_fault"
+          },
+          {
+            "id": "1a087484-b158-5690-a816-44e26c57612e",
+            "name": "feedwater_tank__discrete__actuator_fault",
+            "type": "Digital Input (Discrete Input)",
+            "iecLocation": "%IX5.6",
+            "alias": "feedwater_tank__discrete__actuator_fault"
+          },
+          {
+            "id": "371a400e-d8d5-5b86-92dc-b0b1a7e1ad41",
+            "name": "feedwater_tank__discrete__maintenance_mode",
+            "type": "Digital Input (Discrete Input)",
+            "iecLocation": "%IX5.7",
+            "alias": "feedwater_tank__discrete__maintenance_mode"
+          }
+        ]
+      },
+      {
+        "id": "8f067359-f404-5a21-9205-cb71e0e53d09",
+        "name": "feedwater_tank_holding_readback_0_31",
+        "functionCode": "3",
+        "cycleTime": 250,
+        "offset": "0",
+        "length": 32,
+        "errorHandling": "keep-last-value",
+        "ioPoints": [
+          {
+            "id": "ced7ff0e-688a-51cb-9696-710ec3dfdea9",
+            "name": "feedwater_tank__holding_readback__control_mode",
+            "type": "Analog Input (Holding Register)",
+            "iecLocation": "%IW640",
+            "alias": "feedwater_tank__holding_readback__control_mode"
+          },
+          {
+            "id": "153704f6-d1f4-52f2-a284-49f4b4632100",
+            "name": "feedwater_tank__holding_readback__command_sequence",
+            "type": "Analog Input (Holding Register)",
+            "iecLocation": "%IW641",
+            "alias": "feedwater_tank__holding_readback__command_sequence"
+          },
+          {
+            "id": "4341b033-a136-55d5-987d-cf5e1fed8da9",
+            "name": "feedwater_tank__holding_readback__watchdog_counter",
+            "type": "Analog Input (Holding Register)",
+            "iecLocation": "%IW642",
+            "alias": "feedwater_tank__holding_readback__watchdog_counter"
+          },
+          {
+            "id": "5ddb3680-0171-535b-879c-ce23ac041333",
+            "name": "feedwater_tank__holding_readback__reset_key",
+            "type": "Analog Input (Holding Register)",
+            "iecLocation": "%IW643",
+            "alias": "feedwater_tank__holding_readback__reset_key"
+          },
+          {
+            "id": "280a0153-5cdd-5715-be18-ec157e7fd230",
+            "name": "feedwater_tank__holding_readback__simulation_flags",
+            "type": "Analog Input (Holding Register)",
+            "iecLocation": "%IW644",
+            "alias": "feedwater_tank__holding_readback__simulation_flags"
+          },
+          {
+            "id": "ae8b30c8-14e3-5e06-acc2-f87bc2f90e4a",
+            "name": "feedwater_tank__holding_readback__active_controller_id",
+            "type": "Analog Input (Holding Register)",
+            "iecLocation": "%IW645",
+            "alias": "feedwater_tank__holding_readback__active_controller_id"
+          },
+          {
+            "id": "8c640af9-ac57-5448-aca7-6db3afa69f5d",
+            "name": "feedwater_tank__holding_readback__command_lease_time",
+            "type": "Analog Input (Holding Register)",
+            "iecLocation": "%IW646",
+            "alias": "feedwater_tank__holding_readback__command_lease_time"
+          },
+          {
+            "id": "657e5713-f7be-5d69-94b2-040ec1a5064b",
+            "name": "feedwater_tank__holding_readback__output_rate_limit",
+            "type": "Analog Input (Holding Register)",
+            "iecLocation": "%IW647",
+            "alias": "feedwater_tank__holding_readback__output_rate_limit"
+          },
+          {
+            "id": "e407372b-91f3-5bd1-a71b-437001bfb423",
+            "name": "feedwater_tank__holding_readback__reserved",
+            "type": "Analog Input (Holding Register)",
+            "iecLocation": "%IW648",
+            "alias": "feedwater_tank__holding_readback__reserved"
+          },
+          {
+            "id": "7d0118c0-49b6-504b-a2fb-e29ff1e656e1",
+            "name": "feedwater_tank__holding_readback__primary_setpoint",
+            "type": "Analog Input (Holding Register)",
+            "iecLocation": "%IW649",
+            "alias": "feedwater_tank__holding_readback__primary_setpoint"
+          },
+          {
+            "id": "90a4e7a4-e001-5255-a8fe-6fc80c2570c0",
+            "name": "feedwater_tank__holding_readback__secondary_setpoint",
+            "type": "Analog Input (Holding Register)",
+            "iecLocation": "%IW650",
+            "alias": "feedwater_tank__holding_readback__secondary_setpoint"
+          },
+          {
+            "id": "1737f34a-f0fc-566f-8846-7fee59dd1e16",
+            "name": "feedwater_tank__holding_readback__manual_output",
+            "type": "Analog Input (Holding Register)",
+            "iecLocation": "%IW651",
+            "alias": "feedwater_tank__holding_readback__manual_output"
+          },
+          {
+            "id": "9752b501-4523-5695-829e-b53f1228dcdb",
+            "name": "feedwater_tank__holding_readback__output_high_limit",
+            "type": "Analog Input (Holding Register)",
+            "iecLocation": "%IW652",
+            "alias": "feedwater_tank__holding_readback__output_high_limit"
+          },
+          {
+            "id": "107dd7d4-c74e-59d0-90c4-e2a109af6d95",
+            "name": "feedwater_tank__holding_readback__output_low_limit",
+            "type": "Analog Input (Holding Register)",
+            "iecLocation": "%IW653",
+            "alias": "feedwater_tank__holding_readback__output_low_limit"
+          },
+          {
+            "id": "593f9c7f-9453-5a5f-95a1-fd77dcae1c5b",
+            "name": "feedwater_tank__holding_readback__reserved_14",
+            "type": "Analog Input (Holding Register)",
+            "iecLocation": "%IW654",
+            "alias": "feedwater_tank__holding_readback__reserved_14"
+          },
+          {
+            "id": "28caf036-4f55-5f76-8081-ac317ad161df",
+            "name": "feedwater_tank__holding_readback__reserved_15",
+            "type": "Analog Input (Holding Register)",
+            "iecLocation": "%IW655",
+            "alias": "feedwater_tank__holding_readback__reserved_15"
+          },
+          {
+            "id": "46e27fed-64e3-5a8e-adbe-5d5465a9048e",
+            "name": "feedwater_tank__holding_readback__reserved_16",
+            "type": "Analog Input (Holding Register)",
+            "iecLocation": "%IW656",
+            "alias": "feedwater_tank__holding_readback__reserved_16"
+          },
+          {
+            "id": "6ea1d27e-1700-536a-a9b7-76da33d350b9",
+            "name": "feedwater_tank__holding_readback__reserved_17",
+            "type": "Analog Input (Holding Register)",
+            "iecLocation": "%IW657",
+            "alias": "feedwater_tank__holding_readback__reserved_17"
+          },
+          {
+            "id": "8ff9e85d-edff-57d5-9d28-da2ed4c723c0",
+            "name": "feedwater_tank__holding_readback__reserved_18",
+            "type": "Analog Input (Holding Register)",
+            "iecLocation": "%IW658",
+            "alias": "feedwater_tank__holding_readback__reserved_18"
+          },
+          {
+            "id": "ab38f5ba-0607-5837-b1fd-f018b006cc20",
+            "name": "feedwater_tank__holding_readback__pid_kp",
+            "type": "Analog Input (Holding Register)",
+            "iecLocation": "%IW659",
+            "alias": "feedwater_tank__holding_readback__pid_kp"
+          },
+          {
+            "id": "126b9db4-e489-55c1-83fd-584a535c864d",
+            "name": "feedwater_tank__holding_readback__pid_ki",
+            "type": "Analog Input (Holding Register)",
+            "iecLocation": "%IW660",
+            "alias": "feedwater_tank__holding_readback__pid_ki"
+          },
+          {
+            "id": "ea85d289-7486-5174-8f8d-5f2719c94762",
+            "name": "feedwater_tank__holding_readback__pid_kd",
+            "type": "Analog Input (Holding Register)",
+            "iecLocation": "%IW661",
+            "alias": "feedwater_tank__holding_readback__pid_kd"
+          },
+          {
+            "id": "f41497b6-5757-50f6-9227-a3208a0f30e5",
+            "name": "feedwater_tank__holding_readback__deadband",
+            "type": "Analog Input (Holding Register)",
+            "iecLocation": "%IW662",
+            "alias": "feedwater_tank__holding_readback__deadband"
+          },
+          {
+            "id": "e16d181e-9c76-5891-b16f-8809c0827b33",
+            "name": "feedwater_tank__holding_readback__integral_limit",
+            "type": "Analog Input (Holding Register)",
+            "iecLocation": "%IW663",
+            "alias": "feedwater_tank__holding_readback__integral_limit"
+          },
+          {
+            "id": "20a284a0-0299-5872-9116-614f525627de",
+            "name": "feedwater_tank__holding_readback__controller_scan_time",
+            "type": "Analog Input (Holding Register)",
+            "iecLocation": "%IW664",
+            "alias": "feedwater_tank__holding_readback__controller_scan_time"
+          },
+          {
+            "id": "e482f983-2168-55df-9db1-dcb9db2d76b6",
+            "name": "feedwater_tank__holding_readback__reserved_25",
+            "type": "Analog Input (Holding Register)",
+            "iecLocation": "%IW665",
+            "alias": "feedwater_tank__holding_readback__reserved_25"
+          },
+          {
+            "id": "c69d9003-2845-50cd-a6fd-b3dc0633edb3",
+            "name": "feedwater_tank__holding_readback__reserved_26",
+            "type": "Analog Input (Holding Register)",
+            "iecLocation": "%IW666",
+            "alias": "feedwater_tank__holding_readback__reserved_26"
+          },
+          {
+            "id": "0f21965b-bcce-5b01-99ab-0118c54030c6",
+            "name": "feedwater_tank__holding_readback__reserved_27",
+            "type": "Analog Input (Holding Register)",
+            "iecLocation": "%IW667",
+            "alias": "feedwater_tank__holding_readback__reserved_27"
+          },
+          {
+            "id": "abc5b22d-149e-52d1-bec7-8ee278793b6e",
+            "name": "feedwater_tank__holding_readback__reserved_28",
+            "type": "Analog Input (Holding Register)",
+            "iecLocation": "%IW668",
+            "alias": "feedwater_tank__holding_readback__reserved_28"
+          },
+          {
+            "id": "d42e1ca0-b91f-5a26-a340-e017457af964",
+            "name": "feedwater_tank__holding_readback__heating_setpoint",
+            "type": "Analog Input (Holding Register)",
+            "iecLocation": "%IW669",
+            "alias": "feedwater_tank__holding_readback__heating_setpoint"
+          },
+          {
+            "id": "62898419-6333-5510-a585-1ab2b63956e9",
+            "name": "feedwater_tank__holding_readback__reserved_30",
+            "type": "Analog Input (Holding Register)",
+            "iecLocation": "%IW670",
+            "alias": "feedwater_tank__holding_readback__reserved_30"
+          },
+          {
+            "id": "6f97e95f-8e85-55a7-a68b-d7584e48a24d",
+            "name": "feedwater_tank__holding_readback__reserved_31",
+            "type": "Analog Input (Holding Register)",
+            "iecLocation": "%IW671",
+            "alias": "feedwater_tank__holding_readback__reserved_31"
+          }
+        ]
+      },
+      {
+        "id": "0199863f-ae73-5e9f-8963-e249894fa98b",
+        "name": "feedwater_tank_coil_0_7",
+        "functionCode": "15",
+        "cycleTime": 100,
+        "offset": "0",
+        "length": 8,
+        "errorHandling": "keep-last-value",
+        "ioPoints": [
+          {
+            "id": "53e6e204-fe51-5872-aac4-5dd7deb2808a",
+            "name": "feedwater_tank__coil__start",
+            "type": "Digital Output (Multiple Coils)",
+            "iecLocation": "%QX4.0",
+            "alias": "feedwater_tank__coil__start"
+          },
+          {
+            "id": "343682c4-77a9-51c9-9ba5-9486c6579a03",
+            "name": "feedwater_tank__coil__stop",
+            "type": "Digital Output (Multiple Coils)",
+            "iecLocation": "%QX4.1",
+            "alias": "feedwater_tank__coil__stop"
+          },
+          {
+            "id": "ab82da7e-d054-5b66-be75-85eb1594aa9e",
+            "name": "feedwater_tank__coil__reset_trip",
+            "type": "Digital Output (Multiple Coils)",
+            "iecLocation": "%QX4.2",
+            "alias": "feedwater_tank__coil__reset_trip"
+          },
+          {
+            "id": "25a5ad66-5b5e-5c1f-882b-76ab4d705e1c",
+            "name": "feedwater_tank__coil__ack_alarm",
+            "type": "Digital Output (Multiple Coils)",
+            "iecLocation": "%QX4.3",
+            "alias": "feedwater_tank__coil__ack_alarm"
+          },
+          {
+            "id": "400209b6-ff8b-5aa9-a560-19b6cf7ea0cd",
+            "name": "feedwater_tank__coil__emergency_stop",
+            "type": "Digital Output (Multiple Coils)",
+            "iecLocation": "%QX4.4",
+            "alias": "feedwater_tank__coil__emergency_stop"
+          },
+          {
+            "id": "8e409df1-1ff4-5e4e-81c6-dfa493cc6d8e",
+            "name": "feedwater_tank__coil__force_safe",
+            "type": "Digital Output (Multiple Coils)",
+            "iecLocation": "%QX4.5",
+            "alias": "feedwater_tank__coil__force_safe"
+          },
+          {
+            "id": "c271d01e-9ac5-5370-84fd-8d1d4c19518f",
+            "name": "feedwater_tank__coil__trip_test",
+            "type": "Digital Output (Multiple Coils)",
+            "iecLocation": "%QX4.6",
+            "alias": "feedwater_tank__coil__trip_test"
+          },
+          {
+            "id": "ca3112b1-300c-559d-bcff-a21a7ad65fc9",
+            "name": "feedwater_tank__coil__clear_totalizer",
+            "type": "Digital Output (Multiple Coils)",
+            "iecLocation": "%QX4.7",
+            "alias": "feedwater_tank__coil__clear_totalizer"
+          }
+        ]
+      },
+      {
+        "id": "14eeaa98-439e-5ae5-8606-4e985c4ae00e",
+        "name": "feedwater_tank_holding_0_13",
+        "functionCode": "16",
+        "cycleTime": 100,
+        "offset": "0",
+        "length": 14,
+        "errorHandling": "keep-last-value",
+        "ioPoints": [
+          {
+            "id": "a7c1da2e-32af-5282-9a76-6436a0d1a85c",
+            "name": "feedwater_tank__holding__control_mode",
+            "type": "Analog Output (Multiple Registers)",
+            "iecLocation": "%QW128",
+            "alias": "feedwater_tank__holding__control_mode"
+          },
+          {
+            "id": "d6356a5a-22d8-5531-9de4-e41e8f0e3661",
+            "name": "feedwater_tank__holding__command_sequence",
+            "type": "Analog Output (Multiple Registers)",
+            "iecLocation": "%QW129",
+            "alias": "feedwater_tank__holding__command_sequence"
+          },
+          {
+            "id": "2f6da956-d499-5559-8d0d-29c97794a4b0",
+            "name": "feedwater_tank__holding__watchdog_counter",
+            "type": "Analog Output (Multiple Registers)",
+            "iecLocation": "%QW130",
+            "alias": "feedwater_tank__holding__watchdog_counter"
+          },
+          {
+            "id": "41430587-3535-5b31-b211-38e419507a37",
+            "name": "feedwater_tank__holding__reset_key",
+            "type": "Analog Output (Multiple Registers)",
+            "iecLocation": "%QW131",
+            "alias": "feedwater_tank__holding__reset_key"
+          },
+          {
+            "id": "0dcdd78e-f465-5956-bbb7-bc51663a19c0",
+            "name": "feedwater_tank__holding__simulation_flags",
+            "type": "Analog Output (Multiple Registers)",
+            "iecLocation": "%QW132",
+            "alias": "feedwater_tank__holding__simulation_flags"
+          },
+          {
+            "id": "3bef6427-7b48-55ee-a4d9-b1a87ec97f82",
+            "name": "feedwater_tank__holding__active_controller_id",
+            "type": "Analog Output (Multiple Registers)",
+            "iecLocation": "%QW133",
+            "alias": "feedwater_tank__holding__active_controller_id"
+          },
+          {
+            "id": "0191d476-08ac-542f-ac8d-e2233d62a222",
+            "name": "feedwater_tank__holding__command_lease_time",
+            "type": "Analog Output (Multiple Registers)",
+            "iecLocation": "%QW134",
+            "alias": "feedwater_tank__holding__command_lease_time"
+          },
+          {
+            "id": "429feb85-6634-56ba-bcae-d6b4de36d583",
+            "name": "feedwater_tank__holding__output_rate_limit",
+            "type": "Analog Output (Multiple Registers)",
+            "iecLocation": "%QW135",
+            "alias": "feedwater_tank__holding__output_rate_limit"
+          },
+          {
+            "id": "15b5a7dd-8e17-5d14-8459-fcba721e4f4e",
+            "name": "feedwater_tank__holding__reserved",
+            "type": "Analog Output (Multiple Registers)",
+            "iecLocation": "%QW136",
+            "alias": "feedwater_tank__holding__reserved"
+          },
+          {
+            "id": "aa148fe7-7ffa-5d29-884d-8d8ff0233931",
+            "name": "feedwater_tank__holding__primary_setpoint",
+            "type": "Analog Output (Multiple Registers)",
+            "iecLocation": "%QW137",
+            "alias": "feedwater_tank__holding__primary_setpoint"
+          },
+          {
+            "id": "c0773fc4-b901-5ae5-a97c-d52cb6b0b4a4",
+            "name": "feedwater_tank__holding__secondary_setpoint",
+            "type": "Analog Output (Multiple Registers)",
+            "iecLocation": "%QW138",
+            "alias": "feedwater_tank__holding__secondary_setpoint"
+          },
+          {
+            "id": "af08b27b-9c98-582e-ae43-16d971790e9d",
+            "name": "feedwater_tank__holding__manual_output",
+            "type": "Analog Output (Multiple Registers)",
+            "iecLocation": "%QW139",
+            "alias": "feedwater_tank__holding__manual_output"
+          },
+          {
+            "id": "eadd1f8d-298d-5aca-8601-f806a76eb1ab",
+            "name": "feedwater_tank__holding__output_high_limit",
+            "type": "Analog Output (Multiple Registers)",
+            "iecLocation": "%QW140",
+            "alias": "feedwater_tank__holding__output_high_limit"
+          },
+          {
+            "id": "29e0425d-ce72-598b-86d4-ea70ce806e46",
+            "name": "feedwater_tank__holding__output_low_limit",
+            "type": "Analog Output (Multiple Registers)",
+            "iecLocation": "%QW141",
+            "alias": "feedwater_tank__holding__output_low_limit"
+          }
+        ]
+      },
+      {
+        "id": "a00bd6c2-865d-5a5f-9c99-a43de34b6d1e",
+        "name": "feedwater_tank_holding_19_24",
+        "functionCode": "16",
+        "cycleTime": 100,
+        "offset": "19",
+        "length": 6,
+        "errorHandling": "keep-last-value",
+        "ioPoints": [
+          {
+            "id": "b388be85-a0ca-5a77-8ac9-566ef2f43688",
+            "name": "feedwater_tank__holding__pid_kp",
+            "type": "Analog Output (Multiple Registers)",
+            "iecLocation": "%QW147",
+            "alias": "feedwater_tank__holding__pid_kp"
+          },
+          {
+            "id": "368950d4-3ec0-5fa6-99f9-649ddb655601",
+            "name": "feedwater_tank__holding__pid_ki",
+            "type": "Analog Output (Multiple Registers)",
+            "iecLocation": "%QW148",
+            "alias": "feedwater_tank__holding__pid_ki"
+          },
+          {
+            "id": "9b32f9af-0587-590e-b2e0-5d7cd3a2f899",
+            "name": "feedwater_tank__holding__pid_kd",
+            "type": "Analog Output (Multiple Registers)",
+            "iecLocation": "%QW149",
+            "alias": "feedwater_tank__holding__pid_kd"
+          },
+          {
+            "id": "a2a7f0b9-c120-5649-830c-28d0fef423bb",
+            "name": "feedwater_tank__holding__deadband",
+            "type": "Analog Output (Multiple Registers)",
+            "iecLocation": "%QW150",
+            "alias": "feedwater_tank__holding__deadband"
+          },
+          {
+            "id": "b2102175-598f-5d12-a22c-f4c736615e26",
+            "name": "feedwater_tank__holding__integral_limit",
+            "type": "Analog Output (Multiple Registers)",
+            "iecLocation": "%QW151",
+            "alias": "feedwater_tank__holding__integral_limit"
+          },
+          {
+            "id": "107e6054-1e69-59d4-a91a-346aef9445cd",
+            "name": "feedwater_tank__holding__controller_scan_time",
+            "type": "Analog Output (Multiple Registers)",
+            "iecLocation": "%QW152",
+            "alias": "feedwater_tank__holding__controller_scan_time"
+          }
+        ]
+      },
+      {
+        "id": "970ee56d-881c-5ad1-ab4c-dcb009e47be5",
+        "name": "feedwater_tank_holding_29_29",
+        "functionCode": "16",
+        "cycleTime": 100,
+        "offset": "29",
+        "length": 1,
+        "errorHandling": "keep-last-value",
+        "ioPoints": [
+          {
+            "id": "818938a8-af9d-52c8-90d9-ec6ea0ce2f37",
+            "name": "feedwater_tank__holding__heating_setpoint",
+            "type": "Analog Output (Multiple Registers)",
+            "iecLocation": "%QW157",
+            "alias": "feedwater_tank__holding__heating_setpoint"
+          }
+        ]
+      }
+    ]
+  }
+}

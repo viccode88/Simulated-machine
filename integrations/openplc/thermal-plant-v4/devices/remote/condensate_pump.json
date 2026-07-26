@@ -1,0 +1,960 @@
+{
+  "name": "condensate_pump",
+  "protocol": "modbus-tcp",
+  "modbusTcpConfig": {
+    "host": "127.0.0.1",
+    "port": 15022,
+    "slaveId": 1,
+    "timeout": 1000,
+    "ioGroups": [
+      {
+        "id": "4e2fd3a0-30f7-5ecf-b5d1-f05bb34060a0",
+        "name": "condensate_pump_input_0_49",
+        "functionCode": "4",
+        "cycleTime": 250,
+        "offset": "0",
+        "length": 50,
+        "errorHandling": "keep-last-value",
+        "ioPoints": [
+          {
+            "id": "51aae05d-bdaa-5d64-b5fc-0f0717b4f0cf",
+            "name": "condensate_pump__input__status_word",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW64",
+            "alias": "condensate_pump__input__status_word"
+          },
+          {
+            "id": "dcf32c0e-6357-52d5-8b3b-c692c8327369",
+            "name": "condensate_pump__input__alarm_word_1",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW65",
+            "alias": "condensate_pump__input__alarm_word_1"
+          },
+          {
+            "id": "782ae14f-6d79-54fd-b108-193b60b9c5d4",
+            "name": "condensate_pump__input__alarm_word_2",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW66",
+            "alias": "condensate_pump__input__alarm_word_2"
+          },
+          {
+            "id": "6228ff38-d413-5a82-b64b-0a61aaf9e715",
+            "name": "condensate_pump__input__trip_word",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW67",
+            "alias": "condensate_pump__input__trip_word"
+          },
+          {
+            "id": "c289a0e7-2bf6-5f83-81d5-7aa87b942394",
+            "name": "condensate_pump__input__device_state",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW68",
+            "alias": "condensate_pump__input__device_state"
+          },
+          {
+            "id": "ee8ef276-3a38-538a-b9b8-688d424776de",
+            "name": "condensate_pump__input__first_out_code",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW69",
+            "alias": "condensate_pump__input__first_out_code"
+          },
+          {
+            "id": "56c1ab44-2823-511b-a9bb-7648dfa6c3fb",
+            "name": "condensate_pump__input__overall_quality",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW70",
+            "alias": "condensate_pump__input__overall_quality"
+          },
+          {
+            "id": "5a59ae4f-bbaa-5bd3-844f-61baea48dd78",
+            "name": "condensate_pump__input__register_map_version",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW71",
+            "alias": "condensate_pump__input__register_map_version"
+          },
+          {
+            "id": "3f3c87a9-4e5d-5fcc-a3cb-cd4f5f367316",
+            "name": "condensate_pump__input__firmware_version",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW72",
+            "alias": "condensate_pump__input__firmware_version"
+          },
+          {
+            "id": "6ba4d0fd-8cea-58bb-9bc9-df0cb9dcdb81",
+            "name": "condensate_pump__input__actual_speed",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW73",
+            "alias": "condensate_pump__input__actual_speed"
+          },
+          {
+            "id": "a8acb0a7-e091-571e-b5e1-799e81fd2960",
+            "name": "condensate_pump__input__flow",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW74",
+            "alias": "condensate_pump__input__flow"
+          },
+          {
+            "id": "07f812e9-0a34-5181-81cd-a26b805903c5",
+            "name": "condensate_pump__input__suction_pressure",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW75",
+            "alias": "condensate_pump__input__suction_pressure"
+          },
+          {
+            "id": "7fd8ec35-6a6d-571a-a0fd-64fd34e3801f",
+            "name": "condensate_pump__input__discharge_pressure",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW76",
+            "alias": "condensate_pump__input__discharge_pressure"
+          },
+          {
+            "id": "572bd744-7a53-5d47-8ce7-37c33354386b",
+            "name": "condensate_pump__input__motor_current",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW77",
+            "alias": "condensate_pump__input__motor_current"
+          },
+          {
+            "id": "464529ae-bcdc-58d5-9363-a14fef261298",
+            "name": "condensate_pump__input__npsh_margin",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW78",
+            "alias": "condensate_pump__input__npsh_margin"
+          },
+          {
+            "id": "fb9cc823-cd17-5c34-98be-a8daa9920981",
+            "name": "condensate_pump__input__vibration",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW79",
+            "alias": "condensate_pump__input__vibration"
+          },
+          {
+            "id": "e9249067-c6a5-53e4-ad11-b63cacbc7235",
+            "name": "condensate_pump__input__source_level",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW80",
+            "alias": "condensate_pump__input__source_level"
+          },
+          {
+            "id": "39f697dd-ac66-55d2-9d82-d8e53336fc84",
+            "name": "condensate_pump__input__backpressure",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW81",
+            "alias": "condensate_pump__input__backpressure"
+          },
+          {
+            "id": "431f7b0f-756a-5d62-b695-b3259bbec241",
+            "name": "condensate_pump__input__outlet_valve_position",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW82",
+            "alias": "condensate_pump__input__outlet_valve_position"
+          },
+          {
+            "id": "75e356d9-562c-5d3d-9ca7-91d224b8cfca",
+            "name": "condensate_pump__input__cavitation_factor",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW83",
+            "alias": "condensate_pump__input__cavitation_factor"
+          },
+          {
+            "id": "01924e92-c8e8-5382-ae22-05ebb6b9ffe6",
+            "name": "condensate_pump__input__reserved_20",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW84",
+            "alias": "condensate_pump__input__reserved_20"
+          },
+          {
+            "id": "8d6f1878-2ff0-5ece-913b-db613e1f77fe",
+            "name": "condensate_pump__input__reserved_21",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW85",
+            "alias": "condensate_pump__input__reserved_21"
+          },
+          {
+            "id": "3c2c0271-33bb-542b-85df-f97781b9fa19",
+            "name": "condensate_pump__input__reserved_22",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW86",
+            "alias": "condensate_pump__input__reserved_22"
+          },
+          {
+            "id": "3fb03878-afa0-5c4d-8d60-87c14a4025a2",
+            "name": "condensate_pump__input__reserved_23",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW87",
+            "alias": "condensate_pump__input__reserved_23"
+          },
+          {
+            "id": "ad248911-2bcf-5eb1-b5cf-9c17e52f3517",
+            "name": "condensate_pump__input__reserved_24",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW88",
+            "alias": "condensate_pump__input__reserved_24"
+          },
+          {
+            "id": "a2479de7-e224-5cae-af17-e7e780740ed6",
+            "name": "condensate_pump__input__reserved_25",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW89",
+            "alias": "condensate_pump__input__reserved_25"
+          },
+          {
+            "id": "68d38c2a-2fe7-5440-85a4-46be16a8d79c",
+            "name": "condensate_pump__input__reserved_26",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW90",
+            "alias": "condensate_pump__input__reserved_26"
+          },
+          {
+            "id": "7284d3ac-49d2-5aaa-90a0-327b0fd96fd0",
+            "name": "condensate_pump__input__reserved_27",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW91",
+            "alias": "condensate_pump__input__reserved_27"
+          },
+          {
+            "id": "a6001a0a-295b-50ae-b7d4-7697084ae241",
+            "name": "condensate_pump__input__reserved_28",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW92",
+            "alias": "condensate_pump__input__reserved_28"
+          },
+          {
+            "id": "0ab8dc4e-c07e-5852-9c8d-e61b80815b44",
+            "name": "condensate_pump__input__watchdog_echo",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW93",
+            "alias": "condensate_pump__input__watchdog_echo"
+          },
+          {
+            "id": "c9047663-6abd-591e-af4d-e1e480e440c1",
+            "name": "condensate_pump__input__scan_time_ms",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW94",
+            "alias": "condensate_pump__input__scan_time_ms"
+          },
+          {
+            "id": "4d84c5c4-7bff-53b7-814e-d05b4a717190",
+            "name": "condensate_pump__input__modbus_request_count",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW95",
+            "alias": "condensate_pump__input__modbus_request_count"
+          },
+          {
+            "id": "1155eac3-d16d-5e0b-8d28-7befc75754ab",
+            "name": "condensate_pump__input__rejected_command_count",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW96",
+            "alias": "condensate_pump__input__rejected_command_count"
+          },
+          {
+            "id": "9581648c-6bfb-5e26-bf02-346144404c9b",
+            "name": "condensate_pump__input__exception_count",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW97",
+            "alias": "condensate_pump__input__exception_count"
+          },
+          {
+            "id": "42309440-bf44-5925-b5d3-2baa1d40cbca",
+            "name": "condensate_pump__input__sim_quality_word",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW98",
+            "alias": "condensate_pump__input__sim_quality_word"
+          },
+          {
+            "id": "626a59b5-1783-5909-81ad-77caa220e575",
+            "name": "condensate_pump__input__sim_tick_low",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW99",
+            "alias": "condensate_pump__input__sim_tick_low"
+          },
+          {
+            "id": "cf9b75d4-53dc-5045-b4b3-20ad27099cc4",
+            "name": "condensate_pump__input__comm_loss_seconds",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW100",
+            "alias": "condensate_pump__input__comm_loss_seconds"
+          },
+          {
+            "id": "141169ed-9f54-58bb-bc61-d6be06a0a4bb",
+            "name": "condensate_pump__input__fault_inject_word",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW101",
+            "alias": "condensate_pump__input__fault_inject_word"
+          },
+          {
+            "id": "85ef1793-a35b-5d25-94b5-85cbcb2c9197",
+            "name": "condensate_pump__input__snapshot_generation",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW102",
+            "alias": "condensate_pump__input__snapshot_generation"
+          },
+          {
+            "id": "262c2b74-0f4d-543e-b9a1-5cf75b3ab86b",
+            "name": "condensate_pump__input__run_seconds_hi",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW103",
+            "alias": "condensate_pump__input__run_seconds_hi"
+          },
+          {
+            "id": "2f138596-37eb-59f7-b8aa-2648438a2bd2",
+            "name": "condensate_pump__input__run_seconds_lo",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW104",
+            "alias": "condensate_pump__input__run_seconds_lo"
+          },
+          {
+            "id": "eea79c5b-3eae-59ea-a681-ab3b472f12e3",
+            "name": "condensate_pump__input__start_count",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW105",
+            "alias": "condensate_pump__input__start_count"
+          },
+          {
+            "id": "65256023-2a56-519e-b528-450018452109",
+            "name": "condensate_pump__input__trip_count",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW106",
+            "alias": "condensate_pump__input__trip_count"
+          },
+          {
+            "id": "2b009096-e0b3-545a-beef-e526cb1e9bf6",
+            "name": "condensate_pump__input__mass_total_hi",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW107",
+            "alias": "condensate_pump__input__mass_total_hi"
+          },
+          {
+            "id": "3fa03a36-40b3-59fe-b47e-619e1b47a9df",
+            "name": "condensate_pump__input__mass_total_lo",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW108",
+            "alias": "condensate_pump__input__mass_total_lo"
+          },
+          {
+            "id": "fd1bf5cc-526a-56f0-b77c-cffdd1faf644",
+            "name": "condensate_pump__input__energy_total_hi",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW109",
+            "alias": "condensate_pump__input__energy_total_hi"
+          },
+          {
+            "id": "e3a218bd-39ed-5838-b4d5-b5d3c675efc5",
+            "name": "condensate_pump__input__energy_total_lo",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW110",
+            "alias": "condensate_pump__input__energy_total_lo"
+          },
+          {
+            "id": "e4f18464-41f6-5fae-8bac-a50d7ad1ee02",
+            "name": "condensate_pump__input__alarm_count",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW111",
+            "alias": "condensate_pump__input__alarm_count"
+          },
+          {
+            "id": "af56fc70-33af-5cd6-93d5-73f71c0932fe",
+            "name": "condensate_pump__input__accepted_command_count",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW112",
+            "alias": "condensate_pump__input__accepted_command_count"
+          },
+          {
+            "id": "63ee8c96-19c6-5ac8-8f21-264a0961c070",
+            "name": "condensate_pump__input__reserved_49",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW113",
+            "alias": "condensate_pump__input__reserved_49"
+          }
+        ]
+      },
+      {
+        "id": "66a2c8ca-a7d8-52e6-9c83-0e0ecc6b7b86",
+        "name": "condensate_pump_discrete_0_15",
+        "functionCode": "2",
+        "cycleTime": 250,
+        "offset": "0",
+        "length": 16,
+        "errorHandling": "keep-last-value",
+        "ioPoints": [
+          {
+            "id": "4eaa45a9-e06c-563a-a7ba-43406d88b7ee",
+            "name": "condensate_pump__discrete__ready",
+            "type": "Digital Input (Discrete Input)",
+            "iecLocation": "%IX2.0",
+            "alias": "condensate_pump__discrete__ready"
+          },
+          {
+            "id": "20e94ab0-e2c0-5ddd-9cb4-28d7046876ef",
+            "name": "condensate_pump__discrete__running",
+            "type": "Digital Input (Discrete Input)",
+            "iecLocation": "%IX2.1",
+            "alias": "condensate_pump__discrete__running"
+          },
+          {
+            "id": "9ecf0b46-6ebb-529e-bf9d-bb9c5bfff002",
+            "name": "condensate_pump__discrete__starting",
+            "type": "Digital Input (Discrete Input)",
+            "iecLocation": "%IX2.2",
+            "alias": "condensate_pump__discrete__starting"
+          },
+          {
+            "id": "14124626-f76f-5f95-85b8-82cf438b74a7",
+            "name": "condensate_pump__discrete__stopping",
+            "type": "Digital Input (Discrete Input)",
+            "iecLocation": "%IX2.3",
+            "alias": "condensate_pump__discrete__stopping"
+          },
+          {
+            "id": "abfa3ad4-59c6-598d-a357-0b853d78179c",
+            "name": "condensate_pump__discrete__tripped",
+            "type": "Digital Input (Discrete Input)",
+            "iecLocation": "%IX2.4",
+            "alias": "condensate_pump__discrete__tripped"
+          },
+          {
+            "id": "23ce7aee-2f1a-5422-94e9-42f94f4ccc90",
+            "name": "condensate_pump__discrete__alarm_active",
+            "type": "Digital Input (Discrete Input)",
+            "iecLocation": "%IX2.5",
+            "alias": "condensate_pump__discrete__alarm_active"
+          },
+          {
+            "id": "f20a7438-a43e-5f7e-b656-99dd88adf58b",
+            "name": "condensate_pump__discrete__local_mode",
+            "type": "Digital Input (Discrete Input)",
+            "iecLocation": "%IX2.6",
+            "alias": "condensate_pump__discrete__local_mode"
+          },
+          {
+            "id": "635f277c-926c-51da-a545-3ca3795f6e7c",
+            "name": "condensate_pump__discrete__remote_mode",
+            "type": "Digital Input (Discrete Input)",
+            "iecLocation": "%IX2.7",
+            "alias": "condensate_pump__discrete__remote_mode"
+          },
+          {
+            "id": "be64b8e9-b824-5d1a-ad53-fa3e34b7fae3",
+            "name": "condensate_pump__discrete__auto_mode",
+            "type": "Digital Input (Discrete Input)",
+            "iecLocation": "%IX3.0",
+            "alias": "condensate_pump__discrete__auto_mode"
+          },
+          {
+            "id": "7aedfd69-c20c-53b7-84c6-a5294e6ff4b2",
+            "name": "condensate_pump__discrete__manual_mode",
+            "type": "Digital Input (Discrete Input)",
+            "iecLocation": "%IX3.1",
+            "alias": "condensate_pump__discrete__manual_mode"
+          },
+          {
+            "id": "83698f7b-a705-54fe-ba2b-c95cebbac26c",
+            "name": "condensate_pump__discrete__control_watchdog_ok",
+            "type": "Digital Input (Discrete Input)",
+            "iecLocation": "%IX3.2",
+            "alias": "condensate_pump__discrete__control_watchdog_ok"
+          },
+          {
+            "id": "a61afbd2-9a8a-57f3-894c-01557a516390",
+            "name": "condensate_pump__discrete__sim_bus_ok",
+            "type": "Digital Input (Discrete Input)",
+            "iecLocation": "%IX3.3",
+            "alias": "condensate_pump__discrete__sim_bus_ok"
+          },
+          {
+            "id": "4892e166-8b0e-54e4-a49c-892dd74e8189",
+            "name": "condensate_pump__discrete__interlocks_ok",
+            "type": "Digital Input (Discrete Input)",
+            "iecLocation": "%IX3.4",
+            "alias": "condensate_pump__discrete__interlocks_ok"
+          },
+          {
+            "id": "5c684830-d11b-560d-b5f2-38551f375d1e",
+            "name": "condensate_pump__discrete__sensor_fault",
+            "type": "Digital Input (Discrete Input)",
+            "iecLocation": "%IX3.5",
+            "alias": "condensate_pump__discrete__sensor_fault"
+          },
+          {
+            "id": "82f29df2-7d51-5d99-a268-a606d2ee8c31",
+            "name": "condensate_pump__discrete__actuator_fault",
+            "type": "Digital Input (Discrete Input)",
+            "iecLocation": "%IX3.6",
+            "alias": "condensate_pump__discrete__actuator_fault"
+          },
+          {
+            "id": "6e1bc2cf-b5be-5906-9d58-ad683c228f62",
+            "name": "condensate_pump__discrete__maintenance_mode",
+            "type": "Digital Input (Discrete Input)",
+            "iecLocation": "%IX3.7",
+            "alias": "condensate_pump__discrete__maintenance_mode"
+          }
+        ]
+      },
+      {
+        "id": "962c6a56-7377-59c7-99c6-045c43878a91",
+        "name": "condensate_pump_holding_readback_0_31",
+        "functionCode": "3",
+        "cycleTime": 250,
+        "offset": "0",
+        "length": 32,
+        "errorHandling": "keep-last-value",
+        "ioPoints": [
+          {
+            "id": "01226d79-c1e8-51da-8386-2b0f40bb6613",
+            "name": "condensate_pump__holding_readback__control_mode",
+            "type": "Analog Input (Holding Register)",
+            "iecLocation": "%IW576",
+            "alias": "condensate_pump__holding_readback__control_mode"
+          },
+          {
+            "id": "5941dad7-a8cc-5888-ac02-5f736c838762",
+            "name": "condensate_pump__holding_readback__command_sequence",
+            "type": "Analog Input (Holding Register)",
+            "iecLocation": "%IW577",
+            "alias": "condensate_pump__holding_readback__command_sequence"
+          },
+          {
+            "id": "b4cca294-39fa-5e8d-b488-dfa929955aeb",
+            "name": "condensate_pump__holding_readback__watchdog_counter",
+            "type": "Analog Input (Holding Register)",
+            "iecLocation": "%IW578",
+            "alias": "condensate_pump__holding_readback__watchdog_counter"
+          },
+          {
+            "id": "16cd06cc-c850-5bef-a459-aeae55d9cef8",
+            "name": "condensate_pump__holding_readback__reset_key",
+            "type": "Analog Input (Holding Register)",
+            "iecLocation": "%IW579",
+            "alias": "condensate_pump__holding_readback__reset_key"
+          },
+          {
+            "id": "6a832fc2-59e4-5c25-9d20-095737f85aa5",
+            "name": "condensate_pump__holding_readback__simulation_flags",
+            "type": "Analog Input (Holding Register)",
+            "iecLocation": "%IW580",
+            "alias": "condensate_pump__holding_readback__simulation_flags"
+          },
+          {
+            "id": "34e9dd5c-f38b-57b8-82d0-1a023ea76332",
+            "name": "condensate_pump__holding_readback__active_controller_id",
+            "type": "Analog Input (Holding Register)",
+            "iecLocation": "%IW581",
+            "alias": "condensate_pump__holding_readback__active_controller_id"
+          },
+          {
+            "id": "85cadcf8-75a7-5380-8d9a-410172a1b880",
+            "name": "condensate_pump__holding_readback__command_lease_time",
+            "type": "Analog Input (Holding Register)",
+            "iecLocation": "%IW582",
+            "alias": "condensate_pump__holding_readback__command_lease_time"
+          },
+          {
+            "id": "44131c4a-44aa-5119-9863-9aa3bbcf877a",
+            "name": "condensate_pump__holding_readback__output_rate_limit",
+            "type": "Analog Input (Holding Register)",
+            "iecLocation": "%IW583",
+            "alias": "condensate_pump__holding_readback__output_rate_limit"
+          },
+          {
+            "id": "874d8804-881b-55a3-b524-765d82495d20",
+            "name": "condensate_pump__holding_readback__reserved",
+            "type": "Analog Input (Holding Register)",
+            "iecLocation": "%IW584",
+            "alias": "condensate_pump__holding_readback__reserved"
+          },
+          {
+            "id": "216130d9-8aad-5c08-ac3e-f80ffa852165",
+            "name": "condensate_pump__holding_readback__primary_setpoint",
+            "type": "Analog Input (Holding Register)",
+            "iecLocation": "%IW585",
+            "alias": "condensate_pump__holding_readback__primary_setpoint"
+          },
+          {
+            "id": "22957d0e-5a13-522e-a97c-8157df85451e",
+            "name": "condensate_pump__holding_readback__secondary_setpoint",
+            "type": "Analog Input (Holding Register)",
+            "iecLocation": "%IW586",
+            "alias": "condensate_pump__holding_readback__secondary_setpoint"
+          },
+          {
+            "id": "d3375480-b9c3-5fe6-a0d1-ee6a967da45b",
+            "name": "condensate_pump__holding_readback__manual_output",
+            "type": "Analog Input (Holding Register)",
+            "iecLocation": "%IW587",
+            "alias": "condensate_pump__holding_readback__manual_output"
+          },
+          {
+            "id": "203d34ff-a619-52a7-98a8-bb9e7e2b8dd2",
+            "name": "condensate_pump__holding_readback__output_high_limit",
+            "type": "Analog Input (Holding Register)",
+            "iecLocation": "%IW588",
+            "alias": "condensate_pump__holding_readback__output_high_limit"
+          },
+          {
+            "id": "0aaf7644-5a58-5d3c-bfce-3a24b4e0d763",
+            "name": "condensate_pump__holding_readback__output_low_limit",
+            "type": "Analog Input (Holding Register)",
+            "iecLocation": "%IW589",
+            "alias": "condensate_pump__holding_readback__output_low_limit"
+          },
+          {
+            "id": "2f740792-d7f4-57e9-9f25-bea81a5d19a7",
+            "name": "condensate_pump__holding_readback__reserved_14",
+            "type": "Analog Input (Holding Register)",
+            "iecLocation": "%IW590",
+            "alias": "condensate_pump__holding_readback__reserved_14"
+          },
+          {
+            "id": "a8731cdf-5d7c-5944-a374-58f20b3bb3d8",
+            "name": "condensate_pump__holding_readback__reserved_15",
+            "type": "Analog Input (Holding Register)",
+            "iecLocation": "%IW591",
+            "alias": "condensate_pump__holding_readback__reserved_15"
+          },
+          {
+            "id": "a1bb40ef-8089-57bb-86bd-782237f6a0e6",
+            "name": "condensate_pump__holding_readback__reserved_16",
+            "type": "Analog Input (Holding Register)",
+            "iecLocation": "%IW592",
+            "alias": "condensate_pump__holding_readback__reserved_16"
+          },
+          {
+            "id": "7f747c0e-0ed1-5d42-a129-6aa70dcd821f",
+            "name": "condensate_pump__holding_readback__reserved_17",
+            "type": "Analog Input (Holding Register)",
+            "iecLocation": "%IW593",
+            "alias": "condensate_pump__holding_readback__reserved_17"
+          },
+          {
+            "id": "40f12884-de33-56e3-a248-bad492a541fe",
+            "name": "condensate_pump__holding_readback__reserved_18",
+            "type": "Analog Input (Holding Register)",
+            "iecLocation": "%IW594",
+            "alias": "condensate_pump__holding_readback__reserved_18"
+          },
+          {
+            "id": "ba4c464b-6ac3-5e7c-83e6-f65ee17469a6",
+            "name": "condensate_pump__holding_readback__pid_kp",
+            "type": "Analog Input (Holding Register)",
+            "iecLocation": "%IW595",
+            "alias": "condensate_pump__holding_readback__pid_kp"
+          },
+          {
+            "id": "679b46f5-a316-58f5-9f5e-97b1382457f4",
+            "name": "condensate_pump__holding_readback__pid_ki",
+            "type": "Analog Input (Holding Register)",
+            "iecLocation": "%IW596",
+            "alias": "condensate_pump__holding_readback__pid_ki"
+          },
+          {
+            "id": "6b2678cc-77fa-518a-b961-769b7ca974ca",
+            "name": "condensate_pump__holding_readback__pid_kd",
+            "type": "Analog Input (Holding Register)",
+            "iecLocation": "%IW597",
+            "alias": "condensate_pump__holding_readback__pid_kd"
+          },
+          {
+            "id": "7b88273d-af5a-54b0-96e8-12a533b15ad8",
+            "name": "condensate_pump__holding_readback__deadband",
+            "type": "Analog Input (Holding Register)",
+            "iecLocation": "%IW598",
+            "alias": "condensate_pump__holding_readback__deadband"
+          },
+          {
+            "id": "a4fcbfd6-994b-5fbd-a9b9-82ff01ebd7df",
+            "name": "condensate_pump__holding_readback__integral_limit",
+            "type": "Analog Input (Holding Register)",
+            "iecLocation": "%IW599",
+            "alias": "condensate_pump__holding_readback__integral_limit"
+          },
+          {
+            "id": "756bff70-14e8-5299-905f-aa1cf1f134ab",
+            "name": "condensate_pump__holding_readback__controller_scan_time",
+            "type": "Analog Input (Holding Register)",
+            "iecLocation": "%IW600",
+            "alias": "condensate_pump__holding_readback__controller_scan_time"
+          },
+          {
+            "id": "133f4c2d-a637-5bd6-b175-b978a5e1f10b",
+            "name": "condensate_pump__holding_readback__reserved_25",
+            "type": "Analog Input (Holding Register)",
+            "iecLocation": "%IW601",
+            "alias": "condensate_pump__holding_readback__reserved_25"
+          },
+          {
+            "id": "a2ea753f-2991-5e96-962c-ab80f689fce8",
+            "name": "condensate_pump__holding_readback__reserved_26",
+            "type": "Analog Input (Holding Register)",
+            "iecLocation": "%IW602",
+            "alias": "condensate_pump__holding_readback__reserved_26"
+          },
+          {
+            "id": "6a726019-4f1b-55c8-b6c6-dd81c921bdbc",
+            "name": "condensate_pump__holding_readback__reserved_27",
+            "type": "Analog Input (Holding Register)",
+            "iecLocation": "%IW603",
+            "alias": "condensate_pump__holding_readback__reserved_27"
+          },
+          {
+            "id": "27e50949-641f-547b-a966-c77239bfda5d",
+            "name": "condensate_pump__holding_readback__reserved_28",
+            "type": "Analog Input (Holding Register)",
+            "iecLocation": "%IW604",
+            "alias": "condensate_pump__holding_readback__reserved_28"
+          },
+          {
+            "id": "1e410062-25d4-5f93-934a-368e1c2447a9",
+            "name": "condensate_pump__holding_readback__reserved_29",
+            "type": "Analog Input (Holding Register)",
+            "iecLocation": "%IW605",
+            "alias": "condensate_pump__holding_readback__reserved_29"
+          },
+          {
+            "id": "77613018-15c0-596b-b730-f8d59388dcbb",
+            "name": "condensate_pump__holding_readback__reserved_30",
+            "type": "Analog Input (Holding Register)",
+            "iecLocation": "%IW606",
+            "alias": "condensate_pump__holding_readback__reserved_30"
+          },
+          {
+            "id": "24677ecd-d9c0-59a0-b9c0-1bc58505a9a1",
+            "name": "condensate_pump__holding_readback__reserved_31",
+            "type": "Analog Input (Holding Register)",
+            "iecLocation": "%IW607",
+            "alias": "condensate_pump__holding_readback__reserved_31"
+          }
+        ]
+      },
+      {
+        "id": "b77c9808-f9d0-57a7-8678-c69db4930374",
+        "name": "condensate_pump_coil_0_7",
+        "functionCode": "15",
+        "cycleTime": 100,
+        "offset": "0",
+        "length": 8,
+        "errorHandling": "keep-last-value",
+        "ioPoints": [
+          {
+            "id": "331f5add-21a8-56f8-a927-93d8503d2da5",
+            "name": "condensate_pump__coil__start",
+            "type": "Digital Output (Multiple Coils)",
+            "iecLocation": "%QX2.0",
+            "alias": "condensate_pump__coil__start"
+          },
+          {
+            "id": "8d3bfb72-a764-571e-bc46-9dd93d60115d",
+            "name": "condensate_pump__coil__stop",
+            "type": "Digital Output (Multiple Coils)",
+            "iecLocation": "%QX2.1",
+            "alias": "condensate_pump__coil__stop"
+          },
+          {
+            "id": "f98445e2-0c1d-5927-b6e1-d4433715c1e7",
+            "name": "condensate_pump__coil__reset_trip",
+            "type": "Digital Output (Multiple Coils)",
+            "iecLocation": "%QX2.2",
+            "alias": "condensate_pump__coil__reset_trip"
+          },
+          {
+            "id": "d0de8942-b72b-55a4-a66b-6ef3aaf825c6",
+            "name": "condensate_pump__coil__ack_alarm",
+            "type": "Digital Output (Multiple Coils)",
+            "iecLocation": "%QX2.3",
+            "alias": "condensate_pump__coil__ack_alarm"
+          },
+          {
+            "id": "374705cf-50c0-5265-8bb9-eeb57134a41c",
+            "name": "condensate_pump__coil__emergency_stop",
+            "type": "Digital Output (Multiple Coils)",
+            "iecLocation": "%QX2.4",
+            "alias": "condensate_pump__coil__emergency_stop"
+          },
+          {
+            "id": "03d623cd-c889-58cf-ad54-a77dce4ef6ff",
+            "name": "condensate_pump__coil__force_safe",
+            "type": "Digital Output (Multiple Coils)",
+            "iecLocation": "%QX2.5",
+            "alias": "condensate_pump__coil__force_safe"
+          },
+          {
+            "id": "6a278885-e474-5a59-b5fd-bbd752e1acf7",
+            "name": "condensate_pump__coil__trip_test",
+            "type": "Digital Output (Multiple Coils)",
+            "iecLocation": "%QX2.6",
+            "alias": "condensate_pump__coil__trip_test"
+          },
+          {
+            "id": "90989116-08bc-5858-a2c7-41559b58b00e",
+            "name": "condensate_pump__coil__clear_totalizer",
+            "type": "Digital Output (Multiple Coils)",
+            "iecLocation": "%QX2.7",
+            "alias": "condensate_pump__coil__clear_totalizer"
+          }
+        ]
+      },
+      {
+        "id": "a7ff26f2-cf75-54e8-bab6-2bb5ed0fc34d",
+        "name": "condensate_pump_holding_0_13",
+        "functionCode": "16",
+        "cycleTime": 100,
+        "offset": "0",
+        "length": 14,
+        "errorHandling": "keep-last-value",
+        "ioPoints": [
+          {
+            "id": "3ddd2e37-dc93-5867-8279-c177a3eeb74a",
+            "name": "condensate_pump__holding__control_mode",
+            "type": "Analog Output (Multiple Registers)",
+            "iecLocation": "%QW64",
+            "alias": "condensate_pump__holding__control_mode"
+          },
+          {
+            "id": "e61bde61-cc57-524e-97ac-97bd79efda71",
+            "name": "condensate_pump__holding__command_sequence",
+            "type": "Analog Output (Multiple Registers)",
+            "iecLocation": "%QW65",
+            "alias": "condensate_pump__holding__command_sequence"
+          },
+          {
+            "id": "a131d425-934d-59c9-b4c0-2eb8f51df3fa",
+            "name": "condensate_pump__holding__watchdog_counter",
+            "type": "Analog Output (Multiple Registers)",
+            "iecLocation": "%QW66",
+            "alias": "condensate_pump__holding__watchdog_counter"
+          },
+          {
+            "id": "f5c6c349-7ba7-5300-883c-315c68bcd745",
+            "name": "condensate_pump__holding__reset_key",
+            "type": "Analog Output (Multiple Registers)",
+            "iecLocation": "%QW67",
+            "alias": "condensate_pump__holding__reset_key"
+          },
+          {
+            "id": "0ac4a710-30f0-5d19-a2c8-ac9ee6b28ad5",
+            "name": "condensate_pump__holding__simulation_flags",
+            "type": "Analog Output (Multiple Registers)",
+            "iecLocation": "%QW68",
+            "alias": "condensate_pump__holding__simulation_flags"
+          },
+          {
+            "id": "1dc2c10f-40b5-5c8f-b796-756c23386634",
+            "name": "condensate_pump__holding__active_controller_id",
+            "type": "Analog Output (Multiple Registers)",
+            "iecLocation": "%QW69",
+            "alias": "condensate_pump__holding__active_controller_id"
+          },
+          {
+            "id": "da7c03ca-c152-5af6-b378-f523fcbdffd8",
+            "name": "condensate_pump__holding__command_lease_time",
+            "type": "Analog Output (Multiple Registers)",
+            "iecLocation": "%QW70",
+            "alias": "condensate_pump__holding__command_lease_time"
+          },
+          {
+            "id": "4168b74e-0aa7-5336-92dd-262d149559a2",
+            "name": "condensate_pump__holding__output_rate_limit",
+            "type": "Analog Output (Multiple Registers)",
+            "iecLocation": "%QW71",
+            "alias": "condensate_pump__holding__output_rate_limit"
+          },
+          {
+            "id": "66167346-e885-5908-963f-2f71d5cf590a",
+            "name": "condensate_pump__holding__reserved",
+            "type": "Analog Output (Multiple Registers)",
+            "iecLocation": "%QW72",
+            "alias": "condensate_pump__holding__reserved"
+          },
+          {
+            "id": "29360263-458e-51cf-bb21-f3bf8e98310a",
+            "name": "condensate_pump__holding__primary_setpoint",
+            "type": "Analog Output (Multiple Registers)",
+            "iecLocation": "%QW73",
+            "alias": "condensate_pump__holding__primary_setpoint"
+          },
+          {
+            "id": "0494968a-3563-5bfe-8b92-93b2167c648f",
+            "name": "condensate_pump__holding__secondary_setpoint",
+            "type": "Analog Output (Multiple Registers)",
+            "iecLocation": "%QW74",
+            "alias": "condensate_pump__holding__secondary_setpoint"
+          },
+          {
+            "id": "f61c6901-620f-55d3-975f-11c19797e73c",
+            "name": "condensate_pump__holding__manual_output",
+            "type": "Analog Output (Multiple Registers)",
+            "iecLocation": "%QW75",
+            "alias": "condensate_pump__holding__manual_output"
+          },
+          {
+            "id": "fec7979d-7123-514e-a1a2-f26f7d03d7e6",
+            "name": "condensate_pump__holding__output_high_limit",
+            "type": "Analog Output (Multiple Registers)",
+            "iecLocation": "%QW76",
+            "alias": "condensate_pump__holding__output_high_limit"
+          },
+          {
+            "id": "ecef9fc4-4c35-51e4-8067-761aebd58699",
+            "name": "condensate_pump__holding__output_low_limit",
+            "type": "Analog Output (Multiple Registers)",
+            "iecLocation": "%QW77",
+            "alias": "condensate_pump__holding__output_low_limit"
+          }
+        ]
+      },
+      {
+        "id": "5c642018-f7a1-5dec-8d74-d4b16c12bc30",
+        "name": "condensate_pump_holding_19_24",
+        "functionCode": "16",
+        "cycleTime": 100,
+        "offset": "19",
+        "length": 6,
+        "errorHandling": "keep-last-value",
+        "ioPoints": [
+          {
+            "id": "514a34b5-4156-5dda-9067-032140fd9408",
+            "name": "condensate_pump__holding__pid_kp",
+            "type": "Analog Output (Multiple Registers)",
+            "iecLocation": "%QW83",
+            "alias": "condensate_pump__holding__pid_kp"
+          },
+          {
+            "id": "2e737369-1f9b-5fdc-b025-8a44ece3b23e",
+            "name": "condensate_pump__holding__pid_ki",
+            "type": "Analog Output (Multiple Registers)",
+            "iecLocation": "%QW84",
+            "alias": "condensate_pump__holding__pid_ki"
+          },
+          {
+            "id": "486c95ab-3bd5-5d8f-9f55-201234b900be",
+            "name": "condensate_pump__holding__pid_kd",
+            "type": "Analog Output (Multiple Registers)",
+            "iecLocation": "%QW85",
+            "alias": "condensate_pump__holding__pid_kd"
+          },
+          {
+            "id": "1ec1e8ff-5417-587b-8d92-8aa20feb9a35",
+            "name": "condensate_pump__holding__deadband",
+            "type": "Analog Output (Multiple Registers)",
+            "iecLocation": "%QW86",
+            "alias": "condensate_pump__holding__deadband"
+          },
+          {
+            "id": "9f2c2dde-d5f9-5b52-9d9a-713fbd5245c7",
+            "name": "condensate_pump__holding__integral_limit",
+            "type": "Analog Output (Multiple Registers)",
+            "iecLocation": "%QW87",
+            "alias": "condensate_pump__holding__integral_limit"
+          },
+          {
+            "id": "5317434a-f8df-5aab-8275-91fc716d245f",
+            "name": "condensate_pump__holding__controller_scan_time",
+            "type": "Analog Output (Multiple Registers)",
+            "iecLocation": "%QW88",
+            "alias": "condensate_pump__holding__controller_scan_time"
+          }
+        ]
+      }
+    ]
+  }
+}

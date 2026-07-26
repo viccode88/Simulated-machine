@@ -1,0 +1,978 @@
+{
+  "name": "boiler",
+  "protocol": "modbus-tcp",
+  "modbusTcpConfig": {
+    "host": "127.0.0.1",
+    "port": 15025,
+    "slaveId": 1,
+    "timeout": 1000,
+    "ioGroups": [
+      {
+        "id": "d3a63095-5468-55b6-bb57-f438382b63f2",
+        "name": "boiler_input_0_49",
+        "functionCode": "4",
+        "cycleTime": 250,
+        "offset": "0",
+        "length": 50,
+        "errorHandling": "keep-last-value",
+        "ioPoints": [
+          {
+            "id": "9f25f3f5-a811-58ff-9c12-dc06f4b57e39",
+            "name": "boiler__input__status_word",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW256",
+            "alias": "boiler__input__status_word"
+          },
+          {
+            "id": "cc028673-e727-54b4-8bbf-55bc68f4054b",
+            "name": "boiler__input__alarm_word_1",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW257",
+            "alias": "boiler__input__alarm_word_1"
+          },
+          {
+            "id": "3719e8c5-f430-5c32-9375-30c15d80b798",
+            "name": "boiler__input__alarm_word_2",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW258",
+            "alias": "boiler__input__alarm_word_2"
+          },
+          {
+            "id": "b332ef0d-7372-568d-8967-b81677ceab51",
+            "name": "boiler__input__trip_word",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW259",
+            "alias": "boiler__input__trip_word"
+          },
+          {
+            "id": "2b2be71b-2a13-5be6-b953-5d3a2086fa4b",
+            "name": "boiler__input__device_state",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW260",
+            "alias": "boiler__input__device_state"
+          },
+          {
+            "id": "e74ac117-b6f5-5e37-80d8-7a971a936184",
+            "name": "boiler__input__first_out_code",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW261",
+            "alias": "boiler__input__first_out_code"
+          },
+          {
+            "id": "3e7650be-ccdf-565c-adf5-39e2d1980919",
+            "name": "boiler__input__overall_quality",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW262",
+            "alias": "boiler__input__overall_quality"
+          },
+          {
+            "id": "1a529325-4af4-5534-9e20-0517973f0ec9",
+            "name": "boiler__input__register_map_version",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW263",
+            "alias": "boiler__input__register_map_version"
+          },
+          {
+            "id": "39a48940-3299-50f3-b2ab-0dbf7d5e8551",
+            "name": "boiler__input__firmware_version",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW264",
+            "alias": "boiler__input__firmware_version"
+          },
+          {
+            "id": "d084c098-f5f0-59b5-849e-da5f3de1deb3",
+            "name": "boiler__input__boiler_pressure",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW265",
+            "alias": "boiler__input__boiler_pressure"
+          },
+          {
+            "id": "5d18d976-0157-5186-9955-6a1379229547",
+            "name": "boiler__input__level_indicated",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW266",
+            "alias": "boiler__input__level_indicated"
+          },
+          {
+            "id": "4d85d0b2-a500-5c01-98b9-fe263f75697b",
+            "name": "boiler__input__level_actual",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW267",
+            "alias": "boiler__input__level_actual"
+          },
+          {
+            "id": "33984b2f-28ef-51ab-9ab7-bc6a3ae0b740",
+            "name": "boiler__input__feedwater_flow",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW268",
+            "alias": "boiler__input__feedwater_flow"
+          },
+          {
+            "id": "79a4ab94-7ecd-5c91-a974-306e18698c01",
+            "name": "boiler__input__steam_generation",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW269",
+            "alias": "boiler__input__steam_generation"
+          },
+          {
+            "id": "dbd905c8-fa9a-5f4c-ae7d-a7d24e4972fd",
+            "name": "boiler__input__steam_outflow",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW270",
+            "alias": "boiler__input__steam_outflow"
+          },
+          {
+            "id": "f5c89d40-c8d2-58eb-ad83-9d7e880fe302",
+            "name": "boiler__input__burner_output",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW271",
+            "alias": "boiler__input__burner_output"
+          },
+          {
+            "id": "27f5f80d-3e4a-55e1-98fc-7ef020369a1f",
+            "name": "boiler__input__steam_temperature",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW272",
+            "alias": "boiler__input__steam_temperature"
+          },
+          {
+            "id": "c18933df-6146-589a-a1f1-a23cc19fb773",
+            "name": "boiler__input__water_mass_hi",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW273",
+            "alias": "boiler__input__water_mass_hi"
+          },
+          {
+            "id": "3b0497f1-76f0-5cbe-8db9-bc578592070c",
+            "name": "boiler__input__water_mass_lo",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW274",
+            "alias": "boiler__input__water_mass_lo"
+          },
+          {
+            "id": "36dfae07-3bde-5fcc-981e-bdd38c7a6f22",
+            "name": "boiler__input__flame_status",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW275",
+            "alias": "boiler__input__flame_status"
+          },
+          {
+            "id": "5313d86d-65d0-53f8-a141-36186755cfe6",
+            "name": "boiler__input__blowdown_flow",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW276",
+            "alias": "boiler__input__blowdown_flow"
+          },
+          {
+            "id": "b3ddef7e-5aaf-53b2-9ddf-84cdd08c068a",
+            "name": "boiler__input__purge_time_remaining",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW277",
+            "alias": "boiler__input__purge_time_remaining"
+          },
+          {
+            "id": "6b9890ff-a0d4-5480-b5a5-e20a21656e7c",
+            "name": "boiler__input__feedwater_permitted",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW278",
+            "alias": "boiler__input__feedwater_permitted"
+          },
+          {
+            "id": "9290df62-0060-5407-8ca1-90b2331298e4",
+            "name": "boiler__input__relief_flow",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW279",
+            "alias": "boiler__input__relief_flow"
+          },
+          {
+            "id": "fcd0cda5-378e-5b1d-b814-fa852896dcfb",
+            "name": "boiler__input__reserved_24",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW280",
+            "alias": "boiler__input__reserved_24"
+          },
+          {
+            "id": "38782364-36f1-5c19-aae7-0c5766cfc8cc",
+            "name": "boiler__input__reserved_25",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW281",
+            "alias": "boiler__input__reserved_25"
+          },
+          {
+            "id": "06c51379-8940-51f3-9e57-815c1cb03afb",
+            "name": "boiler__input__reserved_26",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW282",
+            "alias": "boiler__input__reserved_26"
+          },
+          {
+            "id": "9ec342dc-ce99-575f-9433-7134cea47eac",
+            "name": "boiler__input__reserved_27",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW283",
+            "alias": "boiler__input__reserved_27"
+          },
+          {
+            "id": "9206d5cf-3844-52fe-8613-48e125fea318",
+            "name": "boiler__input__reserved_28",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW284",
+            "alias": "boiler__input__reserved_28"
+          },
+          {
+            "id": "c0915c3e-0e3e-5643-8f29-4020e6e69c22",
+            "name": "boiler__input__watchdog_echo",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW285",
+            "alias": "boiler__input__watchdog_echo"
+          },
+          {
+            "id": "03da6804-4e9d-5bad-966e-e5ecb3a0797e",
+            "name": "boiler__input__scan_time_ms",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW286",
+            "alias": "boiler__input__scan_time_ms"
+          },
+          {
+            "id": "4f2c5334-f46b-5821-9636-4a762f7e899f",
+            "name": "boiler__input__modbus_request_count",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW287",
+            "alias": "boiler__input__modbus_request_count"
+          },
+          {
+            "id": "20aa872f-3102-5248-8095-12e7aea251ce",
+            "name": "boiler__input__rejected_command_count",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW288",
+            "alias": "boiler__input__rejected_command_count"
+          },
+          {
+            "id": "c2f642db-6f32-5509-ab66-0ff8dd4c8022",
+            "name": "boiler__input__exception_count",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW289",
+            "alias": "boiler__input__exception_count"
+          },
+          {
+            "id": "e9be69bc-7ce7-572c-b883-969e2ebfea79",
+            "name": "boiler__input__sim_quality_word",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW290",
+            "alias": "boiler__input__sim_quality_word"
+          },
+          {
+            "id": "fe479385-bed8-51da-ab5d-865a53eaa28f",
+            "name": "boiler__input__sim_tick_low",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW291",
+            "alias": "boiler__input__sim_tick_low"
+          },
+          {
+            "id": "d2de63e8-53fe-5537-9d20-b2a60fe2362f",
+            "name": "boiler__input__comm_loss_seconds",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW292",
+            "alias": "boiler__input__comm_loss_seconds"
+          },
+          {
+            "id": "8ea42bb2-2054-5c94-acbe-f8ab4d6315c8",
+            "name": "boiler__input__fault_inject_word",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW293",
+            "alias": "boiler__input__fault_inject_word"
+          },
+          {
+            "id": "affd7b39-b881-5603-8a85-22b2992d0059",
+            "name": "boiler__input__snapshot_generation",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW294",
+            "alias": "boiler__input__snapshot_generation"
+          },
+          {
+            "id": "41791a08-73df-5b63-8e57-053adf073375",
+            "name": "boiler__input__run_seconds_hi",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW295",
+            "alias": "boiler__input__run_seconds_hi"
+          },
+          {
+            "id": "958a0a89-dced-5cc9-9e84-c60c86f24c93",
+            "name": "boiler__input__run_seconds_lo",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW296",
+            "alias": "boiler__input__run_seconds_lo"
+          },
+          {
+            "id": "ee5eb70b-860f-5138-a86c-c34b9a21dce7",
+            "name": "boiler__input__start_count",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW297",
+            "alias": "boiler__input__start_count"
+          },
+          {
+            "id": "f8bf6351-8f30-5198-9ca3-8a261a737960",
+            "name": "boiler__input__trip_count",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW298",
+            "alias": "boiler__input__trip_count"
+          },
+          {
+            "id": "7af6b9f7-ab64-582e-9b5b-5f7fffd9ba83",
+            "name": "boiler__input__mass_total_hi",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW299",
+            "alias": "boiler__input__mass_total_hi"
+          },
+          {
+            "id": "f6cfad20-0b1d-5dce-a610-3fe53308d63b",
+            "name": "boiler__input__mass_total_lo",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW300",
+            "alias": "boiler__input__mass_total_lo"
+          },
+          {
+            "id": "2cac979b-c839-554a-99e7-c7f78a8bef1c",
+            "name": "boiler__input__energy_total_hi",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW301",
+            "alias": "boiler__input__energy_total_hi"
+          },
+          {
+            "id": "7679dcb5-a433-5971-aad1-563c328663cb",
+            "name": "boiler__input__energy_total_lo",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW302",
+            "alias": "boiler__input__energy_total_lo"
+          },
+          {
+            "id": "2f614584-0a12-590c-9f6f-3fe8421e61d3",
+            "name": "boiler__input__alarm_count",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW303",
+            "alias": "boiler__input__alarm_count"
+          },
+          {
+            "id": "8cd2b8ad-d560-53c4-bf52-29e5223cd57a",
+            "name": "boiler__input__accepted_command_count",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW304",
+            "alias": "boiler__input__accepted_command_count"
+          },
+          {
+            "id": "06fe9932-f7a5-5fea-a562-7e2f148e5fc6",
+            "name": "boiler__input__reserved_49",
+            "type": "Analog Input (Input Register)",
+            "iecLocation": "%IW305",
+            "alias": "boiler__input__reserved_49"
+          }
+        ]
+      },
+      {
+        "id": "0a960e6e-48cb-582a-b262-87afa70946b2",
+        "name": "boiler_discrete_0_15",
+        "functionCode": "2",
+        "cycleTime": 250,
+        "offset": "0",
+        "length": 16,
+        "errorHandling": "keep-last-value",
+        "ioPoints": [
+          {
+            "id": "51430f96-6c9f-5fd9-ad94-b71cf9c7d5e1",
+            "name": "boiler__discrete__ready",
+            "type": "Digital Input (Discrete Input)",
+            "iecLocation": "%IX8.0",
+            "alias": "boiler__discrete__ready"
+          },
+          {
+            "id": "b3574e13-fd49-5ee6-a292-af4ee3fb8205",
+            "name": "boiler__discrete__running",
+            "type": "Digital Input (Discrete Input)",
+            "iecLocation": "%IX8.1",
+            "alias": "boiler__discrete__running"
+          },
+          {
+            "id": "0a0bf07e-57c7-5c20-bf24-f18a04508dac",
+            "name": "boiler__discrete__starting",
+            "type": "Digital Input (Discrete Input)",
+            "iecLocation": "%IX8.2",
+            "alias": "boiler__discrete__starting"
+          },
+          {
+            "id": "284fb70d-f91c-5201-9dd3-1eb40bd9504d",
+            "name": "boiler__discrete__stopping",
+            "type": "Digital Input (Discrete Input)",
+            "iecLocation": "%IX8.3",
+            "alias": "boiler__discrete__stopping"
+          },
+          {
+            "id": "c54e8f11-3650-5270-99a3-250dc7a67dce",
+            "name": "boiler__discrete__tripped",
+            "type": "Digital Input (Discrete Input)",
+            "iecLocation": "%IX8.4",
+            "alias": "boiler__discrete__tripped"
+          },
+          {
+            "id": "9d71b510-9b10-5501-9096-09f641f2b122",
+            "name": "boiler__discrete__alarm_active",
+            "type": "Digital Input (Discrete Input)",
+            "iecLocation": "%IX8.5",
+            "alias": "boiler__discrete__alarm_active"
+          },
+          {
+            "id": "48ee8efc-7069-5b02-b225-0626dbd380d5",
+            "name": "boiler__discrete__local_mode",
+            "type": "Digital Input (Discrete Input)",
+            "iecLocation": "%IX8.6",
+            "alias": "boiler__discrete__local_mode"
+          },
+          {
+            "id": "9e660c35-5343-5a54-83b5-e11c674ba1ad",
+            "name": "boiler__discrete__remote_mode",
+            "type": "Digital Input (Discrete Input)",
+            "iecLocation": "%IX8.7",
+            "alias": "boiler__discrete__remote_mode"
+          },
+          {
+            "id": "be203c8b-3fed-5a7f-9322-f09e4be2aba0",
+            "name": "boiler__discrete__auto_mode",
+            "type": "Digital Input (Discrete Input)",
+            "iecLocation": "%IX9.0",
+            "alias": "boiler__discrete__auto_mode"
+          },
+          {
+            "id": "0f9756ea-236b-5dbc-be40-be21e045a3e7",
+            "name": "boiler__discrete__manual_mode",
+            "type": "Digital Input (Discrete Input)",
+            "iecLocation": "%IX9.1",
+            "alias": "boiler__discrete__manual_mode"
+          },
+          {
+            "id": "cbe021fd-f96e-5caa-9ad1-7e09e1a11fd7",
+            "name": "boiler__discrete__control_watchdog_ok",
+            "type": "Digital Input (Discrete Input)",
+            "iecLocation": "%IX9.2",
+            "alias": "boiler__discrete__control_watchdog_ok"
+          },
+          {
+            "id": "a020f502-ffbc-50f0-9e39-4d839ededc1c",
+            "name": "boiler__discrete__sim_bus_ok",
+            "type": "Digital Input (Discrete Input)",
+            "iecLocation": "%IX9.3",
+            "alias": "boiler__discrete__sim_bus_ok"
+          },
+          {
+            "id": "b52ab13f-a58e-5d90-8f9a-3ea6b308f80d",
+            "name": "boiler__discrete__interlocks_ok",
+            "type": "Digital Input (Discrete Input)",
+            "iecLocation": "%IX9.4",
+            "alias": "boiler__discrete__interlocks_ok"
+          },
+          {
+            "id": "3a7a1b90-3e63-5654-bfe6-e321512d87e3",
+            "name": "boiler__discrete__sensor_fault",
+            "type": "Digital Input (Discrete Input)",
+            "iecLocation": "%IX9.5",
+            "alias": "boiler__discrete__sensor_fault"
+          },
+          {
+            "id": "f9fa6222-12d9-5d8d-b6be-ece1a03aca2c",
+            "name": "boiler__discrete__actuator_fault",
+            "type": "Digital Input (Discrete Input)",
+            "iecLocation": "%IX9.6",
+            "alias": "boiler__discrete__actuator_fault"
+          },
+          {
+            "id": "e0a5e7b2-d2d0-5485-89f2-bb9a87497b26",
+            "name": "boiler__discrete__maintenance_mode",
+            "type": "Digital Input (Discrete Input)",
+            "iecLocation": "%IX9.7",
+            "alias": "boiler__discrete__maintenance_mode"
+          }
+        ]
+      },
+      {
+        "id": "65e4b25d-960d-588d-8d7a-51196f7d12d8",
+        "name": "boiler_holding_readback_0_31",
+        "functionCode": "3",
+        "cycleTime": 250,
+        "offset": "0",
+        "length": 32,
+        "errorHandling": "keep-last-value",
+        "ioPoints": [
+          {
+            "id": "7eafdb5c-4c49-51cb-a3c7-008ff420af05",
+            "name": "boiler__holding_readback__control_mode",
+            "type": "Analog Input (Holding Register)",
+            "iecLocation": "%IW768",
+            "alias": "boiler__holding_readback__control_mode"
+          },
+          {
+            "id": "5b82438e-b062-5826-b55d-c607f338b0ff",
+            "name": "boiler__holding_readback__command_sequence",
+            "type": "Analog Input (Holding Register)",
+            "iecLocation": "%IW769",
+            "alias": "boiler__holding_readback__command_sequence"
+          },
+          {
+            "id": "e908ced9-af20-5e1c-b1cc-b12a25b8b55f",
+            "name": "boiler__holding_readback__watchdog_counter",
+            "type": "Analog Input (Holding Register)",
+            "iecLocation": "%IW770",
+            "alias": "boiler__holding_readback__watchdog_counter"
+          },
+          {
+            "id": "24acdeba-942a-5b13-85a4-3ba923fc5f50",
+            "name": "boiler__holding_readback__reset_key",
+            "type": "Analog Input (Holding Register)",
+            "iecLocation": "%IW771",
+            "alias": "boiler__holding_readback__reset_key"
+          },
+          {
+            "id": "94a7caae-1258-5d83-a509-a25510e95ac1",
+            "name": "boiler__holding_readback__simulation_flags",
+            "type": "Analog Input (Holding Register)",
+            "iecLocation": "%IW772",
+            "alias": "boiler__holding_readback__simulation_flags"
+          },
+          {
+            "id": "f0052828-9769-5479-aac1-de696526d129",
+            "name": "boiler__holding_readback__active_controller_id",
+            "type": "Analog Input (Holding Register)",
+            "iecLocation": "%IW773",
+            "alias": "boiler__holding_readback__active_controller_id"
+          },
+          {
+            "id": "dd2b17d9-7190-587d-8034-615025f81c3b",
+            "name": "boiler__holding_readback__command_lease_time",
+            "type": "Analog Input (Holding Register)",
+            "iecLocation": "%IW774",
+            "alias": "boiler__holding_readback__command_lease_time"
+          },
+          {
+            "id": "808ccdbb-fc4c-5dc8-ab20-ab3d6cf9b673",
+            "name": "boiler__holding_readback__output_rate_limit",
+            "type": "Analog Input (Holding Register)",
+            "iecLocation": "%IW775",
+            "alias": "boiler__holding_readback__output_rate_limit"
+          },
+          {
+            "id": "e122bb31-5edb-5d5f-b822-0b920d352eca",
+            "name": "boiler__holding_readback__reserved",
+            "type": "Analog Input (Holding Register)",
+            "iecLocation": "%IW776",
+            "alias": "boiler__holding_readback__reserved"
+          },
+          {
+            "id": "1c07ee1e-9302-5663-b0fc-87cad2fe36e6",
+            "name": "boiler__holding_readback__primary_setpoint",
+            "type": "Analog Input (Holding Register)",
+            "iecLocation": "%IW777",
+            "alias": "boiler__holding_readback__primary_setpoint"
+          },
+          {
+            "id": "478261d4-9e46-572e-a1ef-41317bd6c481",
+            "name": "boiler__holding_readback__secondary_setpoint",
+            "type": "Analog Input (Holding Register)",
+            "iecLocation": "%IW778",
+            "alias": "boiler__holding_readback__secondary_setpoint"
+          },
+          {
+            "id": "5263e911-1878-5d95-b468-a3709143ee58",
+            "name": "boiler__holding_readback__manual_output",
+            "type": "Analog Input (Holding Register)",
+            "iecLocation": "%IW779",
+            "alias": "boiler__holding_readback__manual_output"
+          },
+          {
+            "id": "da8c7517-e292-57f7-aa6e-04e789538d8a",
+            "name": "boiler__holding_readback__output_high_limit",
+            "type": "Analog Input (Holding Register)",
+            "iecLocation": "%IW780",
+            "alias": "boiler__holding_readback__output_high_limit"
+          },
+          {
+            "id": "d0b0588b-0df7-5ab2-a38c-fa907f3d034c",
+            "name": "boiler__holding_readback__output_low_limit",
+            "type": "Analog Input (Holding Register)",
+            "iecLocation": "%IW781",
+            "alias": "boiler__holding_readback__output_low_limit"
+          },
+          {
+            "id": "1981265a-dc53-5653-8cb1-18275cde6b31",
+            "name": "boiler__holding_readback__reserved_14",
+            "type": "Analog Input (Holding Register)",
+            "iecLocation": "%IW782",
+            "alias": "boiler__holding_readback__reserved_14"
+          },
+          {
+            "id": "34b7f719-3fc2-5b35-8786-c34891a09d71",
+            "name": "boiler__holding_readback__reserved_15",
+            "type": "Analog Input (Holding Register)",
+            "iecLocation": "%IW783",
+            "alias": "boiler__holding_readback__reserved_15"
+          },
+          {
+            "id": "d8ef2c97-8fe2-5936-9f4e-951cf6fd2176",
+            "name": "boiler__holding_readback__reserved_16",
+            "type": "Analog Input (Holding Register)",
+            "iecLocation": "%IW784",
+            "alias": "boiler__holding_readback__reserved_16"
+          },
+          {
+            "id": "eac01704-fabb-56e9-a51a-eb0a3ff436e2",
+            "name": "boiler__holding_readback__reserved_17",
+            "type": "Analog Input (Holding Register)",
+            "iecLocation": "%IW785",
+            "alias": "boiler__holding_readback__reserved_17"
+          },
+          {
+            "id": "7838b0cf-7826-5dff-b62c-312f7991b7e3",
+            "name": "boiler__holding_readback__reserved_18",
+            "type": "Analog Input (Holding Register)",
+            "iecLocation": "%IW786",
+            "alias": "boiler__holding_readback__reserved_18"
+          },
+          {
+            "id": "b7da5535-6e77-5cb8-a572-881920185a95",
+            "name": "boiler__holding_readback__pid_kp",
+            "type": "Analog Input (Holding Register)",
+            "iecLocation": "%IW787",
+            "alias": "boiler__holding_readback__pid_kp"
+          },
+          {
+            "id": "9be06115-1108-593c-b24e-7b5e4adb30da",
+            "name": "boiler__holding_readback__pid_ki",
+            "type": "Analog Input (Holding Register)",
+            "iecLocation": "%IW788",
+            "alias": "boiler__holding_readback__pid_ki"
+          },
+          {
+            "id": "4d1eba81-603b-5d4e-995d-a90e40dd86df",
+            "name": "boiler__holding_readback__pid_kd",
+            "type": "Analog Input (Holding Register)",
+            "iecLocation": "%IW789",
+            "alias": "boiler__holding_readback__pid_kd"
+          },
+          {
+            "id": "fe1d1453-df63-5019-b2b5-5ed79b2422a5",
+            "name": "boiler__holding_readback__deadband",
+            "type": "Analog Input (Holding Register)",
+            "iecLocation": "%IW790",
+            "alias": "boiler__holding_readback__deadband"
+          },
+          {
+            "id": "7db725bd-cd73-5839-a180-381d8fdb0abd",
+            "name": "boiler__holding_readback__integral_limit",
+            "type": "Analog Input (Holding Register)",
+            "iecLocation": "%IW791",
+            "alias": "boiler__holding_readback__integral_limit"
+          },
+          {
+            "id": "196ab01e-b111-5ce2-85fd-1adccf230e7d",
+            "name": "boiler__holding_readback__controller_scan_time",
+            "type": "Analog Input (Holding Register)",
+            "iecLocation": "%IW792",
+            "alias": "boiler__holding_readback__controller_scan_time"
+          },
+          {
+            "id": "44a41b30-a836-5c06-9c59-e033c618bdc0",
+            "name": "boiler__holding_readback__reserved_25",
+            "type": "Analog Input (Holding Register)",
+            "iecLocation": "%IW793",
+            "alias": "boiler__holding_readback__reserved_25"
+          },
+          {
+            "id": "cd3bee5e-e50e-59b9-a64e-fdba3a21080e",
+            "name": "boiler__holding_readback__reserved_26",
+            "type": "Analog Input (Holding Register)",
+            "iecLocation": "%IW794",
+            "alias": "boiler__holding_readback__reserved_26"
+          },
+          {
+            "id": "ef2b242a-712f-5f96-8de4-4797eebdda1a",
+            "name": "boiler__holding_readback__reserved_27",
+            "type": "Analog Input (Holding Register)",
+            "iecLocation": "%IW795",
+            "alias": "boiler__holding_readback__reserved_27"
+          },
+          {
+            "id": "ec87a759-91f4-5d5f-8231-f2ea3c9dc6e6",
+            "name": "boiler__holding_readback__reserved_28",
+            "type": "Analog Input (Holding Register)",
+            "iecLocation": "%IW796",
+            "alias": "boiler__holding_readback__reserved_28"
+          },
+          {
+            "id": "7ab3e210-48ea-554b-bf8f-c58737234746",
+            "name": "boiler__holding_readback__blowdown_valve_cmd",
+            "type": "Analog Input (Holding Register)",
+            "iecLocation": "%IW797",
+            "alias": "boiler__holding_readback__blowdown_valve_cmd"
+          },
+          {
+            "id": "c7b9adab-074e-5b4c-aee5-54b7dcee290b",
+            "name": "boiler__holding_readback__reserved_30",
+            "type": "Analog Input (Holding Register)",
+            "iecLocation": "%IW798",
+            "alias": "boiler__holding_readback__reserved_30"
+          },
+          {
+            "id": "c9173ee7-9417-5a0b-9b96-f0b588fcab19",
+            "name": "boiler__holding_readback__reserved_31",
+            "type": "Analog Input (Holding Register)",
+            "iecLocation": "%IW799",
+            "alias": "boiler__holding_readback__reserved_31"
+          }
+        ]
+      },
+      {
+        "id": "f03a155e-7281-5bac-80de-fd01ac603835",
+        "name": "boiler_coil_0_7",
+        "functionCode": "15",
+        "cycleTime": 100,
+        "offset": "0",
+        "length": 8,
+        "errorHandling": "keep-last-value",
+        "ioPoints": [
+          {
+            "id": "f927acd1-87e8-51e3-acaa-4fbec5658566",
+            "name": "boiler__coil__start",
+            "type": "Digital Output (Multiple Coils)",
+            "iecLocation": "%QX8.0",
+            "alias": "boiler__coil__start"
+          },
+          {
+            "id": "b5eaf129-28fc-5c7b-8999-55d7df3c1767",
+            "name": "boiler__coil__stop",
+            "type": "Digital Output (Multiple Coils)",
+            "iecLocation": "%QX8.1",
+            "alias": "boiler__coil__stop"
+          },
+          {
+            "id": "bfa25718-e006-5596-9f0b-514598022570",
+            "name": "boiler__coil__reset_trip",
+            "type": "Digital Output (Multiple Coils)",
+            "iecLocation": "%QX8.2",
+            "alias": "boiler__coil__reset_trip"
+          },
+          {
+            "id": "1efbf23b-2d6b-50ae-bc53-fbf8b5d16c1b",
+            "name": "boiler__coil__ack_alarm",
+            "type": "Digital Output (Multiple Coils)",
+            "iecLocation": "%QX8.3",
+            "alias": "boiler__coil__ack_alarm"
+          },
+          {
+            "id": "bc765613-eb9c-5886-beb4-73d5d6a83a90",
+            "name": "boiler__coil__emergency_stop",
+            "type": "Digital Output (Multiple Coils)",
+            "iecLocation": "%QX8.4",
+            "alias": "boiler__coil__emergency_stop"
+          },
+          {
+            "id": "8a92dd93-46a5-541c-b5e0-471e9012918c",
+            "name": "boiler__coil__force_safe",
+            "type": "Digital Output (Multiple Coils)",
+            "iecLocation": "%QX8.5",
+            "alias": "boiler__coil__force_safe"
+          },
+          {
+            "id": "7a9c6472-300e-5ae4-8cd8-7887f1b9d225",
+            "name": "boiler__coil__trip_test",
+            "type": "Digital Output (Multiple Coils)",
+            "iecLocation": "%QX8.6",
+            "alias": "boiler__coil__trip_test"
+          },
+          {
+            "id": "15922898-6bd3-5773-952d-b9e55b2e1569",
+            "name": "boiler__coil__clear_totalizer",
+            "type": "Digital Output (Multiple Coils)",
+            "iecLocation": "%QX8.7",
+            "alias": "boiler__coil__clear_totalizer"
+          }
+        ]
+      },
+      {
+        "id": "465e7533-a93f-54ec-939d-82e574b0b62c",
+        "name": "boiler_holding_0_13",
+        "functionCode": "16",
+        "cycleTime": 100,
+        "offset": "0",
+        "length": 14,
+        "errorHandling": "keep-last-value",
+        "ioPoints": [
+          {
+            "id": "d646ebd0-9f6d-5bdb-bf73-98ac8a5324c3",
+            "name": "boiler__holding__control_mode",
+            "type": "Analog Output (Multiple Registers)",
+            "iecLocation": "%QW256",
+            "alias": "boiler__holding__control_mode"
+          },
+          {
+            "id": "cae0fc2f-051f-5436-afde-adfd4fd788f0",
+            "name": "boiler__holding__command_sequence",
+            "type": "Analog Output (Multiple Registers)",
+            "iecLocation": "%QW257",
+            "alias": "boiler__holding__command_sequence"
+          },
+          {
+            "id": "000dbb8a-d197-52ce-9340-01942edd3ecf",
+            "name": "boiler__holding__watchdog_counter",
+            "type": "Analog Output (Multiple Registers)",
+            "iecLocation": "%QW258",
+            "alias": "boiler__holding__watchdog_counter"
+          },
+          {
+            "id": "b8f8eae1-b8d4-5e21-aa57-e37c2329f8b1",
+            "name": "boiler__holding__reset_key",
+            "type": "Analog Output (Multiple Registers)",
+            "iecLocation": "%QW259",
+            "alias": "boiler__holding__reset_key"
+          },
+          {
+            "id": "942f7ec4-4f1d-5e6d-b3d3-1e8d2b3bd3ec",
+            "name": "boiler__holding__simulation_flags",
+            "type": "Analog Output (Multiple Registers)",
+            "iecLocation": "%QW260",
+            "alias": "boiler__holding__simulation_flags"
+          },
+          {
+            "id": "49ca60b0-0fa4-508d-ba0a-8336482fde05",
+            "name": "boiler__holding__active_controller_id",
+            "type": "Analog Output (Multiple Registers)",
+            "iecLocation": "%QW261",
+            "alias": "boiler__holding__active_controller_id"
+          },
+          {
+            "id": "21af32f9-3fcc-5f65-b02e-a5e02d0d610b",
+            "name": "boiler__holding__command_lease_time",
+            "type": "Analog Output (Multiple Registers)",
+            "iecLocation": "%QW262",
+            "alias": "boiler__holding__command_lease_time"
+          },
+          {
+            "id": "249fb981-6321-5236-b92a-7ad6dd28e48f",
+            "name": "boiler__holding__output_rate_limit",
+            "type": "Analog Output (Multiple Registers)",
+            "iecLocation": "%QW263",
+            "alias": "boiler__holding__output_rate_limit"
+          },
+          {
+            "id": "883c87c8-7ad2-5109-b3f9-287395f12f8b",
+            "name": "boiler__holding__reserved",
+            "type": "Analog Output (Multiple Registers)",
+            "iecLocation": "%QW264",
+            "alias": "boiler__holding__reserved"
+          },
+          {
+            "id": "014c1d5e-d62a-5cc3-915a-e4448eb7efd5",
+            "name": "boiler__holding__primary_setpoint",
+            "type": "Analog Output (Multiple Registers)",
+            "iecLocation": "%QW265",
+            "alias": "boiler__holding__primary_setpoint"
+          },
+          {
+            "id": "a18fc013-d005-511d-9a2a-46ce67742e47",
+            "name": "boiler__holding__secondary_setpoint",
+            "type": "Analog Output (Multiple Registers)",
+            "iecLocation": "%QW266",
+            "alias": "boiler__holding__secondary_setpoint"
+          },
+          {
+            "id": "8a52c279-a8b7-5933-a85b-aec4c0e4175f",
+            "name": "boiler__holding__manual_output",
+            "type": "Analog Output (Multiple Registers)",
+            "iecLocation": "%QW267",
+            "alias": "boiler__holding__manual_output"
+          },
+          {
+            "id": "c5ef7950-f0f8-5be7-80bf-0aa467dec04c",
+            "name": "boiler__holding__output_high_limit",
+            "type": "Analog Output (Multiple Registers)",
+            "iecLocation": "%QW268",
+            "alias": "boiler__holding__output_high_limit"
+          },
+          {
+            "id": "54a94e02-b1e5-5c86-9f8c-8ec0f97ebf44",
+            "name": "boiler__holding__output_low_limit",
+            "type": "Analog Output (Multiple Registers)",
+            "iecLocation": "%QW269",
+            "alias": "boiler__holding__output_low_limit"
+          }
+        ]
+      },
+      {
+        "id": "6b98a3f8-ffe3-5e84-8552-14ac988b28f2",
+        "name": "boiler_holding_19_24",
+        "functionCode": "16",
+        "cycleTime": 100,
+        "offset": "19",
+        "length": 6,
+        "errorHandling": "keep-last-value",
+        "ioPoints": [
+          {
+            "id": "1b441559-450f-51e2-9151-a7036299c964",
+            "name": "boiler__holding__pid_kp",
+            "type": "Analog Output (Multiple Registers)",
+            "iecLocation": "%QW275",
+            "alias": "boiler__holding__pid_kp"
+          },
+          {
+            "id": "88e18c29-c52d-516f-b51d-897e4fe324e0",
+            "name": "boiler__holding__pid_ki",
+            "type": "Analog Output (Multiple Registers)",
+            "iecLocation": "%QW276",
+            "alias": "boiler__holding__pid_ki"
+          },
+          {
+            "id": "76e13039-a17e-5b8a-aa65-2ec7b8a6c46c",
+            "name": "boiler__holding__pid_kd",
+            "type": "Analog Output (Multiple Registers)",
+            "iecLocation": "%QW277",
+            "alias": "boiler__holding__pid_kd"
+          },
+          {
+            "id": "ad8cd34d-1df3-51e4-931c-2699447ce40a",
+            "name": "boiler__holding__deadband",
+            "type": "Analog Output (Multiple Registers)",
+            "iecLocation": "%QW278",
+            "alias": "boiler__holding__deadband"
+          },
+          {
+            "id": "3c74df67-14af-5ce5-8b95-cb401ba2b833",
+            "name": "boiler__holding__integral_limit",
+            "type": "Analog Output (Multiple Registers)",
+            "iecLocation": "%QW279",
+            "alias": "boiler__holding__integral_limit"
+          },
+          {
+            "id": "0e239340-f0c7-5591-b7d5-a198fc928e50",
+            "name": "boiler__holding__controller_scan_time",
+            "type": "Analog Output (Multiple Registers)",
+            "iecLocation": "%QW280",
+            "alias": "boiler__holding__controller_scan_time"
+          }
+        ]
+      },
+      {
+        "id": "5ef13c17-bd07-5109-95eb-4c8507f8f944",
+        "name": "boiler_holding_29_29",
+        "functionCode": "16",
+        "cycleTime": 100,
+        "offset": "29",
+        "length": 1,
+        "errorHandling": "keep-last-value",
+        "ioPoints": [
+          {
+            "id": "f895278b-7831-5fbf-869b-11cd16fd096d",
+            "name": "boiler__holding__blowdown_valve_cmd",
+            "type": "Analog Output (Multiple Registers)",
+            "iecLocation": "%QW285",
+            "alias": "boiler__holding__blowdown_valve_cmd"
+          }
+        ]
+      }
+    ]
+  }
+}
