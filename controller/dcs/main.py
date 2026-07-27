@@ -194,12 +194,15 @@ class DCS:
         self.auto_start = env_bool("AUTO_START", bool(cfg_get(self.cfg, "dcs.auto_start", True)))
         self.startup_burner_max = float(cfg_get(self.cfg, "dcs.startup_burner_max_pct", 20.0))
         self.startup_valve_max = float(cfg_get(self.cfg, "dcs.startup_valve_max_pct", 15.0))
+        self.load_feedforward = float(cfg_get(self.cfg, "dcs.load_feedforward_pct_per_mw", 1.0))
         self._pressure_ramp_done = False
         self.scan_time = float(cfg_get(self.cfg, "dcs.pid_scan_s", 0.5))
 
         loops = self.cfg.get("dcs", {}).get("loops", {})
         self.boiler_pressure = self._pid("boiler_pressure", loops, setpoint=100.0,
                                          rate_up=5.0, rate_down=10.0)
+        # 升壓限幅會暫時調低 boiler_pressure.out_max，這裡保留正常運轉時的上限
+        self._burner_out_max = self.boiler_pressure.out_max
         level_cfg = loops.get("boiler_level", {})
         self.boiler_level = ThreeElementLevel(
             level_pid=self._pid("boiler_level", loops, setpoint=66.7, out_min=-50.0, out_max=50.0),
@@ -217,6 +220,8 @@ class DCS:
         self.tank_level = self._pid("tank_level", loops, setpoint=60.0, rate_up=3.0, rate_down=3.0)
         self.turbine_speed = self._pid("turbine_speed", loops, setpoint=3000.0,
                                        rate_up=20.0, rate_down=40.0)
+        # 升速限幅會暫時調低 turbine_speed.out_max，這裡保留正常運轉時的上限
+        self._speed_out_max = self.turbine_speed.out_max
         self.load_control = self._pid("load_control", loops, setpoint=0.0,
                                       rate_up=10.0, rate_down=20.0)
 
@@ -309,11 +314,18 @@ class DCS:
         await self.bus.close()
 
     async def _poll_loop(self) -> None:
+        """Modbus 輪詢。
+
+        週期同樣以「模擬時間」計時：若用真實時間，`plantctl speed 20` 時
+        PID 每 0.5 模擬秒執行一次、輪詢卻每 5 模擬秒才更新一次，
+        控制器會拿著過期的 PV 做運算，加速模擬下的行為與即時模擬不一致。
+        """
         period = float(cfg_get(self.cfg, "dcs.poll_s", 0.25))
+        last = self.sim_time
         while True:
             await asyncio.gather(*[link.poll() for link in self.devices.values()],
                                  return_exceptions=True)
-            await asyncio.sleep(period)
+            last = await self._wait_sim_period(period, last)
 
     # -- 模擬時間排程 ------------------------------------------------------
     async def _wait_sim_period(self, period: float, last: float) -> float:
@@ -429,14 +441,23 @@ class DCS:
 
         # --- 8.1 鍋爐壓力控制 ---
         boiler = self.devices["boiler"]
+        generator_link = self.devices["generator"]
+        breaker_is_closed = generator_link.online and generator_link.ir("BREAKER_STATUS") >= 1
         if boiler.online and self.boiler_pressure.auto:
             pressure = boiler.ir("BOILER_PRESSURE")
-            burner = self.boiler_pressure.update(pressure, dt)
-            # 升壓期間限制燃燒器輸出，避免壓力大幅過衝（達壓後鎖存解除）
-            if pressure >= self.boiler_pressure.setpoint * 0.95:
+            # 升壓期間限制燃燒器輸出，避免壓力大幅過衝（達壓後鎖存解除）。
+            # 併聯後也必須解除：一旦汽輪機開始抽汽，壓力就不會再自己爬到 95%，
+            # 燃燒器被鎖在 20%（約 20 kg/s）而負載要 60 kg/s，壓力會一路掉到
+            # LOW_PRESSURE，轉速跟著垮掉並觸發欠頻跳機（實測 636 s 觸發 5303）。
+            if pressure >= self.boiler_pressure.setpoint * 0.95 or breaker_is_closed:
                 self._pressure_ramp_done = True
-            if not self._pressure_ramp_done:
-                burner = min(burner, self.startup_burner_max)
+            # 與轉速迴圈同理：限幅要套進 PID 的輸出上限。
+            # 用 min() 從外面砍，積分會一路累積到上限，解除瞬間燃燒器由 20%
+            # 跳到 100%，壓力直接衝過 115 bar 超壓跳機（實測 596 s 觸發 5103）。
+            self.boiler_pressure.out_max = (
+                self._burner_out_max if self._pressure_ramp_done else self.startup_burner_max
+            )
+            burner = self.boiler_pressure.update(pressure, dt)
             if boiler.di("TRIPPED"):
                 self.boiler_pressure.force_output(0.0)
                 burner = 0.0
@@ -477,9 +498,23 @@ class DCS:
                          and breaker_closed)
             load_ff = 0.0
             if generator.online:
-                # 負載前饋：以額定負載換算閥門開度
-                load_ff = 0.8 * generator.ir("ELECTRICAL_POWER")
+                # 負載前饋：以額定負載換算閥門開度。
+                # 增益必須接近實際的「閥位 -> MW」物理增益（≈1 %/MW），
+                # 否則穩態缺口全靠 ki=0.005 的積分補，補到一半轉速就先掉到
+                # 欠頻跳機門檻（實測 0.8 時併聯後 22 秒觸發 5303）。
+                load_ff = self.load_feedforward * generator.ir("ELECTRICAL_POWER")
             current_position = valve.hr("MANUAL_OUTPUT") if valve.online else 0.0
+
+            # 升速期間限制閥門開度，避免併聯前瞬間超速。
+            # 限幅必須套進 PID 的輸出上限，不能只對輸出做 min()：
+            # 外部限幅是 PID 看不見的，積分項會一路累積到 integral_limit，
+            # 等轉速接近 3000 RPM、限幅解除的瞬間，閥門會從 15% 直接跳到 100%，
+            # 汽輪機必定衝過 3300 RPM 超速跳機（實測 428 s 觸發 5201）。
+            run_up = speed_rpm < self.turbine_speed.setpoint * 0.97 and not breaker_closed
+            self.turbine_speed.out_max = (
+                self.startup_valve_max if run_up else self._speed_out_max
+            )
+
             if grid_mode:
                 if not self.load_control.auto:
                     # 轉速控制 -> 負載控制：以目前閥位無擾動接手（bumpless transfer）
@@ -495,10 +530,6 @@ class DCS:
                     self.turbine_speed.to_auto(current_position)
                     self.emit("SPEED_CONTROL_ENGAGED", position=round(current_position, 2))
                 position = self.turbine_speed.update(speed_rpm, dt, feedforward=load_ff)
-
-            # 升速期間限制閥門開度，避免瞬間超速
-            if speed_rpm < self.turbine_speed.setpoint * 0.97 and not breaker_closed:
-                position = min(position, self.startup_valve_max)
 
             # 安全邏輯永遠優先：超速時無條件關閥
             overspeed = float(cfg_get(self.cfg, "dcs.overspeed_close_rpm", 3150.0))

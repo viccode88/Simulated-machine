@@ -7,6 +7,7 @@ dcs:
   overspeed_close_rpm: 3150.0
   startup_burner_max_pct: 20.0    # 升壓期間燃燒器上限
   startup_valve_max_pct: 15.0     # 升速期間主蒸汽閥上限
+  load_feedforward_pct_per_mw: 1.0  # 負載前饋：每 MW 需要的閥門開度（≈實際物理增益）
   port: 502
   hosts:
     condenser: condenser
@@ -19,9 +20,13 @@ dcs:
     generator: generator
   loops:
     boiler_pressure:        # PV 鍋爐壓力 / SP 100 bar(a) / MV 燃燒器輸出
-      kp: 2.0
-      ki: 0.08
-      kd: 0.0
+      # 鍋爐壓力是「積分型」程序（dP/dt ∝ 蒸發量），積分作用必須很小，
+      # 否則會出現週期約 180 秒的持續振盪：壓力衝到 113 bar 打開安全閥，
+      # 洩汽又把水位打亂，最後以高高水位跳機收場（實測 1021 s 觸發 5102）。
+      # 改為以比例 + 微分為主、積分只用來消除殘差。
+      kp: 1.5
+      ki: 0.01
+      kd: 3.0
       setpoint: 100.0
       out_min: 0.0
       out_max: 100.0
@@ -30,8 +35,10 @@ dcs:
       integral_limit: 100.0
       deadband: 0.2
     boiler_level:           # 三元素：水位修正 + 蒸汽流量前饋 - 給水流量回授
-      kp: 2.0
-      ki: 0.05
+      # 水位同樣是積分型程序，且有 swell 效應（升壓時水位假性上升）。
+      # 前饋增益取 1.0（與物理增益一致），修正項的積分放小，避免與壓力迴路共振。
+      kp: 1.5
+      ki: 0.02
       kd: 0.0
       setpoint: 66.7
       out_min: -50.0
@@ -39,7 +46,7 @@ dcs:
       integral_limit: 50.0
       deadband: 0.3
       three_element: true
-      feedforward_gain: 1.2
+      feedforward_gain: 1.0
       flow_kp: 1.2
       flow_ki: 0.4
     tank_level:             # PV 給水槽水位 / SP 60% / MV 凝結水泵速度

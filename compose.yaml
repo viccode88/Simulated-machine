@@ -1,9 +1,16 @@
 # 簡化火力發電廠工業控制模擬器
 #
-#   docker compose --profile standalone up --build      # 全部設備 + 內建 DCS + HMI + 歷史資料
-#   docker compose --profile external-plc up --build    # 全部設備，不啟動內建 DCS
+#   cp .env.example .env
+#   docker compose up --build                           # 自持運轉（.env 預設 standalone）
+#   COMPOSE_PROFILES=external-plc docker compose up     # 不啟動內建 DCS，改由外部 PLC 控制
 #
-# 設備服務不設 profile，因此任何 profile 都會啟動；只有控制器/HMI/工具受 profile 控制。
+# .env 的 COMPOSE_PROFILES 決定啟動哪一組服務，預設 standalone：
+# 設備 + plant-bus + 內建 DCS + HMI + historian，開機後 DCS 會自動走完
+# 16 步冷啟動並持續發電。設備服務不設 profile，任何模式都會啟動；
+# 只有控制器/HMI/工具受 profile 控制。
+#
+# 注意：命令列的 `--profile` 是疊加在 COMPOSE_PROFILES 之上，不是取代。
+# 要單獨跑 external-plc 請用上面的環境變數寫法，否則內建 DCS 會與外部 PLC 搶控制權。
 
 x-device: &device
   build:
@@ -66,6 +73,7 @@ services:
       STATE_DIR: /var/lib/plant-bus
       HTTP_PORT: "8080"
       RESTORE_ON_BOOT: ${RESTORE_ON_BOOT:-}
+      RESTORE_ON_BOOT_DELAY: ${RESTORE_ON_BOOT_DELAY:-5}
       TZ: ${TZ:-Asia/Taipei}
     networks: [sim_net, management_net]
     ports:

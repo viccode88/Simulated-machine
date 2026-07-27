@@ -21,6 +21,10 @@ class Step:
     done: Callable[[Ctx], bool] = lambda ctx: True
     guard: Callable[[Ctx], tuple[bool, str]] | None = None
     timeout: float = 600.0
+    # True：每次 update 都重新評估 guard 並重下命令。
+    # 用於「命令可能被設備拒絕、且允許條件是瞬時窗口」的步驟（例如併聯）：
+    # 只在進入步驟時下一次命令，錯過窗口就會枯等到逾時。
+    repeat_enter: bool = False
 
 
 async def _noop(ctx: Ctx) -> None:
@@ -61,6 +65,12 @@ def build_sequence() -> list[Step]:
         await ctx.pulse("steam_valve", "START")
         await ctx.pulse("turbine", "START")
         ctx.turbine_speed.to_auto(0.0)
+
+    async def excite_generator(ctx: Ctx) -> None:
+        # 同步檢查之前必須先勵磁：AVR 只有在發電機 RUNNING 時才建立電壓，
+        # 電壓為 0 時 SYNC_PERMISSIVE 的「電壓在範圍內」永遠不成立，
+        # SYNC_CHECK 會一路等到逾時。
+        await ctx.pulse("generator", "START")
 
     async def close_breaker(ctx: Ctx) -> None:
         await ctx.pulse("generator", "START")
@@ -105,15 +115,27 @@ def build_sequence() -> list[Step]:
              timeout=300),
         Step("RUN_UP", "汽輪機達 3000 RPM", None,
              lambda c: abs(c.pv("turbine", "SPEED_RPM") - 3000.0) <= 30.0, timeout=900),
-        Step("SYNC_CHECK", "發電機同步檢查", None,
+        Step("SYNC_CHECK", "發電機勵磁與同步檢查", excite_generator,
              lambda c: c.pv("generator", "SYNC_PERMISSIVE") == 0x3F, timeout=300),
         Step("CLOSE_BREAKER", "閉合發電機斷路器", close_breaker,
              lambda c: c.pv("generator", "BREAKER_STATUS") >= 1,
-             guard=lambda c: (abs(c.pv("turbine", "SPEED_RPM") - 3000.0) <= 30.0,
-                              "汽輪機轉速不符，禁止閉合斷路器"),
+             guard=lambda c: (
+                 abs(c.pv("turbine", "SPEED_RPM") - 3000.0) <= 30.0
+                 and c.pv("generator", "SYNC_PERMISSIVE") == 0x3F,
+                 "汽輪機轉速不符或同步條件不成立，禁止閉合斷路器",
+             ),
+             # 相角差會持續滑移，同步窗口是一閃即逝的：必須反覆嘗試，
+             # 直到窗口再次打開為止，不能只在進入步驟時試一次
+             repeat_enter=True,
              timeout=180),
         Step("RAMP_LOAD", "逐步增加負載", ramp_load,
              lambda c: c.pv("generator", "ELECTRICAL_POWER") >= c.target_load_mw * 0.95,
+             # 併聯後先讓鍋爐壓力回到設定值附近再加載：
+             # 對著軟掉的鍋爐加載會讓壓力與轉速一起垮
+             guard=lambda c: (
+                 c.pv("boiler", "BOILER_PRESSURE") >= c.boiler_pressure.setpoint * 0.9,
+                 "鍋爐壓力不足，暫緩加載",
+             ),
              timeout=1800),
         Step("NORMAL", "進入正常自動控制", None, lambda c: True, timeout=60),
     ]
@@ -169,6 +191,18 @@ class Sequencer:
                      index=self.index)
             self.entered = True
             self.elapsed = 0.0
+        elif step.repeat_enter and step.enter and not step.done(ctx):
+            # 重試型步驟：guard 成立時才重下命令，避免對著不成立的允許條件
+            # 反覆送出必被拒絕的命令而灌爆事件記錄
+            allowed = True
+            if step.guard:
+                allowed, reason = step.guard(ctx)
+                if not allowed and self.last_error != reason:
+                    self.last_error = reason
+                    ctx.emit("SEQUENCE_BLOCKED", step=step.name, reason=reason)
+            if allowed:
+                self.last_error = ""
+                await step.enter(ctx)
         self.elapsed += dt
         if step.done(ctx):
             ctx.emit("SEQUENCE_STEP_DONE", step=step.name, elapsed=round(self.elapsed, 1))

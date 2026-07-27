@@ -5,7 +5,9 @@ generator:
   grid_frequency_hz: 50.0
   grid_stiffness_mw_per_rpm: 2.0
   load_tau_s: 0.5
-  load_rate_mw_s: 2.0
+  # 加載速率：孤島模式下電氣功率直接加在軸上，加載太快轉速控制跟不上。
+  # 2.0 MW/s（0→60 MW 只要 30 秒）實測會在併聯後 22 秒觸發欠頻跳機。
+  load_rate_mw_s: 0.5
   default_mode: 0                 # 0 = 孤島（預設），1 = 強電網
   sync_speed_band_rpm: 30.0
   sync_frequency_band_hz: [49.5, 50.5]

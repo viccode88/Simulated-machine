@@ -204,6 +204,55 @@ def cmd_snapshot(args) -> int:
     return 0 if "error" not in result else 1
 
 
+def cmd_baseline(args) -> int:
+    """等機組自動升到目標負載後存一份穩態快照。
+
+    存好之後把 .env 的 RESTORE_ON_BOOT 設成這個名稱，
+    之後每次 `docker compose up` 都會在幾十毫秒內直接回到滿載運轉，
+    不必再等一次完整冷啟動。
+    """
+    deadline = time.time() + args.timeout
+    target = args.load
+    last_report = 0.0
+    while time.time() < deadline:
+        state = api("/state")
+        if "error" in state:
+            print(f"無法連線 plant-bus：{state['error']}")
+            return 1
+        offline = state.get("offline_devices") or []
+        signals = state.get("signals") or {}
+        power = float((signals.get("generator.electrical_power_mw") or {}).get("value", 0.0))
+        tripped = sorted(n for n, p in (state.get("participants") or {}).items()
+                         if p.get("tripped"))
+        now = time.time()
+        if now - last_report >= 10.0:
+            last_report = now
+            print(f"  sim {state.get('sim_time', 0):>8.1f}s  發電 {power:6.2f} MW"
+                  f"  離線={offline or '-'}  跳機={tripped or '-'}")
+        if tripped and not args.ignore_trips:
+            print(f"設備跳機，停止等待：{', '.join(tripped)}\n"
+                  f"先排除原因並重置（見 docs/operations-manual.md 第八章），或加 --ignore-trips")
+            return 1
+        if power >= target:
+            print(f"已達 {power:.2f} MW，存檔中…")
+            result = api("/snapshot/save", "POST",
+                         {"name": args.name, "description": args.description,
+                          "tags": ["baseline"]})
+            show(result)
+            if isinstance(result, dict) and result.get("error"):
+                return 1
+            if not result.get("complete", True):
+                print("快照不完整，不建議用於 RESTORE_ON_BOOT")
+                return 1
+            print(f"\n完成。把 .env 改成 RESTORE_ON_BOOT={args.name} "
+                  f"即可在下次啟動時直接回到這個狀態。")
+            return 0
+        time.sleep(args.interval)
+    print(f"等待逾時（{args.timeout:.0f} 秒）仍未達 {target} MW；"
+          f"用 `plantctl events --event SEQUENCE_BLOCKED` 看順序卡在哪一步")
+    return 1
+
+
 def cmd_rollback(args) -> int:
     listing = api("/snapshot")
     name = args.name or listing.get("last")
@@ -316,6 +365,18 @@ def build_parser() -> argparse.ArgumentParser:
                       help="即使快照缺少部分設備仍強制還原（會造成混合機組狀態）")
     snap.add_argument("--full", action="store_true")
     snap.set_defaults(func=cmd_snapshot)
+
+    baseline = sub.add_parser(
+        "baseline", help="等機組升到目標負載後存一份穩態快照，供 RESTORE_ON_BOOT 使用")
+    baseline.add_argument("--name", default="steady-60mw")
+    baseline.add_argument("--load", type=float, default=57.0,
+                          help="達到幾 MW 才存檔（預設 57，即 60 MW 的 95%%）")
+    baseline.add_argument("--timeout", type=float, default=1800.0, help="最長等待秒數")
+    baseline.add_argument("--interval", type=float, default=2.0, help="輪詢間隔秒數")
+    baseline.add_argument("--description", default="穩態基準（plantctl baseline 自動產生）")
+    baseline.add_argument("--ignore-trips", action="store_true",
+                          help="即使有設備跳機也繼續等待")
+    baseline.set_defaults(func=cmd_baseline)
 
     rollback = sub.add_parser("rollback", help="還原最後一次快照")
     rollback.add_argument("name", nargs="?")

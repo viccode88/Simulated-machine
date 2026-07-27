@@ -6,8 +6,22 @@
 
 ```bash
 cp .env.example .env
-docker compose --profile standalone up --build
+docker compose up --build
 ```
+
+**開起來就會自己發電。** 預設 profile 是 `standalone`，plant-bus、8 台設備、
+內建 DCS、HMI 與 historian 全部啟動，DCS 會在 8 秒後自動執行 16 步冷啟動順序，
+約 11 分鐘（模擬時間）後併聯併升到 60 MW，之後持續穩態運轉。
+`plantctl watch` 可以看它自己爬上去。
+
+想「開機瞬間就在滿載」：第一次跑完整啟動，達到負載後執行
+
+```bash
+python -m tools.plantctl baseline        # 存成 steady-60mw 快照
+```
+
+再把 `.env` 改成 `RESTORE_ON_BOOT=steady-60mw`，之後每次 `docker compose up`
+都會在數十毫秒內直接回到 60 MW 滿載（不必再等冷啟動）。
 
 啟動後：
 
@@ -123,6 +137,7 @@ RESTORE_ON_BOOT=steady-60mw docker compose --profile standalone up
 主機端預設只綁 `127.0.0.1`（`.env` 的 `BIND_ADDR`）；
 需要從實驗室 LAN 連入時改成 `BIND_ADDR=0.0.0.0`。
 
+操作方法、錯誤判讀與排除，見 **[docs/operations-manual.md](docs/operations-manual.md)**。
 詳細說明見 [docs/architecture.md](docs/architecture.md)。
 外部 PLC／DCS 要如何串接這 8 台設備，見 [docs/plc-integration.md](docs/plc-integration.md)
 （含可執行骨架 `examples/external_plc.py`）。
@@ -133,11 +148,17 @@ RESTORE_ON_BOOT=steady-60mw docker compose --profile standalone up
 
 ## 三、Compose profiles
 
+profile 由 `.env` 的 `COMPOSE_PROFILES` 決定，預設 `standalone`：
+
 ```bash
-docker compose --profile standalone up --build       # 設備 + plant-bus + 內建 DCS + HMI + historian
-docker compose --profile external-plc up --build     # 設備 + plant-bus + HMI + historian（無內建 DCS）
-docker compose -f compose.yaml -f compose.secure.yaml --profile secure up --build
+docker compose up --build                            # standalone：自持運轉（預設）
+COMPOSE_PROFILES=external-plc docker compose up      # 無內建 DCS，改由外部 PLC 控制
+COMPOSE_PROFILES=standalone docker compose -f compose.yaml -f compose.secure.yaml up --build
 ```
+
+> 命令列的 `--profile` 是**疊加**在 `COMPOSE_PROFILES` 之上，不是取代。
+> 要單獨跑 `external-plc`，請用上面的環境變數寫法或改 `.env`；
+> 用 `--profile external-plc` 會連內建 DCS 一起帶起來，跟你的 PLC 搶控制權。
 
 設備服務不綁 profile，因此任何模式都會啟動；只有控制器、HMI 與測試工具受 profile 控制。
 `secure` profile 以 stunnel sidecar 在 802 埠提供 Modbus Security（TLS + X.509），
@@ -277,6 +298,6 @@ thermal-plant-simulator/
 ├── tools/            plantctl、情境執行器、不變量檢查、封包錄製、文件產生
 ├── configs/          全廠與各設備設定（所有門檻）
 ├── scenarios/        8 個驗收情境
-├── docs/             架構、物理模型、暫存器表、代碼表、操作順序
+├── docs/             操作手冊、架構、物理模型、暫存器表、代碼表、操作順序
 └── tests/            unit / physics / modbus / integration / scenarios / regression
 ```
