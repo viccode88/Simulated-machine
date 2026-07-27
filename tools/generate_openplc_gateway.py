@@ -548,7 +548,6 @@ def make_main_st(rows: Sequence[Register], remotes: Sequence[dict]) -> str:
     lines.extend(
         [
             "",
-            "    (* Southbound mirrors and commands.  Aliases match remote JSON exactly. *)",
             *declarations(remotes, rows),
             "  END_VAR",
             "",

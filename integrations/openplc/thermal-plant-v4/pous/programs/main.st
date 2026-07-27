@@ -137,7 +137,6 @@ PROGRAM main
     i_condensate_pump_trip_prev : BOOL := FALSE;
     i_steam_valve_trip_prev : BOOL := FALSE;
 
-    (* Southbound mirrors and commands.  Aliases match remote JSON exactly. *)
     condenser__input__status_word AT %IW0 : UINT := 0;
     condenser__input__alarm_word_1 AT %IW1 : UINT := 0;
     condenser__input__alarm_word_2 AT %IW2 : UINT := 0;
