@@ -17,7 +17,6 @@ RUN pip install --no-cache-dir \
 
 COPY common ./common
 COPY devices ./devices
-COPY controller ./controller
 COPY plant_bus ./plant_bus
 COPY historian ./historian
 COPY hmi ./hmi
