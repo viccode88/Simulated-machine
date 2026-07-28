@@ -2,8 +2,8 @@
   "name": "boiler",
   "protocol": "modbus-tcp",
   "modbusTcpConfig": {
-    "host": "127.0.0.1",
-    "port": 15025,
+    "host": "boiler",
+    "port": 502,
     "slaveId": 1,
     "timeout": 1000,
     "ioGroups": [
@@ -193,24 +193,24 @@
           },
           {
             "id": "38782364-36f1-5c19-aae7-0c5766cfc8cc",
-            "name": "boiler__input__reserved_25",
+            "name": "boiler__input__local_output",
             "type": "Analog Input (Input Register)",
             "iecLocation": "%IW281",
-            "alias": "boiler__input__reserved_25"
+            "alias": "boiler__input__local_output"
           },
           {
             "id": "06c51379-8940-51f3-9e57-815c1cb03afb",
-            "name": "boiler__input__reserved_26",
+            "name": "boiler__input__self_hold_state",
             "type": "Analog Input (Input Register)",
             "iecLocation": "%IW282",
-            "alias": "boiler__input__reserved_26"
+            "alias": "boiler__input__self_hold_state"
           },
           {
             "id": "9ec342dc-ce99-575f-9433-7134cea47eac",
-            "name": "boiler__input__reserved_27",
+            "name": "boiler__input__permissive_word",
             "type": "Analog Input (Input Register)",
             "iecLocation": "%IW283",
-            "alias": "boiler__input__reserved_27"
+            "alias": "boiler__input__permissive_word"
           },
           {
             "id": "9206d5cf-3844-52fe-8613-48e125fea318",
@@ -794,182 +794,34 @@
         ]
       },
       {
-        "id": "465e7533-a93f-54ec-939d-82e574b0b62c",
-        "name": "boiler_holding_0_13",
+        "id": "03ea95cc-0277-5c8a-b474-75f8dac05894",
+        "name": "boiler_holding_1_3",
         "functionCode": "16",
         "cycleTime": 100,
-        "offset": "0",
-        "length": 14,
+        "offset": "1",
+        "length": 3,
         "errorHandling": "keep-last-value",
         "ioPoints": [
           {
-            "id": "d646ebd0-9f6d-5bdb-bf73-98ac8a5324c3",
-            "name": "boiler__holding__control_mode",
-            "type": "Analog Output (Multiple Registers)",
-            "iecLocation": "%QW256",
-            "alias": "boiler__holding__control_mode"
-          },
-          {
-            "id": "cae0fc2f-051f-5436-afde-adfd4fd788f0",
+            "id": "5c064784-739b-5ead-ba2a-6a9d240605f7",
             "name": "boiler__holding__command_sequence",
             "type": "Analog Output (Multiple Registers)",
             "iecLocation": "%QW257",
             "alias": "boiler__holding__command_sequence"
           },
           {
-            "id": "000dbb8a-d197-52ce-9340-01942edd3ecf",
+            "id": "9428a30f-4188-5374-87ea-756c84530453",
             "name": "boiler__holding__watchdog_counter",
             "type": "Analog Output (Multiple Registers)",
             "iecLocation": "%QW258",
             "alias": "boiler__holding__watchdog_counter"
           },
           {
-            "id": "b8f8eae1-b8d4-5e21-aa57-e37c2329f8b1",
+            "id": "ebf22114-4ae7-577f-a568-2a2d4f11acbd",
             "name": "boiler__holding__reset_key",
             "type": "Analog Output (Multiple Registers)",
             "iecLocation": "%QW259",
             "alias": "boiler__holding__reset_key"
-          },
-          {
-            "id": "942f7ec4-4f1d-5e6d-b3d3-1e8d2b3bd3ec",
-            "name": "boiler__holding__simulation_flags",
-            "type": "Analog Output (Multiple Registers)",
-            "iecLocation": "%QW260",
-            "alias": "boiler__holding__simulation_flags"
-          },
-          {
-            "id": "49ca60b0-0fa4-508d-ba0a-8336482fde05",
-            "name": "boiler__holding__active_controller_id",
-            "type": "Analog Output (Multiple Registers)",
-            "iecLocation": "%QW261",
-            "alias": "boiler__holding__active_controller_id"
-          },
-          {
-            "id": "21af32f9-3fcc-5f65-b02e-a5e02d0d610b",
-            "name": "boiler__holding__command_lease_time",
-            "type": "Analog Output (Multiple Registers)",
-            "iecLocation": "%QW262",
-            "alias": "boiler__holding__command_lease_time"
-          },
-          {
-            "id": "249fb981-6321-5236-b92a-7ad6dd28e48f",
-            "name": "boiler__holding__output_rate_limit",
-            "type": "Analog Output (Multiple Registers)",
-            "iecLocation": "%QW263",
-            "alias": "boiler__holding__output_rate_limit"
-          },
-          {
-            "id": "883c87c8-7ad2-5109-b3f9-287395f12f8b",
-            "name": "boiler__holding__reserved",
-            "type": "Analog Output (Multiple Registers)",
-            "iecLocation": "%QW264",
-            "alias": "boiler__holding__reserved"
-          },
-          {
-            "id": "014c1d5e-d62a-5cc3-915a-e4448eb7efd5",
-            "name": "boiler__holding__primary_setpoint",
-            "type": "Analog Output (Multiple Registers)",
-            "iecLocation": "%QW265",
-            "alias": "boiler__holding__primary_setpoint"
-          },
-          {
-            "id": "a18fc013-d005-511d-9a2a-46ce67742e47",
-            "name": "boiler__holding__secondary_setpoint",
-            "type": "Analog Output (Multiple Registers)",
-            "iecLocation": "%QW266",
-            "alias": "boiler__holding__secondary_setpoint"
-          },
-          {
-            "id": "8a52c279-a8b7-5933-a85b-aec4c0e4175f",
-            "name": "boiler__holding__manual_output",
-            "type": "Analog Output (Multiple Registers)",
-            "iecLocation": "%QW267",
-            "alias": "boiler__holding__manual_output"
-          },
-          {
-            "id": "c5ef7950-f0f8-5be7-80bf-0aa467dec04c",
-            "name": "boiler__holding__output_high_limit",
-            "type": "Analog Output (Multiple Registers)",
-            "iecLocation": "%QW268",
-            "alias": "boiler__holding__output_high_limit"
-          },
-          {
-            "id": "54a94e02-b1e5-5c86-9f8c-8ec0f97ebf44",
-            "name": "boiler__holding__output_low_limit",
-            "type": "Analog Output (Multiple Registers)",
-            "iecLocation": "%QW269",
-            "alias": "boiler__holding__output_low_limit"
-          }
-        ]
-      },
-      {
-        "id": "6b98a3f8-ffe3-5e84-8552-14ac988b28f2",
-        "name": "boiler_holding_19_24",
-        "functionCode": "16",
-        "cycleTime": 100,
-        "offset": "19",
-        "length": 6,
-        "errorHandling": "keep-last-value",
-        "ioPoints": [
-          {
-            "id": "1b441559-450f-51e2-9151-a7036299c964",
-            "name": "boiler__holding__pid_kp",
-            "type": "Analog Output (Multiple Registers)",
-            "iecLocation": "%QW275",
-            "alias": "boiler__holding__pid_kp"
-          },
-          {
-            "id": "88e18c29-c52d-516f-b51d-897e4fe324e0",
-            "name": "boiler__holding__pid_ki",
-            "type": "Analog Output (Multiple Registers)",
-            "iecLocation": "%QW276",
-            "alias": "boiler__holding__pid_ki"
-          },
-          {
-            "id": "76e13039-a17e-5b8a-aa65-2ec7b8a6c46c",
-            "name": "boiler__holding__pid_kd",
-            "type": "Analog Output (Multiple Registers)",
-            "iecLocation": "%QW277",
-            "alias": "boiler__holding__pid_kd"
-          },
-          {
-            "id": "ad8cd34d-1df3-51e4-931c-2699447ce40a",
-            "name": "boiler__holding__deadband",
-            "type": "Analog Output (Multiple Registers)",
-            "iecLocation": "%QW278",
-            "alias": "boiler__holding__deadband"
-          },
-          {
-            "id": "3c74df67-14af-5ce5-8b95-cb401ba2b833",
-            "name": "boiler__holding__integral_limit",
-            "type": "Analog Output (Multiple Registers)",
-            "iecLocation": "%QW279",
-            "alias": "boiler__holding__integral_limit"
-          },
-          {
-            "id": "0e239340-f0c7-5591-b7d5-a198fc928e50",
-            "name": "boiler__holding__controller_scan_time",
-            "type": "Analog Output (Multiple Registers)",
-            "iecLocation": "%QW280",
-            "alias": "boiler__holding__controller_scan_time"
-          }
-        ]
-      },
-      {
-        "id": "5ef13c17-bd07-5109-95eb-4c8507f8f944",
-        "name": "boiler_holding_29_29",
-        "functionCode": "16",
-        "cycleTime": 100,
-        "offset": "29",
-        "length": 1,
-        "errorHandling": "keep-last-value",
-        "ioPoints": [
-          {
-            "id": "f895278b-7831-5fbf-869b-11cd16fd096d",
-            "name": "boiler__holding__blowdown_valve_cmd",
-            "type": "Analog Output (Multiple Registers)",
-            "iecLocation": "%QW285",
-            "alias": "boiler__holding__blowdown_valve_cmd"
           }
         ]
       }

@@ -44,6 +44,11 @@ condenser,INPUT,30018,17,VACUUM_SYSTEM_OUTPUT,u16,%,100,,,no,no,
 condenser,INPUT,30019,18,CONDENSATE_TEMPERATURE,i16,degC,10,,,no,no,
 condenser,INPUT,30020,19,HOTWELL_MASS_HI,u32,kg,1,,,no,no,
 condenser,INPUT,30021,20,HOTWELL_MASS_LO,u16,kg,1,,,no,no,
+condenser,INPUT,30022,21,MAKEUP_VALVE_POSITION,u16,%,100,,,no,no,補水閥實際開度（本地控制）
+condenser,INPUT,30023,22,MAKEUP_FLOW,u16,kg/s,100,,,no,no,
+condenser,INPUT,30026,25,LOCAL_OUTPUT,u16,%,100,,,no,no,本地調節器輸出（自持控制的 MV）
+condenser,INPUT,30027,26,SELF_HOLD_STATE,enum,,1.0,,,no,no,0=停用 1=待機等允許條件 2=自持運轉 3=操作員停機 4=跳機鎖定 5=維修
+condenser,INPUT,30028,27,PERMISSIVE_WORD,bitfield,,1.0,,,no,no,各啟動允許條件是否成立（bit0 起）
 condenser,INPUT,30030,29,WATCHDOG_ECHO,u16,,1.0,,,no,no,回應 40003 之值
 condenser,INPUT,30031,30,SCAN_TIME_MS,u16,ms,10,,,no,no,物理掃描耗時 ×10
 condenser,INPUT,30032,31,MODBUS_REQUEST_COUNT,u16,,1.0,,,no,no,已處理請求數（模 65536）
@@ -129,6 +134,9 @@ condensate_pump,INPUT,30017,16,SOURCE_LEVEL,u16,%,100,,,no,no,
 condensate_pump,INPUT,30018,17,BACKPRESSURE,u16,bar(a),100,,,no,no,
 condensate_pump,INPUT,30019,18,OUTLET_VALVE_POSITION,u16,%,100,,,no,no,
 condensate_pump,INPUT,30020,19,CAVITATION_FACTOR,u16,%,100,,,no,no,
+condensate_pump,INPUT,30026,25,LOCAL_OUTPUT,u16,%,100,,,no,no,本地調節器輸出（自持控制的 MV）
+condensate_pump,INPUT,30027,26,SELF_HOLD_STATE,enum,,1.0,,,no,no,0=停用 1=待機等允許條件 2=自持運轉 3=操作員停機 4=跳機鎖定 5=維修
+condensate_pump,INPUT,30028,27,PERMISSIVE_WORD,bitfield,,1.0,,,no,no,各啟動允許條件是否成立（bit0 起）
 condensate_pump,INPUT,30030,29,WATCHDOG_ECHO,u16,,1.0,,,no,no,回應 40003 之值
 condensate_pump,INPUT,30031,30,SCAN_TIME_MS,u16,ms,10,,,no,no,物理掃描耗時 ×10
 condensate_pump,INPUT,30032,31,MODBUS_REQUEST_COUNT,u16,,1.0,,,no,no,已處理請求數（模 65536）
@@ -211,6 +219,9 @@ feedwater_tank,INPUT,30015,14,WATER_TEMPERATURE,i16,degC,10,,,no,no,
 feedwater_tank,INPUT,30016,15,TANK_PRESSURE,u16,bar(a),1000,,,no,no,
 feedwater_tank,INPUT,30017,16,OVERFLOW_FLOW,u16,kg/s,100,,,no,no,
 feedwater_tank,INPUT,30018,17,NET_FLOW,i16,kg/s,100,,,no,no,
+feedwater_tank,INPUT,30026,25,LOCAL_OUTPUT,u16,%,100,,,no,no,本地調節器輸出（自持控制的 MV）
+feedwater_tank,INPUT,30027,26,SELF_HOLD_STATE,enum,,1.0,,,no,no,0=停用 1=待機等允許條件 2=自持運轉 3=操作員停機 4=跳機鎖定 5=維修
+feedwater_tank,INPUT,30028,27,PERMISSIVE_WORD,bitfield,,1.0,,,no,no,各啟動允許條件是否成立（bit0 起）
 feedwater_tank,INPUT,30030,29,WATCHDOG_ECHO,u16,,1.0,,,no,no,回應 40003 之值
 feedwater_tank,INPUT,30031,30,SCAN_TIME_MS,u16,ms,10,,,no,no,物理掃描耗時 ×10
 feedwater_tank,INPUT,30032,31,MODBUS_REQUEST_COUNT,u16,,1.0,,,no,no,已處理請求數（模 65536）
@@ -298,6 +309,9 @@ feedwater_pump,INPUT,30019,18,OUTLET_VALVE_POSITION,u16,%,100,,,no,no,
 feedwater_pump,INPUT,30020,19,CAVITATION_FACTOR,u16,%,100,,,no,no,
 feedwater_pump,INPUT,30021,20,BOILER_PRESSURE,u16,bar(a),100,,,no,no,
 feedwater_pump,INPUT,30022,21,FEEDWATER_PERMITTED,enum,,1.0,,,no,no,
+feedwater_pump,INPUT,30026,25,LOCAL_OUTPUT,u16,%,100,,,no,no,本地調節器輸出（自持控制的 MV）
+feedwater_pump,INPUT,30027,26,SELF_HOLD_STATE,enum,,1.0,,,no,no,0=停用 1=待機等允許條件 2=自持運轉 3=操作員停機 4=跳機鎖定 5=維修
+feedwater_pump,INPUT,30028,27,PERMISSIVE_WORD,bitfield,,1.0,,,no,no,各啟動允許條件是否成立（bit0 起）
 feedwater_pump,INPUT,30030,29,WATCHDOG_ECHO,u16,,1.0,,,no,no,回應 40003 之值
 feedwater_pump,INPUT,30031,30,SCAN_TIME_MS,u16,ms,10,,,no,no,物理掃描耗時 ×10
 feedwater_pump,INPUT,30032,31,MODBUS_REQUEST_COUNT,u16,,1.0,,,no,no,已處理請求數（模 65536）
@@ -387,6 +401,9 @@ boiler,INPUT,30021,20,BLOWDOWN_FLOW,u16,kg/s,100,,,no,no,
 boiler,INPUT,30022,21,PURGE_TIME_REMAINING,u16,s,10,,,no,no,
 boiler,INPUT,30023,22,FEEDWATER_PERMITTED,enum,,1.0,,,no,no,
 boiler,INPUT,30024,23,RELIEF_FLOW,u16,kg/s,100,,,no,no,安全閥排放量
+boiler,INPUT,30026,25,LOCAL_OUTPUT,u16,%,100,,,no,no,本地調節器輸出（自持控制的 MV）
+boiler,INPUT,30027,26,SELF_HOLD_STATE,enum,,1.0,,,no,no,0=停用 1=待機等允許條件 2=自持運轉 3=操作員停機 4=跳機鎖定 5=維修
+boiler,INPUT,30028,27,PERMISSIVE_WORD,bitfield,,1.0,,,no,no,各啟動允許條件是否成立（bit0 起）
 boiler,INPUT,30030,29,WATCHDOG_ECHO,u16,,1.0,,,no,no,回應 40003 之值
 boiler,INPUT,30031,30,SCAN_TIME_MS,u16,ms,10,,,no,no,物理掃描耗時 ×10
 boiler,INPUT,30032,31,MODBUS_REQUEST_COUNT,u16,,1.0,,,no,no,已處理請求數（模 65536）
@@ -471,6 +488,9 @@ steam_valve,INPUT,30016,15,ACTUATOR_SPEED,u16,%/s,100,,,no,no,
 steam_valve,INPUT,30017,16,POSITION_DEVIATION,i16,%,100,,,no,no,
 steam_valve,INPUT,30018,17,FAST_CLOSE_STATUS,enum,,1.0,,,no,no,0=正常 1=快關中 2=快關完成
 steam_valve,INPUT,30019,18,VALVE_FAULT_CODE,enum,,1.0,,,no,no,
+steam_valve,INPUT,30026,25,LOCAL_OUTPUT,u16,%,100,,,no,no,本地調節器輸出（自持控制的 MV）
+steam_valve,INPUT,30027,26,SELF_HOLD_STATE,enum,,1.0,,,no,no,0=停用 1=待機等允許條件 2=自持運轉 3=操作員停機 4=跳機鎖定 5=維修
+steam_valve,INPUT,30028,27,PERMISSIVE_WORD,bitfield,,1.0,,,no,no,各啟動允許條件是否成立（bit0 起）
 steam_valve,INPUT,30030,29,WATCHDOG_ECHO,u16,,1.0,,,no,no,回應 40003 之值
 steam_valve,INPUT,30031,30,SCAN_TIME_MS,u16,ms,10,,,no,no,物理掃描耗時 ×10
 steam_valve,INPUT,30032,31,MODBUS_REQUEST_COUNT,u16,,1.0,,,no,no,已處理請求數（模 65536）
@@ -557,6 +577,9 @@ turbine,INPUT,30017,16,BEARING_TEMPERATURE,i16,degC,10,,,no,no,
 turbine,INPUT,30018,17,GOVERNOR_OUTPUT,u16,%,100,,,no,no,
 turbine,INPUT,30019,18,ACCELERATION,i16,RPM/s,10,,,no,no,
 turbine,INPUT,30020,19,EFFICIENCY,u16,%,100,,,no,no,
+turbine,INPUT,30026,25,LOCAL_OUTPUT,u16,%,100,,,no,no,本地調節器輸出（自持控制的 MV）
+turbine,INPUT,30027,26,SELF_HOLD_STATE,enum,,1.0,,,no,no,0=停用 1=待機等允許條件 2=自持運轉 3=操作員停機 4=跳機鎖定 5=維修
+turbine,INPUT,30028,27,PERMISSIVE_WORD,bitfield,,1.0,,,no,no,各啟動允許條件是否成立（bit0 起）
 turbine,INPUT,30030,29,WATCHDOG_ECHO,u16,,1.0,,,no,no,回應 40003 之值
 turbine,INPUT,30031,30,SCAN_TIME_MS,u16,ms,10,,,no,no,物理掃描耗時 ×10
 turbine,INPUT,30032,31,MODBUS_REQUEST_COUNT,u16,,1.0,,,no,no,已處理請求數（模 65536）
@@ -645,6 +668,9 @@ generator,INPUT,30017,16,SYNC_PERMISSIVE,bitfield,,1.0,,,no,no,
 generator,INPUT,30018,17,PHASE_ANGLE_DIFF,i16,deg,100,,,no,no,
 generator,INPUT,30019,18,ELECTRICAL_TORQUE,u16,MW,100,,,no,no,
 generator,INPUT,30020,19,OPERATING_MODE,enum,,1.0,,,no,no,0=孤島 1=強電網
+generator,INPUT,30026,25,LOCAL_OUTPUT,u16,%,100,,,no,no,本地調節器輸出（自持控制的 MV）
+generator,INPUT,30027,26,SELF_HOLD_STATE,enum,,1.0,,,no,no,0=停用 1=待機等允許條件 2=自持運轉 3=操作員停機 4=跳機鎖定 5=維修
+generator,INPUT,30028,27,PERMISSIVE_WORD,bitfield,,1.0,,,no,no,各啟動允許條件是否成立（bit0 起）
 generator,INPUT,30030,29,WATCHDOG_ECHO,u16,,1.0,,,no,no,回應 40003 之值
 generator,INPUT,30031,30,SCAN_TIME_MS,u16,ms,10,,,no,no,物理掃描耗時 ×10
 generator,INPUT,30032,31,MODBUS_REQUEST_COUNT,u16,,1.0,,,no,no,已處理請求數（模 65536）

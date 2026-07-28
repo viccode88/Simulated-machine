@@ -1,4 +1,8 @@
-"""發電機設備容器。
+"""發電機設備容器（自持）。
+
+本地自持控制：轉速接近額定就自行勵磁，同步條件成立就自行併聯（auto-sync），
+併聯後把負載緩緩加到 40010 PRIMARY_SETPOINT（預設 60 MW）；鍋爐壓力不足時
+自動暫停加載，避免對著軟掉的鍋爐拉負載造成壓力與轉速一起垮。
 
 孤島模式（預設）：Pelectrical = LoadDemand，負載增加直接產生反向轉矩，
                   汽輪機轉速下降，調速器再開大蒸汽閥。
@@ -20,7 +24,7 @@ CODE = 5300
 class Generator(BaseDevice):
     NAME = "generator"
     CODE_BASE = CODE
-    DEFAULT_COMM_POLICY = "HOLD_LAST"
+    DEFAULT_COMM_POLICY = "LOCAL_AUTO"
 
     PROCESS_INPUTS = [
         RegSpec(9, "ELECTRICAL_POWER", "MW", 100),
@@ -68,12 +72,16 @@ class Generator(BaseDevice):
     ]
 
     PUBLISHES = ["generator.electrical_power_mw", "generator.breaker_closed",
-                 "generator.frequency_hz", "generator.load_demand_mw"]
-    SUBSCRIBES = ["turbine.speed_rpm", "turbine.mechanical_power_mw", "turbine.tripped"]
+                 "generator.frequency_hz", "generator.load_demand_mw",
+                 "generator.operating_mode"]
+    # boiler.pressure_bar_abs：加載允許條件（壓力不足時暫停加載）
+    SUBSCRIBES = ["turbine.speed_rpm", "turbine.mechanical_power_mw", "turbine.tripped",
+                  "boiler.pressure_bar_abs"]
 
     STATE_VARS = ["electrical_power", "load_demand", "voltage_kv", "frequency", "current_a",
                   "power_factor", "breaker_closed", "phase_angle", "operating_mode",
-                  "speed_rpm", "reverse_power_flag", "breaker_fail_timer"]
+                  "speed_rpm", "reverse_power_flag", "breaker_fail_timer", "load_hold",
+                  "auto_sync_blocked"]
 
     def configure(self) -> None:
         c = self.cfg.get("generator", {})
@@ -102,15 +110,34 @@ class Generator(BaseDevice):
         self.reverse_power_flag = 0.0
         self.breaker_fail_timer = 0.0
         self.sync_word = 0
+        self.load_hold = 0.0        # 1 = 加載暫停中（鍋爐壓力不足）
+        # 操作端（SCADA／PLC）主動開路後必須鎖住自動併聯，否則下一個掃描週期
+        # 自動同步就會把斷路器再閉回去，操作員等於按不下去
+        self.auto_sync_blocked = 0.0
+
+        # --- 本地自持控制 ---
+        ctl = c.get("control", {})
+        self.auto_sync = bool(ctl.get("auto_sync", True))
+        self.excite_speed_pct = float(ctl.get("excite_speed_pct", 90.0))
+        # 併聯後才加載，且鍋爐壓力必須維持在設定值的這個比例以上
+        self.load_pressure_ratio = float(ctl.get("load_min_pressure_ratio", 0.9))
+        self.boiler_pressure_setpoint = float(
+            cfg_get(self.cfg, "boiler.pressure_setpoint_bar", 100.0))
+        self.sync_retry_timer = 0.0
 
         self.set_inhibit("OVERCURRENT", lambda: not self.breaker_closed)
         self.set_inhibit("REVERSE_POWER", lambda: not self.breaker_closed)
-        self.set_inhibit("OVERFREQUENCY", lambda: self.speed_rpm < 500.0)
+        # 過頻是電網側保護：斷路器打開時由汽輪機的超速保護（3300 RPM）負責，
+        # 否則正常甩載（轉速短暫衝到 3130 RPM ≈ 52.2 Hz）就會留下一個沒有意義的
+        # 跳機鎖存，自持機組會因此停在需要人工重置的狀態。
+        self.set_inhibit("OVERFREQUENCY",
+                         lambda: self.speed_rpm < 500.0 or not self.breaker_closed)
         self.set_inhibit("UNDERFREQUENCY", lambda: not self.breaker_closed)
 
     def default_holdings(self) -> dict[str, float]:
         return {
-            "PRIMARY_SETPOINT": 0.0,
+            # 自持機組的目標負載：SCADA 不必下設定值，開機就往這個負載走
+            "PRIMARY_SETPOINT": float(cfg_get(self.cfg, "generator.target_load_mw", 60.0)),
             "SECONDARY_SETPOINT": float(cfg_get(self.cfg, "generator.rated_kv", 15.75)),
             "MANUAL_OUTPUT": 0.0,
             "OPERATING_MODE": float(cfg_get(self.cfg, "generator.default_mode", 0)),
@@ -135,11 +162,15 @@ class Generator(BaseDevice):
     def start_permissives(self) -> list[tuple[str, bool]]:
         return [
             ("汽輪機未跳機", self.sig("turbine.tripped", 0.0) < 0.5),
+            ("轉速接近額定（可勵磁）",
+             self.sig("turbine.speed_rpm", 0.0) >= self.rated_speed * self.excite_speed_pct / 100.0),
             ("無跳機鎖存", not self.protection.any_latched),
             ("緊急停止未啟動", not self.estop),
         ]
 
     def on_start(self) -> None:
+        # START 同時解除「操作端開路」的自動併聯鎖
+        self.auto_sync_blocked = 0.0
         self.sm.to(DeviceState.RUNNING, "EXCITATION_ON")
 
     def on_stop(self) -> None:
@@ -165,7 +196,9 @@ class Generator(BaseDevice):
         self.breaker_fail_timer = 0.0
         self.breaker_closed = 0
         self.load_demand = 0.0
-        self._emit("BREAKER_OPENED", reason=reason,
+        if reason in ("MANUAL", "STOP", "FORCE_SAFE", "COMM_TIMEOUT"):
+            self.auto_sync_blocked = 1.0
+        self._emit("BREAKER_OPENED", reason=reason, auto_sync_blocked=self.auto_sync_blocked,
                    power_before=round(self.electrical_power, 2))
 
     def _close_breaker(self) -> None:
@@ -223,10 +256,30 @@ class Generator(BaseDevice):
             else:
                 reason = "TRIP"
             self._open_breaker(reason)
+        # --- 自動同步（自持併聯） ---
+        # 相角差持續滑移，同步窗口是一閃即逝的：每個掃描週期都重新判斷，
+        # 條件成立就立刻閉合，不能只在某個時點試一次。
+        if (self.auto_sync and self.auto_mode and self.sm.running and not self.breaker_closed
+                and not self.auto_sync_blocked
+                and not self.sm.tripped and not self.estop and not self.force_safe
+                and not turbine_tripped and all(ok for _, ok in self.sync_permissives())):
+            self._close_breaker()
+
         demand = self.hr("PRIMARY_SETPOINT") if self.auto_mode else self.hr("MANUAL_OUTPUT")
         demand += self.faults.factor("load_step_mw", 0.0)
         if not self.breaker_closed:
             demand = 0.0
+        # 加載允許條件：鍋爐壓力不足時凍結負載，等鍋爐追上來再繼續加
+        boiler_pressure = self.sig("boiler.pressure_bar_abs", self.boiler_pressure_setpoint)
+        pressure_ok = boiler_pressure >= self.boiler_pressure_setpoint * self.load_pressure_ratio
+        if self.auto_mode and self.breaker_closed and not pressure_ok:
+            demand = min(demand, self.load_demand)
+        hold = 1.0 if (self.breaker_closed and not pressure_ok) else 0.0
+        if hold != self.load_hold:
+            self._emit("LOAD_RAMP_HOLD" if hold else "LOAD_RAMP_RESUMED",
+                       boiler_pressure=round(boiler_pressure, 2),
+                       load_mw=round(self.load_demand, 2))
+        self.load_hold = hold
         rate = max(0.1, self.hr("LOAD_RATE_LIMIT"))
         self.load_demand = rate_limit(self.load_demand, clamp(demand, 0.0, self.rated_mw * 1.5),
                                       rate, rate * 4.0, dt)
@@ -256,6 +309,7 @@ class Generator(BaseDevice):
 
         self.reverse_power_flag = 1.0 if (self.breaker_closed and mech_power < 0.5
                                           and self.electrical_power > 1.0) else 0.0
+        self.local_output = self.load_demand
 
         self.energy_total += self.electrical_power * dt / 3.6  # MW·s -> kWh
 
@@ -281,6 +335,7 @@ class Generator(BaseDevice):
             "generator.breaker_closed": float(self.breaker_closed),
             "generator.frequency_hz": self.frequency,
             "generator.load_demand_mw": self.load_demand,
+            "generator.operating_mode": float(self.operating_mode),
         }
 
     def fill_registers(self, regs: list[int]) -> None:

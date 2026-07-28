@@ -10,8 +10,28 @@ steam_valve:
   fail_to_close_delay_s: 3.0
   local_speed_gain: 0.02
 
+  # --- 本地自持控制：汽輪機調速器 ---
+  control:
+    speed:                    # 併聯前 PV 轉速 / SP 40010 / MV 閥位
+      kp: 0.05
+      ki: 0.005
+      kd: 0.002
+      rate_up: 20.0
+      rate_down: 40.0
+      deadband: 2.0
+      integral_limit: 100.0
+    load:                     # 強電網併聯後 PV 發電量 / SP 負載需求
+      kp: 0.5
+      ki: 0.1
+      rate_up: 10.0
+      rate_down: 20.0
+      integral_limit: 100.0
+    startup_valve_max_pct: 15.0        # 升速期間閥門開度上限
+    overspeed_close_rpm: 3150.0        # 超速無條件關閥
+    load_feedforward_pct_per_mw: 1.0   # 負載前饋（≈實際閥位->MW 增益）
+
 comm:
-  failure_policy: FAIL_CLOSE   # 預設失效位置 FAIL_CLOSE
+  failure_policy: LOCAL_AUTO   # 自持：本地調速器繼續維持轉速/負載
 
 protections:
   POSITION_DEVIATION_TRIP:

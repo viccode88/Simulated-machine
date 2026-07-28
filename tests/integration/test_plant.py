@@ -1,4 +1,7 @@
-"""整廠整合測試：閉迴路啟動、快照快速恢復、跳機鎖存、持久化。"""
+"""整廠整合測試：自持啟動、快照快速恢復、跳機鎖存、持久化。
+
+設備自持，因此這些測試裡沒有任何控制器：`plant.step()` 就是全部。
+"""
 from __future__ import annotations
 
 import copy
@@ -7,7 +10,7 @@ import os
 import pytest
 
 from common.modbus.register_map import RESET_KEY_VALUE, DeviceState, Table
-from tests.harness import CONFIG_DIR, DEVICE_CLASSES, MiniPlant, bring_to_steady, simple_control
+from tests.harness import CONFIG_DIR, DEVICE_CLASSES, MiniPlant, bring_to_steady, run_until
 
 
 @pytest.fixture(scope="module")
@@ -44,7 +47,6 @@ def test_water_inventory_is_conserved(steady):
     plant = restore(steady)
     start = plant.inventory()
     for _ in range(200):
-        simple_control(plant, 60.0)
         plant.step(5)
     # 只有排污、補水與溢流會改變總水量
     assert abs(plant.inventory() - start) < 4000
@@ -54,7 +56,6 @@ def test_water_inventory_is_conserved(steady):
 def test_snapshot_restore_is_bit_exact(steady):
     plant = restore(steady)
     for _ in range(50):
-        simple_control(plant, 60.0)
         plant.step(5)
     document = copy.deepcopy(plant.snapshot())
     before = {name: device.snapshot_state()["physics"] for name, device in plant.devices.items()}
@@ -62,7 +63,6 @@ def test_snapshot_restore_is_bit_exact(steady):
     # 大幅擾動
     plant.write("generator", "PRIMARY_SETPOINT", 95.0)
     for _ in range(200):
-        simple_control(plant, 95.0)
         plant.step(5)
     assert plant.signal("boiler.pressure_bar_abs") != pytest.approx(
         document["bus"]["signals"]["boiler.pressure_bar_abs"], abs=0.05)
@@ -195,24 +195,43 @@ def test_start_command_rejected_while_latched(tmp_path):
 
 
 # ------------------------------------------------------------ 通訊失效
-def test_watchdog_loss_drives_burner_to_zero(steady):
+def test_watchdog_loss_does_not_disturb_self_holding_control(steady):
+    """自持設備：失去 PLC 通訊只是狀態，不得改變本地控制。
+
+    舊行為（外部 DCS 時代）是把燃燒器降到 0%，那會讓「沒有 PLC 就不能發電」，
+    與自持設計互相矛盾。
+    """
     plant = restore(steady)
     boiler = plant.dev("boiler")
-    boiler.set_hr("MANUAL_OUTPUT", 60.0)
-    for _ in range(200):          # 20 秒不更新 watchdog
+    power_before = plant.signal("generator.electrical_power_mw")
+    for _ in range(300):          # 30 秒不更新 watchdog
         plant.step(1, kick_watchdog=False)
     assert not boiler.watchdog_ok
-    assert boiler.hr("MANUAL_OUTPUT") == 0.0, "通訊失效時燃燒器必須降為 0%"
-    assert boiler.alarms.states[boiler.CODE_BASE + 91].active
+    assert boiler.alarms.states[boiler.CODE_BASE + 91].active, "仍必須點亮 watchdog 警報"
+    assert boiler.comm_policy == "LOCAL_AUTO"
+    assert boiler.burner_output > 5.0, "本地壓力控制必須繼續燃燒"
+    assert plant.signal("generator.electrical_power_mw") > power_before * 0.8
 
 
-def test_steam_valve_fails_closed_on_comm_loss(steady):
+def test_plant_keeps_generating_without_any_controller(steady):
+    """完全沒有 PLC／SCADA 時，機組必須自己維持在可運行狀態。"""
+    plant = restore(steady)
+    for _ in range(120):
+        plant.step(5, kick_watchdog=False)
+    assert 2900 <= plant.signal("turbine.speed_rpm") <= 3100
+    assert plant.signal("generator.electrical_power_mw") > 50.0
+    assert 80 <= plant.signal("boiler.pressure_bar_abs") <= 110
+    assert not any(d.protection.any_latched for d in plant.devices.values())
+
+
+def test_steam_valve_keeps_local_governor_on_comm_loss(steady):
     plant = restore(steady)
     valve = plant.dev("steam_valve")
-    assert valve.comm_policy == "FAIL_CLOSE"
+    assert valve.comm_policy == "LOCAL_AUTO"
     for _ in range(200):
         plant.step(1, kick_watchdog=False)
-    assert valve.position < 5.0
+    assert valve.position > 5.0, "調速器是本地的，通訊失效不得關閥"
+    assert 2900 <= plant.signal("turbine.speed_rpm") <= 3100
 
 
 # ------------------------------------------------------------ 情境行為
@@ -224,7 +243,6 @@ def test_load_rejection_causes_speed_rise_then_valve_closes(steady):
     plant.pulse("generator", "BREAKER_OPEN")
     peak = before
     for _ in range(60):
-        simple_control(plant, 60.0)
         plant.step(5)
         peak = max(peak, turbine.speed_rpm)
     assert generator.breaker_closed == 0
@@ -239,7 +257,6 @@ def test_cooling_loss_trips_turbine_and_latch_persists(steady):
     condenser.faults.enabled = True
     condenser.faults.set("process", "cooling_water_availability", 0.2)
     for _ in range(400):
-        simple_control(plant, 60.0)
         plant.step(5)
         if turbine.protection.any_latched:
             break
@@ -249,7 +266,6 @@ def test_cooling_loss_trips_turbine_and_latch_persists(steady):
     # 冷卻恢復後跳機仍鎖存
     condenser.faults.clear("process", "cooling_water_availability")
     for _ in range(200):
-        simple_control(plant, 60.0)
         plant.step(5)
     assert turbine.protection.any_latched, "跳機不因冷凝器壓力恢復而解除"
 
@@ -261,7 +277,6 @@ def test_feedwater_pump_trip_eventually_trips_boiler(steady):
     pump.faults.enabled = True
     pump.faults.set("actuator", "pump_trip", True)
     for _ in range(1200):
-        simple_control(plant, 60.0)
         plant.step(5)
         if boiler.protection.any_latched:
             break

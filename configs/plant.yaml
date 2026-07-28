@@ -41,13 +41,17 @@ modbus:
 comm:
   watchdog_timeout: 3.0   # 超過 3 秒未更新 40003 -> CONTROL_WATCHDOG_OK = false
   hold_seconds: 2.0
-  failure_policy: HOLD_LAST
+  # 設備自持：失去 PLC 通訊不改變本地控制，只降級品質並點亮警報
+  failure_policy: LOCAL_AUTO
 
 persistence:
   period: 1.0
 
 control:
-  default_mode: 3         # 3 = REMOTE_AUTO
+  default_mode: 1         # 1 = LOCAL_AUTO（設備自持，本地調節器決定輸出）
+  self_hold: true         # 允許條件成立即自行啟動
+  self_start_delay_s: 2.0     # 允許條件需連續成立多久才自行啟動
+  self_restart_delay_s: 10.0  # 本地需求消失多久才自行停機（進入待機）
 
 # --- 額定運轉條件（§6），供多個設備交叉引用 ---
 ratings:

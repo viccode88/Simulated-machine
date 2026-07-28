@@ -23,7 +23,7 @@ plantctl / HTTP API
    5. 恢復執行
         │
         ├── boiler / turbine / …（8 台設備，各自序列化自己的完整狀態）
-        └── dcs-plc（PID 積分項、啟動順序步驟、跳機矩陣）
+        └── 各設備的本地調節器（積分項、追隨狀態）、自持狀態與操作員停機鎖
 ```
 
 關鍵設計：
@@ -83,7 +83,7 @@ curl -X POST localhost:15080/snapshot/restore \
 ### 啟動時自動還原
 
 ```bash
-RESTORE_ON_BOOT=steady-60mw docker compose --profile standalone up
+RESTORE_ON_BOOT=steady-60mw docker compose up
 ```
 
 ### HMI

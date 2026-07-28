@@ -1,17 +1,20 @@
 name: load_rejection
 description: |
-  §19.3 發電機甩載 90 MW -> 0 MW。調速器正常時轉速應恢復；
-  若閥門卡住則超速跳機並鎖存。
+  §19.3 發電機甩載 60 MW -> 0 MW。設備自持：主蒸汽閥的本地調速器在
+  3150 RPM 快關，鍋爐在 108 bar 高壓 runback 切燃料，機組不跳機並自行回到
+  3000 RPM 空載。
+  注意：本模型沒有汽機旁通，90 MW 全載甩載會超過安全閥容量（40 kg/s），
+  鍋爐仍會超壓跳機——那是預期行為，不是缺陷。
 snapshot:
   restore: steady-60mw
   clean: true
 speed: 1.0
 steps:
   - wait: 10
-  - write: {device: generator, register: PRIMARY_SETPOINT, value: 90}
-  - expect: {signal: generator.electrical_power_mw, min: 88, max: 92, within: 180}
   - write: {device: generator, register: BREAKER_OPEN, value: 1, coil: true}
-  - expect: {signal: turbine.speed_rpm, min: 3010, max: 3400, within: 20}
-  - expect: {signal: steam_valve.position_pct, min: 0, max: 20, within: 30}
-  - expect: {signal: turbine.speed_rpm, min: 2900, max: 3160, within: 180, hold: 10}
+  - expect: {signal: turbine.speed_rpm, min: 3010, max: 3250, within: 20}
+  - expect: {signal: steam_valve.position_pct, min: 0, max: 5, within: 30}
+  - expect_event: {event: PRESSURE_RUNBACK, within: 60}
+  - expect: {signal: turbine.speed_rpm, min: 2900, max: 3100, within: 300, hold: 10}
+  - expect: {signal: boiler.pressure_bar_abs, min: 90, max: 115, within: 300}
   - check_invariants: {}

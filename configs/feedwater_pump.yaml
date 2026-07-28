@@ -10,10 +10,25 @@ feedwater_pump:
   vibration_base_mm_s: 1.2
   start_level_min_pct: 25.0
   has_outlet_valve: true
+  standby_margin_pct: 4.0     # 鍋爐水位高於設定值 +4% 進入待機
+  restart_margin_pct: 1.0     # 低於設定值 +1% 自行重啟
+
+  # --- 本地自持控制：三元素鍋爐水位 ---
+  control:
+    level:                    # 水位修正（輸出 ±50% 流量修正）
+      kp: 1.5
+      ki: 0.02
+      deadband: 0.3
+    flow:                     # 給水流量迴路（輸出即轉速命令）
+      kp: 1.2
+      ki: 0.4
+      rate_up: 25.0
+      rate_down: 25.0
+    feedforward_gain: 1.0     # 蒸汽流量前饋（與物理增益一致）
 
 comm:
-  failure_policy: HOLD_LAST
-  hold_seconds: 2.0           # 保持 2 秒後降速
+  failure_policy: LOCAL_AUTO
+  hold_seconds: 2.0
 
 protections:
   LOW_LOW_SUCTION:

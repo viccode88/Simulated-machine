@@ -13,7 +13,7 @@ turbine:
   start_max_exhaust_bar: 0.15
 
 comm:
-  failure_policy: FAIL_LOW       # 進入安全減速
+  failure_policy: LOCAL_AUTO     # 自持：調速器在主蒸汽閥本地執行
 
 protections:
   OVERSPEED:

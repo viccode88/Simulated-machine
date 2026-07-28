@@ -2,12 +2,17 @@
 
 PumpHead = ShutoffHead × Speed²
 Flow     = RatedFlow × Speed × sqrt(max(0, 1 - dP / PumpHead)) × CavitationFactor
+
+自持行為：泵浦自己控制下游水位。水位高於設定值一段時間就進入待機（停轉），
+低於重啟門檻再自行啟動，因此不需要外部控制器決定轉速，也不會因為
+最低轉速下限而把下游灌到溢流。
 """
 from __future__ import annotations
 
 import random
 
 from common.device.base_device import BaseDevice
+from common.device.regulator import build_regulator
 from common.modbus.encoding import enc_u16
 from common.modbus.register_map import DeviceState, RegSpec
 from common.util import clamp, first_order, ramp, rate_limit
@@ -57,6 +62,19 @@ class PumpDevice(BaseDevice):
         """
         return False, ""
 
+    def controlled_level(self) -> float:
+        """子類別提供：本泵浦負責維持的下游水位（%）。"""
+        raise NotImplementedError
+
+    def level_setpoint(self) -> float:
+        """本泵浦的水位設定值，預設取 40010 PRIMARY_SETPOINT。"""
+        return self.hr("PRIMARY_SETPOINT")
+
+    def local_speed_demand(self, dt: float) -> float:
+        """自持轉速需求。預設：本地水位調節器（手動模式改用 40012）。"""
+        self.speed_ctl.setpoint = self.level_setpoint()
+        return self.local_demand(self.speed_ctl, self.controlled_level(), dt)
+
     # -- 共通設定 ----------------------------------------------------------
     def configure_pump(self, c: dict) -> None:
         self.rated_flow = float(c.get("rated_flow_kg_s", 120.0))
@@ -89,6 +107,20 @@ class PumpDevice(BaseDevice):
         self.backpressure = 1.0
         self._flow_inhibited_latched = False
 
+        # --- 自持：待機門檻與本地水位調節器 ---
+        # 泵浦有最低轉速與揚程下限，無法無限降流量；因此「下游已經夠滿」時
+        # 必須真的停轉進入待機，否則會一路灌到溢流或高水位跳機。
+        self.standby_margin = float(c.get("standby_margin_pct", 4.0))
+        self.restart_margin = float(c.get("restart_margin_pct", 1.0))
+        ctl = c.get("control", {})
+        self.speed_ctl = build_regulator(
+            f"{self.NAME}_level", ctl.get("level", {}),
+            kp=2.0, ki=0.05, kd=0.0, out_min=0.0, out_max=100.0,
+            rate_up=float(c.get("speed_rate_pct_s", 15.0)),
+            rate_down=float(c.get("speed_rate_pct_s", 15.0)),
+            deadband=0.5, integral_limit=100.0,
+        )
+
     def control_output(self) -> float:
         return self.speed
 
@@ -102,6 +134,26 @@ class PumpDevice(BaseDevice):
             ("緊急停止未啟動", not self.estop),
         ]
 
+    # -- 自持條件 ----------------------------------------------------------
+    def self_start_ready(self) -> tuple[bool, str]:
+        """下游水位低於「設定值 + 重啟餘裕」才需要送水。"""
+        setpoint = self.level_setpoint()
+        level = self.controlled_level()
+        if level < setpoint + self.restart_margin:
+            return True, f"下游水位 {level:.1f}% < {setpoint + self.restart_margin:.1f}%"
+        return False, "下游水位已足夠"
+
+    def self_stop_request(self) -> tuple[bool, str]:
+        """下游水位高過設定值一段餘裕就進入待機（泵浦無法無限降流量）。"""
+        inhibited, reason = self.flow_inhibited()
+        if inhibited:
+            return True, reason
+        setpoint = self.level_setpoint()
+        level = self.controlled_level()
+        if level > setpoint + self.standby_margin:
+            return True, f"下游水位 {level:.1f}% > {setpoint + self.standby_margin:.1f}%"
+        return False, ""
+
     def on_start(self) -> None:
         self.sm.to(DeviceState.STARTING, "START")
 
@@ -110,6 +162,7 @@ class PumpDevice(BaseDevice):
 
     def on_trip(self, codes: list[int]) -> None:
         self.speed_command = 0.0
+        self.speed_ctl.hold(0.0)
 
     # -- 共通物理 ----------------------------------------------------------
     def _head_floor_speed(self) -> float:
@@ -133,12 +186,16 @@ class PumpDevice(BaseDevice):
         inhibited, inhibit_reason = self.flow_inhibited()
         if self.sm.tripped or self.estop or self.force_safe or self.sm.state not in running_states:
             target = 0.0
+            self.speed_ctl.hold(0.0)
+            self.local_output = 0.0
         elif inhibited:
             # 安全禁止送水：必須真正停轉，不可再套用最低轉速／揚程下限，
             # 否則泵浦會以 min_speed 持續打水到被禁止進水的設備
             target = 0.0
+            self.speed_ctl.hold(0.0)
+            self.local_output = 0.0
         else:
-            target = clamp(self.hr("MANUAL_OUTPUT"), 0.0, 100.0)
+            target = clamp(self.local_speed_demand(dt), 0.0, 100.0)
             target = clamp(target, self.hr("OUTPUT_LOW_LIMIT"), self.hr("OUTPUT_HIGH_LIMIT"))
             target = max(target, self.min_speed, self._head_floor_speed())
         if inhibited != self._flow_inhibited_latched:
@@ -201,8 +258,8 @@ class PumpDevice(BaseDevice):
         self.mass_total += self.flow * dt
 
     def apply_comm_loss(self, policy: str) -> None:
-        if policy == "HOLD_LAST":
-            return
+        if policy in ("HOLD_LAST", "LOCAL_AUTO"):
+            return          # 自持：本地水位控制繼續運作
         if policy in ("FAIL_LOW", "FAIL_CLOSE"):
             self.set_hr("MANUAL_OUTPUT", 0.0)
         elif policy == "FAIL_HIGH":
@@ -216,6 +273,12 @@ class PumpDevice(BaseDevice):
             "flow": self.flow,
             "vibration": self.vibration,
         }
+
+    def snapshot_extra(self) -> dict:
+        return {"speed_ctl": self.speed_ctl.to_dict()}
+
+    def restore_extra(self, data: dict) -> None:
+        self.speed_ctl.from_dict(data.get("speed_ctl") or {})
 
     def fill_pump_registers(self, regs: list[int]) -> None:
         regs[9] = enc_u16(self.speed, 100)

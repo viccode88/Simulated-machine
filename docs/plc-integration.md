@@ -1,7 +1,16 @@
-# 外部 PLC／DCS 串接指南
+# 外部 PLC 串接指南
 
-本文說明「控制器」要如何透過 Modbus TCP 接管這 8 台設備。
-內建 DCS（`controller/dcs/main.py`）就是這份規格的參考實作，可直接對照原始碼閱讀。
+本文說明 PLC 要如何透過 Modbus TCP 與這 8 台**自持設備**交換資料。
+
+設備自己啟動、自己調節、自己保護，因此 PLC 的工作只有兩件事：
+**資料交換**（南向輪詢、北向提供給 SCADA）與**邏輯判斷**（watchdog、脈衝展寬、
+跳機矩陣、互鎖判斷）。**不要**在 PLC 裡寫 PID 或設定值——那會跟設備自己的
+調節器互相打架。
+
+參考實作有兩個，可直接對照原始碼閱讀：
+
+* `integrations/openplc/thermal-plant-v4/pous/programs/main.st`（OpenPLC v4，預設）
+* `examples/external_plc.py`（Python 骨架，只用 `docs/register-map.csv`）
 
 ---
 
@@ -14,9 +23,9 @@
 * **南向（必要）**：PLC 是 **Client／Master**，主動輪詢 8 台設備、下命令。本文主要在講這一段。
 * **北向（選配）**：PLC 自己再開一個 Modbus Server 給上位系統讀。
 
-> 注意：內建 DCS **只做南向**，它沒有開 Modbus Server。
-> `compose.yaml` 為 `dcs-plc` 保留了 `15020:502` 的埠對映，但預設沒有行程在聽。
-> 要做北向就自己用 `common/modbus/server.py` 的 `ModbusTcpServer`（第 9 節）。
+> 預設的 OpenPLC 服務兩面都做：南向輪詢 8 台設備，北向在 502 開 Modbus Server，
+> 由 `compose.yaml` 對映到主機的 `15020`。SCADA 一律連 PLC，不要直連設備
+> （繞過 PLC 寫入會與 PLC 爭用單一寫入者租約，收到 Exception 06）。
 
 設備端不是「被動記憶體」：每台設備自己跑物理模型、狀態機、保護邏輯，
 **PLC 寫下去的命令只是請求**，設備會依安全邏輯決定接不接受。
@@ -39,17 +48,19 @@
 
 **從主機連**：用 `127.0.0.1` + 對映埠 15021~15028（見 README 埠表）。
 
-啟動不含內建 DCS 的環境，把控制權留給你的 PLC：
+啟動不含 OpenPLC 的環境，把 control_net 留給你自己的 PLC：
 
 ```bash
-docker compose --profile external-plc up --build -d
+COMPOSE_PROFILES=no-plc docker compose up --build -d
 ```
+
+設備照樣會自持運轉；你的 PLC 接上去之後負責資料交換與邏輯判斷即可。
 
 ---
 
 ## 2. 介面契約在哪裡
 
-`docs/register-map.csv` 是唯一的介面契約來源（688 筆），欄位：
+`docs/register-map.csv` 是唯一的介面契約來源（714 筆），欄位：
 
 ```
 device,table,doc_address,pdu_offset,name,dtype,unit,scale,min,max,writable,pulse,description
@@ -91,10 +102,12 @@ CSV 可用 `python -m tools.export_docs` 重新產生。
 | 0 | LOCAL_MANUAL | ✗ |
 | 1 | LOCAL_AUTO | ✗ |
 | 2 | REMOTE_MANUAL | ✓ 用 MANUAL_OUTPUT |
-| 3 | REMOTE_AUTO | ✓ 用 PRIMARY_SETPOINT（預設值） |
+| 3 | REMOTE_AUTO | ✓ 用 PRIMARY_SETPOINT |
 | 4 | MAINTENANCE | ✗ 拒絕 START |
 
-開機預設是 **3 = REMOTE_AUTO**（`configs/plant.yaml` 的 `control.default_mode`）。
+開機預設是 **1 = LOCAL_AUTO**（`configs/plant.yaml` 的 `control.default_mode`）：
+自持設備由本地調節器決定輸出，`MANUAL_OUTPUT` 在 AUTO 模式下被忽略。
+PLC 不需要（也不應該）改這個值；要人工接管才寫 `0 = LOCAL_MANUAL`。
 
 ### 3.2 單一寫入者租約（Single Writer Lease）
 
@@ -129,8 +142,8 @@ CSV 可用 `python -m tools.export_docs` 重新產生。
 
 ## 4. 標準掃描週期
 
-內建 DCS 的節奏（`configs/dcs.yaml`）：輪詢 `poll_s: 0.25` 秒、PID `pid_scan_s: 0.5` 秒、
-watchdog 1 秒。建議照抄這個結構：
+OpenPLC 專案的節奏（`tools/generate_openplc_gateway.py`）：cyclic task 20 ms、
+南向讀取 250 ms、命令寫入 100 ms、watchdog 200 ms。建議照抄這個結構：
 
 ```
 每 250 ms：讀 → 更新快取
@@ -236,80 +249,84 @@ PLC 必須把這些當**正常回應**處理，不能因為收到例外就斷線
 | 30037 | `COMM_LOSS_SECONDS` | 目前通訊中斷秒數 |
 | 30039 | `SNAPSHOT_GENERATION` | 每次快照還原 +1，PLC 可據此重置內部狀態（積分項！） |
 
-> **快照還原後 PLC 要自己重置積分項**：設備狀態被瞬間換掉，PID 內部的積分累積若不跟著處理，
-> 會在還原後暴衝。內建 DCS 是透過參與快照協議來解決（第 10 節）。
+> **快照還原後 PLC 要自己重置邊緣記憶**：設備狀態被瞬間換掉，跳機邊緣、脈衝計時
+> 這類內部狀態若不跟著重置，會誤判或漏判。控制器的積分項不必再擔心——調節器在
+> 設備內，會跟著快照一起還原。
 
 ---
 
-## 7. 控制迴路怎麼串
+## 7. PLC 要做的邏輯（不是控制）
 
-設備之間的物理耦合走 `sim_net`，PLC 看不到也不需要看；
-PLC 要做的是「從 A 設備讀 PV，寫到 B 設備的 MV」。內建 DCS 的 5 個迴路：
+設備之間的物理耦合走 `sim_net`，PLC 看不到也不需要看；設備的閉迴路調節也在
+設備內，PLC 同樣不需要參與。PLC 該做的是這四件事：
 
-| # | 迴路 | PV（從哪讀） | MV（寫到哪） | SP |
-| --- | --- | --- | --- | --- |
-| 1 | 鍋爐壓力 | `boiler.BOILER_PRESSURE` | `boiler.MANUAL_OUTPUT`（燃燒器 %） | 100 bar(a) |
-| 2 | 鍋爐水位（三元素） | `boiler.LEVEL_INDICATED` + `STEAM_OUTFLOW` 前饋 − `FEEDWATER_FLOW` 回授 | `feedwater_pump.MANUAL_OUTPUT`（泵速 %） | 66.7% |
-| 3 | 給水槽水位 | `feedwater_tank.TANK_LEVEL` | `condensate_pump.MANUAL_OUTPUT` | 60% |
-| 4 | 汽輪機轉速 | `turbine.SPEED_RPM` | `steam_valve.MANUAL_OUTPUT`（閥位 %） | 3000 RPM |
-| 5 | 負載（併網後） | `generator.ELECTRICAL_POWER` | `steam_valve.MANUAL_OUTPUT` | `generator.LOAD_DEMAND` |
+### 7.1 watchdog 與鏈路確認
 
-迴路 4 與 5 **共用同一個 MV**：`generator.OPERATING_MODE ≥ 1`（併網）時用負載控制，
-否則用轉速控制。切換時務必做 bumpless transfer（把新 PID 的積分項預載成目前輸出），
-`controller/pid.py` 的 `to_auto(current_output)` 就是幹這個的。
+每 200 ms 把每台設備的 `WATCHDOG_COUNTER`（40003）寫成新值（遞增、跳過 0），
+再比對 `WATCHDOG_ECHO`（30030）有沒有跟著動。連續 3 秒沒動＝該設備通訊失效，
+點亮 HMI 上的狀態即可——設備是自持的，**不需要**（也不該）為此改動它的輸出。
 
-三個必須寫死在 PLC 裡、優先於任何 PID 的安全邏輯：
+### 7.2 脈衝展寬
 
-```python
-# 1. 超速無條件關閥（門檻 3150 RPM，比設備跳機門檻 3300 早）
-if turbine.SPEED_RPM > 3150 or turbine.TRIPPED:
-    steam_valve.MANUAL_OUTPUT = 0
+HMI 只送一個 `true`。PLC 把 `START`／`STOP`／`RESET_TRIP`／`ACK_ALARM`／
+`TRIP_TEST`／`CLEAR_TOTALIZER`／`BREAKER_CLOSE`／`BREAKER_OPEN` 保持約 160 ms
+（要大於南向寫入週期）再自動清零。`EMERGENCY_STOP` 與 `FORCE_SAFE` 是保持型，
+**永遠不要自動清除**，必須由操作員明確解除。
 
-# 2. 鍋爐跳機時燃燒器歸零，且積分項要一起清掉
-if boiler.TRIPPED:
-    boiler.MANUAL_OUTPUT = 0; pressure_pid.force_output(0)
+`RESET_TRIP` 上升緣時，PLC 要一併填入 `RESET_KEY = 0xA55A` 並把
+`COMMAND_SEQUENCE` 遞增（跳過 0）；脈衝結束後把 Reset Key 清回 0。
 
-# 3. 設備說不准給水就不准給
-if boiler.FEEDWATER_PERMITTED < 1:
-    feedwater_pump.MANUAL_OUTPUT = 0; flow_pid.force_output(0)
-```
+### 7.3 只寫命令，不寫控制值
 
-啟動期間還要加兩個限幅，否則一定過衝：升壓時燃燒器 ≤ 20%、升速時閥位 ≤ 15%
-（`dcs.startup_burner_max_pct` / `startup_valve_max_pct`）。
+PLC 的南向寫入應該只有：
 
-### 跳機矩陣（第二層防護）
+| 寫什麼 | FC | 位址 |
+| --- | --- | --- |
+| 命令線圈 | 15 | Coil 0~7（發電機另有 9、10） |
+| 命令暫存器 | 16 | Holding 1~3（`COMMAND_SEQUENCE` / `WATCHDOG_COUNTER` / `RESET_KEY`） |
 
-設備之間已經有 `sim_net` 互鎖，但 PLC 應該再做一層。偵測 `TRIPPED`（DI 10005）**上升緣**時：
+設定值（40010/40011）、手動輸出（40012）、輸出限幅、PID 參數**都不要寫**。
+它們仍然是可寫的（工程人員偶爾需要改目標負載），但那是刻意的人工動作，
+不是 PLC 的週期性行為。北向地圖的 `plc_forwards` 欄位就是這條界線。
 
-| 來源跳機 | PLC 應執行 |
+### 7.4 跳機矩陣（第二層防護）
+
+設備之間已經有 `sim_net` 互鎖，但 PLC 應該再做一層。偵測 `TRIPPED`（DI 10005）
+**上升緣**時下達命令：
+
+| 來源跳機 | PLC 下達的命令 |
 | --- | --- |
-| turbine | `generator` 脈衝 `BREAKER_OPEN`、`steam_valve.MANUAL_OUTPUT=0`、`generator.PRIMARY_SETPOINT=0` |
-| boiler | `boiler.MANUAL_OUTPUT=0`、`steam_valve.MANUAL_OUTPUT=0` |
-| condenser | `generator.PRIMARY_SETPOINT=0`（降載） |
-| feedwater_pump | `boiler.MANUAL_OUTPUT=0`（避免低水位） |
-| condensate_pump | `feedwater_pump.MANUAL_OUTPUT=20`（保護給水槽） |
-| steam_valve | `boiler.MANUAL_OUTPUT=0` |
+| turbine | `generator` 脈衝 `BREAKER_OPEN`、`steam_valve` 脈衝 `STOP` |
+| boiler | `steam_valve` 脈衝 `STOP` |
+| condenser | `generator` 脈衝 `BREAKER_OPEN` |
+| feedwater_pump | `boiler` 脈衝 `STOP` |
+| condensate_pump | 無（給水泵自己會保護給水槽） |
+| steam_valve | `boiler` 脈衝 `STOP` |
 
-只在邊緣觸發一次，不要每個 scan 重送（會蓋掉操作員的手動處置）。
-完整規則見 `controller/trip_matrix.py`。
+另外，`turbine.SPEED_RPM > 3150`（比設備跳機門檻 3300 早）或汽輪機跳機時，
+獨立對主蒸汽閥下 `STOP`——這是不依賴設備自己調速器的第二層超速保護。
+
+只在邊緣觸發一次，不要每個 scan 重送（會蓋掉操作員的手動處置）。被 `STOP` 停下的
+設備會維持停機，直到操作員按 `START`（這也是重新允許自持運轉的動作）。
 
 ---
 
 ## 8. 通訊失效：每台設備的行為不同
 
-PLC 掛掉或網路斷了，設備不會傻等。watchdog 逾時 + hold 2 秒後各自執行：
+PLC 掛掉或網路斷了，機組**照常運轉**：八台設備的預設策略都是 `LOCAL_AUTO`，
+本地調節器繼續維持程序量，只把品質降級並點亮 `CONTROL_WATCHDOG_LOST` 警報。
 
-| 設備 | 策略 | 行為 |
+| 策略 | 行為 | 誰在用 |
 | --- | --- | --- |
-| boiler | `FAIL_LOW` | 燃燒器立即降到 0% |
-| turbine | `FAIL_LOW` | 進入安全減速 |
-| steam_valve | `FAIL_CLOSE` | 閥門關閉（預設失效位置） |
-| feedwater_pump / feedwater_tank / generator | `HOLD_LAST` | 維持最後命令 |
-| condenser / condensate_pump | `LOCAL_FALLBACK` | 切回本地自動控制 |
+| `LOCAL_AUTO` | 本地控制繼續，只降級品質與警報 | 八台設備預設 |
+| `HOLD_LAST` | 保持最後命令 | 需要傳統遠端控制語意時 |
+| `FAIL_LOW` / `FAIL_CLOSE` / `FAIL_OPEN` | 輸出歸零／關閥／開閥 | 要示範失效安全時 |
+| `TRIP` | 直接跳機 | 嚴格安全示範 |
 
-PLC 重新連上後要注意：**設備的輸出已經被改掉了**，PID 積分項與實際輸出脫節。
-恢復前先讀回目前的 `BURNER_OUTPUT` / `ACTUAL_SPEED` / `VALVE_POSITION`，
-用 `to_auto(目前輸出)` 做 bumpless 再接手。
+要示範「PLC 失聯就失效安全」，改該設備 YAML 的 `comm.failure_policy` 即可。
+
+PLC 重新連上後不需要做任何 bumpless 處理——控制從頭到尾都在設備內，
+沒有脫節問題。只要重新開始 kick watchdog 就好。
 
 ---
 
@@ -341,58 +358,50 @@ server = ModbusTcpServer(
 await server.start()
 ```
 
-北向 map 建議只暴露聚合值（全廠負載、機組狀態、順序步驟、第一故障），
-不要把 8 台設備的暫存器原樣轉發 —— 那樣 SCADA 會繞過 PLC 的安全邏輯。
+北向 map 可以原樣轉發設備的唯讀資料（本專案的 OpenPLC 專案就是這樣做的，
+見 `northbound-map.csv`），但**可寫入的部分只暴露命令**：SCADA 的工作是啟動、
+停止、確認警報與觀察，設定值與輸出屬於設備自己。`plc_forwards` 欄位標明了
+哪些點會真的被 PLC 寫到設備。
 
 ---
 
-## 10. 參與快照協議（強烈建議）
+## 10. 參與快照協議（選配）
 
-PLC 若不參與快照，「秒級重置環境」對它就是失效的：設備回到 60 MW 穩態，
-PLC 的積分項、順序步驟、跳機矩陣旗標卻停在別的地方。
+自持設備把調節器狀態一起放進快照，因此「秒級重置環境」對 PLC 的影響小很多：
+PLC 沒有積分項要對齊，只有**邊緣記憶**（跳機上升緣、脈衝計時）需要重置。
 
-做法是以 `Role.CONTROLLER` 連上 plant-bus（`common/simbus/client.py`），
-處理三種訊息：
+最低限度做法：輪詢 `SNAPSHOT_GENERATION`（30039），發現變了就清掉跳機邊緣旗標與
+脈衝狀態。`examples/external_plc.py` 的 `snapshot_changed()` 就是這樣做的。
+
+想更完整（例如 PLC 內有自己的統計或順序狀態），可以用 `Role.CONTROLLER` 連上
+plant-bus（`common/simbus/client.py`），處理四種訊息：
 
 | 訊息 | PLC 要做什麼 |
 | --- | --- |
 | `TICK` | 更新模擬時間（事件時戳用它，不要用真實時間） |
-| `PAUSE` / `RESUME` | 暫停／恢復控制運算（暫停時不可繼續積分） |
-| `SNAPSHOT_SAVE` | 回傳 `SNAPSHOT_DATA`：PID 積分項與 auto 狀態、順序步驟、跳機矩陣已觸發集合、模式 |
+| `PAUSE` / `RESUME` | 暫停／恢復邏輯運算 |
+| `SNAPSHOT_SAVE` | 回傳 `SNAPSHOT_DATA`：自己的邊緣記憶與內部狀態 |
 | `SNAPSHOT_RESTORE` | 套用後回 `RESTORE_ACK{ok, error}` |
-
-參考 `controller/dcs/main.py` 的 `snapshot_state()` / `restore_state()`（約 30 行）。
-
-不想接 plant-bus 的最低限度做法：輪詢 `SNAPSHOT_GENERATION`（30039），
-發現變了就把所有 PID 重置並用當下輸出重新 `to_auto()`。
 
 ---
 
-## 11. 冷啟動順序（PLC 要實作的 15 步）
+## 11. 冷啟動順序：PLC 不需要實作
 
-每步都有「進入動作 / 完成條件 / 順序禁止（guard）」。guard 不成立就停在原步驟並拒絕前進 ——
-這是順序控制的重點，不是「等時間到就往下走」。
+這是與舊版最大的差異。**沒有順序器**——冷啟動順序是設備的允許條件互相扣住後
+自然浮現的，PLC 只要不擋路即可：
 
-| # | 步驟 | 進入動作 | 完成條件 | 順序禁止 |
-| ---: | --- | --- | --- | --- |
-| 1 | COOLING_WATER | condenser `MANUAL_OUTPUT=100` + START | `COOLING_WATER_AVAILABILITY > 90%` | |
-| 2 | PULL_VACUUM | — | `CONDENSER_PRESSURE ≤ 0.12 bar(a)` | |
-| 3 | CHECK_HOTWELL | — | `HOTWELL_LEVEL ≥ 20%` | |
-| 4 | START_CONDENSATE_PUMP | `MANUAL_OUTPUT=40` + START | `RUNNING` | 熱井 < 20% 禁止啟動 |
-| 5 | TANK_LEVEL | 水槽迴路轉 auto | `｜TANK_LEVEL − 60｜< 5%` | |
-| 6 | START_FEEDWATER_PUMP | `OUTLET_VALVE_CMD=100`、`MANUAL_OUTPUT=40` + START | `RUNNING` | 給水槽 < 25% 禁止啟動 |
-| 7 | BOILER_LEVEL | 三元素迴路轉 auto | `｜LEVEL_INDICATED − 66.7｜< 5%` | |
-| 8 | BOILER_PURGE | boiler START | `DEVICE_STATE ∈ {2,6,7}` | 水位不在 30~80% 禁止點火 |
-| 9 | IGNITE | `MANUAL_OUTPUT=15` | `FLAME_STATUS ≥ 2`（穩定） | |
-| 10 | RAISE_PRESSURE | 壓力迴路轉 auto | `BOILER_PRESSURE ≥ 30 bar(a)` | |
-| 11 | OPEN_MSV | steam_valve START + turbine START，轉速迴路轉 auto | `SPEED_RPM > 300` | 冷凝器 > 0.15 bar(a) 禁止啟動汽輪機 |
-| 12 | RUN_UP | — | `｜SPEED_RPM − 3000｜ ≤ 30` | |
-| 13 | SYNC_CHECK | — | `SYNC_PERMISSIVE == 0x3F`（6 個條件全滿足） | |
-| 14 | CLOSE_BREAKER | generator START + `BREAKER_CLOSE` | `BREAKER_STATUS ≥ 1` | 轉速偏差 > 30 RPM 禁止併網 |
-| 15 | RAMP_LOAD | `PRIMARY_SETPOINT = 60 MW` | `ELECTRICAL_POWER ≥ 57 MW` | |
+```
+熱井有水 → 冷凝器抽真空 → 凝結水泵補給水槽 → 給水泵補鍋爐
+→ 鍋爐吹掃點火升壓 → 壓力達 30 bar 主蒸汽閥開啟 → 汽輪機升速
+→ 轉速達 90% 發電機勵磁 → 同步條件成立自動併聯 → 負載爬到目標
+```
 
-每步都要有 timeout（120~1800 秒不等），逾時就停在該步並發事件，不要無限等待。
-完整實作見 `controller/startup_sequence.py`。
+完整時間軸與各步驟的允許條件見 `docs/sequence-of-operation.md`。
+PLC 想觀察進度就讀 30027 `SELF_HOLD_STATE` 與 30028 `PERMISSIVE_WORD`：
+哪一個位元是 0，就是還在等哪一個條件。
+
+若真的需要由 PLC 主導順序（例如作業程序要求），把 `.env` 的 `SELF_HOLD=false`
+關掉自持，設備就退回純外部命令模式（保護與互鎖仍在）。
 
 ---
 
@@ -402,8 +411,8 @@ PLC 的積分項、順序步驟、跳機矩陣旗標卻停在別的地方。
 純粹靠 `docs/register-map.csv` 當契約的外部 PLC 骨架，示範本文所有機制：
 
 ```bash
-# 環境先起來（不含內建 DCS，把控制權留給你的 PLC）
-docker compose --profile external-plc up -d
+# 環境先起來（不啟動 OpenPLC，把 control_net 留給你的 PLC）
+COMPOSE_PROFILES=no-plc docker compose up -d
 
 # 從主機執行（自動用 15021~15028 埠）
 python examples/external_plc.py --host 127.0.0.1
@@ -416,8 +425,8 @@ python examples/external_plc.py --host 127.0.0.1 --only boiler
 ```
 
 它做了：CSV 驅動的位址解析、批次輪詢、watchdog 續租、例外碼分類處理、
-跳機矩陣邊緣觸發、鍋爐壓力 PID、超速強制關閥、`SNAPSHOT_GENERATION` 變化時重置積分項。
-拿它當骨架改成自己的控制策略即可。
+跳機矩陣邊緣觸發（只下命令）、超速獨立停機、`SNAPSHOT_GENERATION` 變化時重置邊緣記憶，
+以及在報表列出每台設備的自持狀態。拿它當骨架改成自己的邏輯即可。
 
 ---
 
@@ -432,10 +441,11 @@ python examples/external_plc.py --host 127.0.0.1 --only boiler
 - [ ] 命令是脈衝，不會補寫 False
 - [ ] 重置有備齊 Reset Key + 新序號 + 安全條件
 - [ ] 監看 `REJECTED_COMMAND_COUNT`，被拒絕會記錄原因
-- [ ] 超速 3150 RPM 關閥的安全邏輯**寫在 PID 之外**且優先
-- [ ] 跳機矩陣只在邊緣觸發一次
-- [ ] `SNAPSHOT_GENERATION` 變化時重置 PID 積分項
-- [ ] 通訊恢復後用 bumpless transfer 接手，不是直接切回 auto
+- [ ] 超速 3150 RPM 的停機命令獨立於設備自己的調速器
+- [ ] 跳機矩陣只在邊緣觸發一次，而且只下命令（不寫設定值／手動輸出）
+- [ ] 週期性寫入只有命令線圈與 Holding 1~3
+- [ ] `SNAPSHOT_GENERATION` 變化時重置邊緣記憶與脈衝狀態
+- [ ] 通訊恢復後直接繼續 kick watchdog（沒有 bumpless 問題）
 
 相關文件：`docs/architecture.md`、`docs/sequence-of-operation.md`、`docs/register-map.csv`、
 `docs/alarm-codes.csv`、`TESTING.md`。

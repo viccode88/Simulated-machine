@@ -2,8 +2,8 @@
   "name": "condenser",
   "protocol": "modbus-tcp",
   "modbusTcpConfig": {
-    "host": "127.0.0.1",
-    "port": 15021,
+    "host": "condenser",
+    "port": 502,
     "slaveId": 1,
     "timeout": 1000,
     "ioGroups": [
@@ -165,17 +165,17 @@
           },
           {
             "id": "b3f103d4-f614-50e9-956c-e856e1df6435",
-            "name": "condenser__input__reserved_21",
+            "name": "condenser__input__makeup_valve_position",
             "type": "Analog Input (Input Register)",
             "iecLocation": "%IW21",
-            "alias": "condenser__input__reserved_21"
+            "alias": "condenser__input__makeup_valve_position"
           },
           {
             "id": "deae626c-6a17-5e1c-a16a-ca43fcc31b47",
-            "name": "condenser__input__reserved_22",
+            "name": "condenser__input__makeup_flow",
             "type": "Analog Input (Input Register)",
             "iecLocation": "%IW22",
-            "alias": "condenser__input__reserved_22"
+            "alias": "condenser__input__makeup_flow"
           },
           {
             "id": "130b0cc5-192f-56be-b959-1f913e33cf22",
@@ -193,24 +193,24 @@
           },
           {
             "id": "a4f6aeed-05f4-57a6-aae2-1d105902b3e4",
-            "name": "condenser__input__reserved_25",
+            "name": "condenser__input__local_output",
             "type": "Analog Input (Input Register)",
             "iecLocation": "%IW25",
-            "alias": "condenser__input__reserved_25"
+            "alias": "condenser__input__local_output"
           },
           {
             "id": "6a5ac530-ebf7-5dd8-ae96-44723450b3ee",
-            "name": "condenser__input__reserved_26",
+            "name": "condenser__input__self_hold_state",
             "type": "Analog Input (Input Register)",
             "iecLocation": "%IW26",
-            "alias": "condenser__input__reserved_26"
+            "alias": "condenser__input__self_hold_state"
           },
           {
             "id": "0221358a-5fba-5b03-b7d5-f4ddbfe2c0e7",
-            "name": "condenser__input__reserved_27",
+            "name": "condenser__input__permissive_word",
             "type": "Analog Input (Input Register)",
             "iecLocation": "%IW27",
-            "alias": "condenser__input__reserved_27"
+            "alias": "condenser__input__permissive_word"
           },
           {
             "id": "01f84267-72e5-54f8-bbb9-70cd39d1324c",
@@ -794,182 +794,34 @@
         ]
       },
       {
-        "id": "64a48b70-9ccd-5fc9-b470-bcf36d21ec67",
-        "name": "condenser_holding_0_13",
+        "id": "f1030bac-5119-5c6f-a158-fcb4977652ef",
+        "name": "condenser_holding_1_3",
         "functionCode": "16",
         "cycleTime": 100,
-        "offset": "0",
-        "length": 14,
+        "offset": "1",
+        "length": 3,
         "errorHandling": "keep-last-value",
         "ioPoints": [
           {
-            "id": "4f794b8d-5f56-58be-a5c2-9353687581eb",
-            "name": "condenser__holding__control_mode",
-            "type": "Analog Output (Multiple Registers)",
-            "iecLocation": "%QW0",
-            "alias": "condenser__holding__control_mode"
-          },
-          {
-            "id": "3ddaf194-58e6-561e-ba89-438dd2e08b16",
+            "id": "ad12eb66-aad5-5828-be99-c9f5e07b35e3",
             "name": "condenser__holding__command_sequence",
             "type": "Analog Output (Multiple Registers)",
             "iecLocation": "%QW1",
             "alias": "condenser__holding__command_sequence"
           },
           {
-            "id": "761cd929-03eb-5d0e-8778-cfcb203484c5",
+            "id": "4cd756e5-887b-578f-9711-0b26be8c9d22",
             "name": "condenser__holding__watchdog_counter",
             "type": "Analog Output (Multiple Registers)",
             "iecLocation": "%QW2",
             "alias": "condenser__holding__watchdog_counter"
           },
           {
-            "id": "94e5028d-2850-58c5-9428-488f4eff0427",
+            "id": "78740772-895e-5f84-8927-cc0769afd312",
             "name": "condenser__holding__reset_key",
             "type": "Analog Output (Multiple Registers)",
             "iecLocation": "%QW3",
             "alias": "condenser__holding__reset_key"
-          },
-          {
-            "id": "7af93c45-c636-5ad9-a4de-04200aa2c6e4",
-            "name": "condenser__holding__simulation_flags",
-            "type": "Analog Output (Multiple Registers)",
-            "iecLocation": "%QW4",
-            "alias": "condenser__holding__simulation_flags"
-          },
-          {
-            "id": "f336aae3-6275-5291-be1c-4e6d594ddf0b",
-            "name": "condenser__holding__active_controller_id",
-            "type": "Analog Output (Multiple Registers)",
-            "iecLocation": "%QW5",
-            "alias": "condenser__holding__active_controller_id"
-          },
-          {
-            "id": "e6e53b87-9a79-523a-b522-f1eb76b598d2",
-            "name": "condenser__holding__command_lease_time",
-            "type": "Analog Output (Multiple Registers)",
-            "iecLocation": "%QW6",
-            "alias": "condenser__holding__command_lease_time"
-          },
-          {
-            "id": "84735f5a-ce7f-5d16-a09f-b8ac01d0bf28",
-            "name": "condenser__holding__output_rate_limit",
-            "type": "Analog Output (Multiple Registers)",
-            "iecLocation": "%QW7",
-            "alias": "condenser__holding__output_rate_limit"
-          },
-          {
-            "id": "6a4f4977-d593-5f55-94c9-68d9e8755926",
-            "name": "condenser__holding__reserved",
-            "type": "Analog Output (Multiple Registers)",
-            "iecLocation": "%QW8",
-            "alias": "condenser__holding__reserved"
-          },
-          {
-            "id": "26c9d356-42f0-535f-bde0-d97464d2cf1a",
-            "name": "condenser__holding__primary_setpoint",
-            "type": "Analog Output (Multiple Registers)",
-            "iecLocation": "%QW9",
-            "alias": "condenser__holding__primary_setpoint"
-          },
-          {
-            "id": "5fdcce00-7f54-58b7-87be-a16d2a8da114",
-            "name": "condenser__holding__secondary_setpoint",
-            "type": "Analog Output (Multiple Registers)",
-            "iecLocation": "%QW10",
-            "alias": "condenser__holding__secondary_setpoint"
-          },
-          {
-            "id": "5b7fb4f0-f789-5a17-8896-fe298bcf0604",
-            "name": "condenser__holding__manual_output",
-            "type": "Analog Output (Multiple Registers)",
-            "iecLocation": "%QW11",
-            "alias": "condenser__holding__manual_output"
-          },
-          {
-            "id": "41d83d32-a5b1-5ed9-b14c-aff7b6286a32",
-            "name": "condenser__holding__output_high_limit",
-            "type": "Analog Output (Multiple Registers)",
-            "iecLocation": "%QW12",
-            "alias": "condenser__holding__output_high_limit"
-          },
-          {
-            "id": "bda8a98b-f28f-52a3-8963-dd84a4ac3f0f",
-            "name": "condenser__holding__output_low_limit",
-            "type": "Analog Output (Multiple Registers)",
-            "iecLocation": "%QW13",
-            "alias": "condenser__holding__output_low_limit"
-          }
-        ]
-      },
-      {
-        "id": "294c6265-3481-5727-b9b7-bd7733864808",
-        "name": "condenser_holding_19_24",
-        "functionCode": "16",
-        "cycleTime": 100,
-        "offset": "19",
-        "length": 6,
-        "errorHandling": "keep-last-value",
-        "ioPoints": [
-          {
-            "id": "f9cd37eb-4ab0-5367-ac33-9888111bf27f",
-            "name": "condenser__holding__pid_kp",
-            "type": "Analog Output (Multiple Registers)",
-            "iecLocation": "%QW19",
-            "alias": "condenser__holding__pid_kp"
-          },
-          {
-            "id": "22bee7d1-50e6-59be-8711-c2c982abaf5b",
-            "name": "condenser__holding__pid_ki",
-            "type": "Analog Output (Multiple Registers)",
-            "iecLocation": "%QW20",
-            "alias": "condenser__holding__pid_ki"
-          },
-          {
-            "id": "5effb95c-4219-5f85-97f9-cdfd023561e2",
-            "name": "condenser__holding__pid_kd",
-            "type": "Analog Output (Multiple Registers)",
-            "iecLocation": "%QW21",
-            "alias": "condenser__holding__pid_kd"
-          },
-          {
-            "id": "0699b413-9d4e-5291-89e5-f377bb6b93e2",
-            "name": "condenser__holding__deadband",
-            "type": "Analog Output (Multiple Registers)",
-            "iecLocation": "%QW22",
-            "alias": "condenser__holding__deadband"
-          },
-          {
-            "id": "0aff6974-fde7-59bb-83dc-bcc8289d9474",
-            "name": "condenser__holding__integral_limit",
-            "type": "Analog Output (Multiple Registers)",
-            "iecLocation": "%QW23",
-            "alias": "condenser__holding__integral_limit"
-          },
-          {
-            "id": "5ec4ce5c-d9aa-5233-8e9b-7ff79accb0fe",
-            "name": "condenser__holding__controller_scan_time",
-            "type": "Analog Output (Multiple Registers)",
-            "iecLocation": "%QW24",
-            "alias": "condenser__holding__controller_scan_time"
-          }
-        ]
-      },
-      {
-        "id": "f5fd7094-a000-59ba-a1f9-204dd0cc5254",
-        "name": "condenser_holding_29_29",
-        "functionCode": "16",
-        "cycleTime": 100,
-        "offset": "29",
-        "length": 1,
-        "errorHandling": "keep-last-value",
-        "ioPoints": [
-          {
-            "id": "6edbfe16-ca2f-5393-a9d1-70b49fddde46",
-            "name": "condenser__holding__makeup_valve_cmd",
-            "type": "Analog Output (Multiple Registers)",
-            "iecLocation": "%QW29",
-            "alias": "condenser__holding__makeup_valve_cmd"
           }
         ]
       }

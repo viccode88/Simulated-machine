@@ -13,9 +13,10 @@ condenser:
   max_makeup_kg_s: 20.0
   air_leak_gain: 0.05
   hotwell_setpoint_pct: 55.0
+  makeup_gain_pct_per_pct_s: 5.0  # 熱井補水閥本地控制增益
 
 comm:
-  failure_policy: LOCAL_FALLBACK
+  failure_policy: LOCAL_AUTO
 
 protections:
   HIGH_PRESSURE:

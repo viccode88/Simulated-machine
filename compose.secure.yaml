@@ -12,7 +12,7 @@ services:
   boiler:
     environment:
       LAB_MODE: "false"
-    # 只允許 TLS 前端與 DCS 寫入
+    # 只允許 TLS 前端與 PLC 寫入
     command: ["python", "-m", "devices.boiler.main"]
 
   modbus-tls:

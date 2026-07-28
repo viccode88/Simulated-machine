@@ -1,4 +1,8 @@
-"""冷凝器設備容器。
+"""冷凝器設備容器（自持）。
+
+本地自持控制：熱井有水就自行啟動冷卻水與真空系統，並以補水閥把熱井水位
+維持在 40011 SECONDARY_SETPOINT。冷卻能力在自動模式固定全開（真空是所有
+下游設備的允許條件，沒有理由自行降載）。
 
 冷凝能力 Mcapacity = RatedCapacity × CoolingWaterAvailability × HeatTransferFactor
 壓力     dP/dt = Koverload × ExcessSteam - Kvacuum × (P - Pminimum)
@@ -26,7 +30,7 @@ def saturation_temp_c(pressure_bar: float) -> float:
 class Condenser(BaseDevice):
     NAME = "condenser"
     CODE_BASE = CODE
-    DEFAULT_COMM_POLICY = "LOCAL_FALLBACK"
+    DEFAULT_COMM_POLICY = "LOCAL_AUTO"
 
     PROCESS_INPUTS = [
         RegSpec(9, "CONDENSER_PRESSURE", "bar(a)", 10000),
@@ -41,6 +45,8 @@ class Condenser(BaseDevice):
         RegSpec(18, "CONDENSATE_TEMPERATURE", "degC", 10, dtype="i16"),
         RegSpec(19, "HOTWELL_MASS_HI", "kg", 1, dtype="u32"),
         RegSpec(20, "HOTWELL_MASS_LO", "kg", 1),
+        RegSpec(21, "MAKEUP_VALVE_POSITION", "%", 100, desc="補水閥實際開度（本地控制）"),
+        RegSpec(22, "MAKEUP_FLOW", "kg/s", 100),
     ]
     EXTRA_HOLDINGS = [
         RegSpec(9, "PRIMARY_SETPOINT", "bar(a)", 10000, lo=0, hi=6.5, writable=True,
@@ -75,7 +81,7 @@ class Condenser(BaseDevice):
 
     STATE_VARS = ["pressure", "hotwell_mass", "hotwell_level", "capacity", "condensed",
                   "exhaust_in", "condensate_out", "cooling_availability", "vacuum_output",
-                  "condensate_temp", "makeup_flow"]
+                  "condensate_temp", "makeup_flow", "makeup_command"]
 
     def configure(self) -> None:
         c = self.cfg.get("condenser", {})
@@ -103,6 +109,10 @@ class Condenser(BaseDevice):
         self.vacuum_output = 0.0
         self.condensate_temp = 25.0
         self.makeup_flow = 0.0
+        # 補水閥命令是本地控制量，不回寫自己的 Holding Register
+        # （40030 屬於操作端；設備回寫會與 PLC 的週期寫入互相蓋來蓋去）
+        self.makeup_command = float(cfg_get(self.cfg, "condenser.makeup_default_pct", 0.0))
+        self.makeup_gain = float(c.get("makeup_gain_pct_per_pct_s", 5.0))
 
     def default_holdings(self) -> dict[str, float]:
         return {
@@ -137,7 +147,16 @@ class Condenser(BaseDevice):
         self.condensate_out = max(0.0, self.sig("condensate_pump.flow_kg_s", 0.0))
 
         running = self.sm.state in (DeviceState.STARTING, DeviceState.RUNNING)
-        command = self.hr("MANUAL_OUTPUT") / 100.0 if running else 0.0
+        # 自動模式：冷卻能力全開（真空是汽輪機的允許條件，自持設備不會自行降載）
+        if not running:
+            self.local_output = 0.0
+            command = 0.0
+        elif self.auto_mode:
+            self.local_output = 100.0
+            command = 1.0
+        else:
+            self.local_output = clamp(self.hr("MANUAL_OUTPUT"), 0.0, 100.0)
+            command = self.local_output / 100.0
         availability_fault = self.faults.factor("cooling_water_availability", 1.0)
         target_availability = clamp(command * availability_fault, 0.0, 1.0)
         self.cooling_availability = first_order(self.cooling_availability, target_availability, 3.0, dt)
@@ -166,12 +185,14 @@ class Condenser(BaseDevice):
 
         # --- 冷凝與熱井 ---
         self.condensed = min(self.exhaust_in, self.capacity)
-        # 熱井水位本地控制：AUTO 模式下由補水閥維持設定值（40011）
-        if self.auto_mode and running:
+        # 熱井水位本地控制：AUTO 模式由補水閥維持設定值（40011）
+        if self.auto_mode:
             error = self.hr("SECONDARY_SETPOINT") - self.hotwell_level
-            command = clamp(self.hr("MAKEUP_VALVE_CMD") + 5.0 * error * dt, 0.0, 100.0)
-            self.set_hr("MAKEUP_VALVE_CMD", command)
-        self.makeup_flow = self.max_makeup * self.hr("MAKEUP_VALVE_CMD") / 100.0
+            self.makeup_command = clamp(self.makeup_command + self.makeup_gain * error * dt,
+                                        0.0, 100.0)
+        else:
+            self.makeup_command = clamp(self.hr("MAKEUP_VALVE_CMD"), 0.0, 100.0)
+        self.makeup_flow = self.max_makeup * self.makeup_command / 100.0
         leak = self.faults.factor("hotwell_leak_kg_s", 0.0)
         self.hotwell_mass += (self.condensed + self.makeup_flow - self.condensate_out - leak) * dt
         self.hotwell_mass = clamp(self.hotwell_mass, 0.0, self.mass_max * 1.2)
@@ -192,7 +213,7 @@ class Condenser(BaseDevice):
 
     def apply_comm_loss(self, policy: str) -> None:
         # 維持本地冷卻控制：冷卻能力保持 100%
-        if policy == "LOCAL_FALLBACK":
+        if policy in ("LOCAL_FALLBACK", "LOCAL_AUTO"):
             self.set_hr("MANUAL_OUTPUT", 100.0)
 
     def protection_values(self) -> dict[str, float]:
@@ -227,6 +248,8 @@ class Condenser(BaseDevice):
         regs[17] = enc_u16(self.vacuum_output * 100.0, 100)
         regs[18] = enc_i16(self.condensate_temp, 10)
         regs[19], regs[20] = enc_u32(self.hotwell_mass)
+        regs[21] = enc_u16(self.makeup_command, 100)
+        regs[22] = enc_u16(self.makeup_flow, 100)
 
 
 if __name__ == "__main__":

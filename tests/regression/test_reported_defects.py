@@ -8,6 +8,7 @@ from __future__ import annotations
 import asyncio
 import json
 import os
+import pathlib
 import struct
 import tempfile
 
@@ -18,15 +19,16 @@ from aiohttp.test_utils import TestClient, TestServer
 from common.device.faults import FaultInjector
 from common.modbus.register_map import RegisterMap, Table
 from common.modbus.server import AccessPolicy, ModbusTcpServer, RegisterImage
-from common.simbus.protocol import MsgType, Role
+from common.simbus.protocol import MsgType, Role, SignalValue
 from common.util import EventLogger
-from controller.trip_matrix import TripMatrix
 from devices.boiler.main import Boiler
 from devices.generator.main import Generator
 from plant_bus.app.bus import PlantBus, Participant
 from plant_bus.app.http_api import _body
 from plant_bus.app.snapshot_store import SnapshotIntegrityError, SnapshotStore
 from tests.harness import CONFIG_DIR, MiniPlant, bring_to_steady
+
+ROOT = pathlib.Path(__file__).resolve().parents[2]
 
 
 # ---------------------------------------------------------------------------
@@ -63,95 +65,35 @@ def _bus_with_devices(*names: str, tmp_path=None) -> tuple[PlantBus, dict[str, _
 
 
 # ---------------------------------------------------------------------------
-# P1-1 加速模擬會改變 DCS 行為並觸發假通訊逾時
+# P1-1 控制迴圈的時間基準（自持版：設備本身就是控制器）
 # ---------------------------------------------------------------------------
-def _make_dcs():
-    from controller.dcs.main import DCS
+def test_device_control_uses_simulation_time_not_wall_clock():
+    """症狀（舊版）：外部 DCS 依真實時間跑 PID，`speed 5` 會產生假通訊逾時。
 
-    os.environ["STATE_DIR"] = tempfile.mkdtemp(prefix="dcs-reg-")
-    return DCS(config_dir=CONFIG_DIR)
-
-
-async def test_control_loop_period_follows_simulation_time():
-    """症狀：PID／順序／watchdog 依真實時間執行，`speed 5` 時 watchdog 每 5
-    模擬秒才更新一次，超過設備 3 模擬秒的逾時門檻而產生假通訊逾時。"""
-    dcs = _make_dcs()
+    自持設備的調節器與 watchdog 都在 scan(dt) 內，dt 由 plant-bus 的 tick 提供，
+    因此模擬速度不會改變控制行為。這裡以兩種 dt 推進相同的模擬時間，
+    驗證結果一致。
+    """
+    fast = MiniPlant()
+    slow = MiniPlant(dt=0.05)
     try:
-        dcs.bus.connected.set()
-        dcs.sim_time = 100.0
-        waiter = asyncio.ensure_future(dcs._wait_sim_period(1.0, 100.0))
-
-        await asyncio.sleep(0.25)                 # 真實時間過去，模擬時間沒動
-        assert not waiter.done(), "模擬時間未前進時不得提前執行"
-
-        dcs.sim_time = 101.0                      # 模擬時間前進一個週期
-        assert await asyncio.wait_for(waiter, timeout=1.0) == pytest.approx(101.0)
+        fast.run_seconds(120.0)
+        slow.run_seconds(120.0)
+        for name in ("boiler.pressure_bar_abs", "condenser.pressure_bar_abs"):
+            assert fast.signal(name) == pytest.approx(slow.signal(name), rel=0.15), name
+        for device in list(fast.devices.values()) + list(slow.devices.values()):
+            assert device.watchdog_ok, "watchdog 以模擬時間計時，不同 dt 都不得逾時"
     finally:
-        dcs.log.close()
+        fast.close()
+        slow.close()
 
 
-async def test_fast_simulation_runs_control_loop_more_often_in_real_time():
-    """5 倍速下，1 模擬秒內必須跑滿 1 秒份的掃描次數，不能只跑 1/5。"""
-    dcs = _make_dcs()
-    try:
-        dcs.bus.connected.set()
-        dcs.sim_time = 0.0
-        last, iterations = 0.0, 0
-        # 模擬 plant-bus 以 5 倍速推進：每次迴圈推進 0.1 模擬秒
-        for _ in range(10):
-            dcs.sim_time = round(dcs.sim_time + 0.1, 6)
-            while dcs.sim_time - last >= 0.5:
-                last = await dcs._wait_sim_period(0.5, last)
-                iterations += 1
-        assert iterations == 2, f"1 模擬秒 / 0.5 秒掃描 = 2 次，實際 {iterations}"
-    finally:
-        dcs.log.close()
-
-
-async def test_wait_realigns_after_snapshot_rewinds_simulation_time():
-    """快照還原把模擬時間往回拉時，控制迴圈不得枯等追上舊時間線。"""
-    dcs = _make_dcs()
-    try:
-        dcs.bus.connected.set()
-        dcs.sim_time = 20.0
-        waiter = asyncio.ensure_future(dcs._wait_sim_period(1.0, 500.0))
-        await asyncio.sleep(0.15)
-        dcs.sim_time = 21.0
-        assert await asyncio.wait_for(waiter, timeout=1.0) == pytest.approx(21.0)
-    finally:
-        dcs.log.close()
-
-
-async def test_wait_falls_back_to_wall_clock_when_bus_offline():
-    """plant-bus 未連線時 DCS 仍須能獨立運轉。"""
-    dcs = _make_dcs()
-    try:
-        dcs.bus.connected.clear()
-        result = await asyncio.wait_for(dcs._wait_sim_period(0.05, 0.0), timeout=1.0)
-        assert result == dcs.sim_time
-    finally:
-        dcs.log.close()
-
-
-async def test_wait_recovers_if_ticks_stop_while_connected():
-    """安全網：已連線但模擬時間停滯時不得永久卡住控制迴圈。"""
-    dcs = _make_dcs()
-    try:
-        dcs.bus.connected.set()
-        dcs.SIM_TIME_STALL_TIMEOUT = 0.2
-        dcs.sim_time = 5.0
-        result = await asyncio.wait_for(dcs._wait_sim_period(1.0, 5.0), timeout=2.0)
-        assert result == pytest.approx(5.0)
-    finally:
-        dcs.log.close()
-
-
-async def test_controller_receives_ticks_without_observer():
-    """DCS 的時間基準不能依賴 historian／HMI 是否在線。"""
+async def test_plc_receives_ticks_without_observer():
+    """PLC 身分的參與者不能因為 historian／HMI 不在線就收不到 tick。"""
     log = EventLogger(device="plant-bus")
     bus = PlantBus({"simulation": {"dt": 0.1}}, None, log)
     controller = _FakeWriter()
-    bus.participants["dcs-plc"] = Participant(name="dcs-plc", role=Role.CONTROLLER.value,
+    bus.participants["openplc"] = Participant(name="openplc", role=Role.CONTROLLER.value,
                                               writer=controller)
     await bus._do_tick()
     assert MsgType.TICK.value in controller.types(), "沒有 observer 時控制器仍須收到 tick"
@@ -162,11 +104,11 @@ async def test_controller_receives_ticks_without_observer():
 # P1-2 給水泵：鍋爐禁止給水後仍以最低轉速持續送水
 # ---------------------------------------------------------------------------
 def test_feedwater_pump_stops_when_boiler_forbids_feedwater():
-    """症狀：DCS 把 MANUAL_OUTPUT 設為 0，但 pump_base 的 min_speed／揚程下限
-    又把它抬回去，結果泵浦仍以 52% 轉速送 19 kg/s 進禁止進水的鍋爐。"""
+    """症狀：控制端把轉速命令歸零，但 pump_base 的 min_speed／揚程下限又把它
+    抬回去，結果泵浦仍以 52% 轉速送 19 kg/s 進禁止進水的鍋爐。"""
     plant = MiniPlant()
     try:
-        bring_to_steady(plant, load_mw=40.0, seconds=300.0)
+        bring_to_steady(plant, load_mw=40.0, seconds=900.0)
         pump = plant.dev("feedwater_pump")
         assert pump.speed > pump.min_speed, "前置條件：泵浦原本正在送水"
 
@@ -181,21 +123,20 @@ def test_feedwater_pump_stops_when_boiler_forbids_feedwater():
 
 
 def test_feedwater_pump_resumes_after_permission_restored():
-    """禁止解除後必須恢復送水，修正不得讓泵浦永久停擺。"""
+    """禁止解除後必須自行恢復送水，修正不得讓泵浦永久停擺。"""
     plant = MiniPlant()
     try:
-        bring_to_steady(plant, load_mw=40.0, seconds=300.0)
+        bring_to_steady(plant, load_mw=40.0, seconds=900.0)
         pump = plant.dev("feedwater_pump")
         for _ in range(100):
             plant.signals["boiler.feedwater_permitted"] = 0.0
             plant.step(1)
         assert pump.speed < 0.5
 
-        plant.write("feedwater_pump", "MANUAL_OUTPUT", 45.0)
-        for _ in range(200):
+        for _ in range(600):
             plant.signals["boiler.feedwater_permitted"] = 1.0
             plant.step(1)
-        assert pump.speed > pump.min_speed, "允許給水後必須恢復運轉"
+        assert pump.speed > pump.min_speed, "允許給水後必須自行恢復運轉"
         assert pump.flow > 1.0
     finally:
         plant.close()
@@ -365,36 +306,61 @@ async def test_step_completion_pauses_devices_again():
 # P1-7 強電網模式把主蒸汽閥命令降到 0
 # ---------------------------------------------------------------------------
 def test_load_control_takes_over_bumplessly_in_grid_mode():
-    """症狀：load_control 從未 to_auto()，手動輸出預設 0，
-    強電網模式下閥門命令被壓成 0。"""
-    from controller.dcs.main import DCS
+    """症狀：負載迴圈從未接手目前閥位，切到強電網的瞬間閥門命令被壓成 0。
 
-    os.environ["STATE_DIR"] = tempfile.mkdtemp(prefix="dcs-reg-")
-    dcs = DCS(config_dir=CONFIG_DIR)
+    調速器現在住在主蒸汽閥裡，切換必須是 bumpless 的。
+    """
+    from devices.steam_valve.main import SteamValve
+
+    valve = SteamValve(config_dir=CONFIG_DIR, state_dir=tempfile.mkdtemp(prefix="valve-reg-"))
     try:
-        assert not dcs.load_control.auto, "初始必須是手動（由控制邏輯負責切換）"
-        # 模擬「已併聯 + 強電網」時的接手：以目前閥位無擾動切入 AUTO
-        dcs.load_control.to_auto(62.0)
-        dcs.turbine_speed.to_manual(62.0)
-        dcs.load_control.setpoint = 60.0
-        output = dcs.load_control.update(60.0, 0.5)
-        assert output == pytest.approx(62.0, abs=1.0), (
-            f"bumpless transfer 後輸出應接近原閥位，實際 {output}"
+        valve.bus_ok = True
+        valve.position = 62.0
+        valve.inputs = {
+            name: SignalValue(value, "GOOD", 1, "test")
+            for name, value in {
+                "turbine.speed_rpm": 3000.0,
+                "generator.breaker_closed": 1.0,
+                "generator.operating_mode": 1.0,
+                "generator.electrical_power_mw": 60.0,
+                "generator.load_demand_mw": 60.0,
+            }.items()
+        }
+        command = valve.governor(0.5)
+        assert valve.load_control_active == 1.0, "併聯 + 強電網必須切到負載控制"
+        assert command == pytest.approx(62.0, abs=1.0), (
+            f"bumpless transfer 後輸出應接近原閥位，實際 {command}"
         )
-        assert output > 0.0
     finally:
-        dcs.log.close()
+        valve.store.close()
+        valve.log.close()
 
 
-def test_dcs_control_step_gate_allows_load_control():
-    """閘門條件必須同時接受 turbine_speed.auto 或 load_control.auto，
-    否則切到負載控制後整段 8.4 邏輯會停止執行。"""
-    import inspect
+def test_speed_control_takes_back_when_breaker_opens():
+    """解列後必須把控制權交還轉速迴圈，同樣不得跳變。"""
+    from devices.steam_valve.main import SteamValve
 
-    from controller.dcs.main import DCS
-
-    source = inspect.getsource(DCS._control_step)
-    assert "self.turbine_speed.auto or self.load_control.auto" in source
+    valve = SteamValve(config_dir=CONFIG_DIR, state_dir=tempfile.mkdtemp(prefix="valve-reg2-"))
+    try:
+        valve.bus_ok = True
+        valve.position = 55.0
+        valve.load_control_active = 1.0
+        valve.inputs = {
+            name: SignalValue(value, "GOOD", 1, "test")
+            for name, value in {
+                "turbine.speed_rpm": 3000.0,
+                "generator.breaker_closed": 0.0,
+                "generator.operating_mode": 1.0,
+                "generator.electrical_power_mw": 0.0,
+                "generator.load_demand_mw": 0.0,
+            }.items()
+        }
+        command = valve.governor(0.5)
+        assert valve.load_control_active == 0.0
+        assert command == pytest.approx(55.0, abs=2.0)
+    finally:
+        valve.store.close()
+        valve.log.close()
 
 
 # ---------------------------------------------------------------------------
@@ -588,68 +554,41 @@ def test_non_safety_source_still_blocked_on_estop():
 # ---------------------------------------------------------------------------
 # 其他：Trip matrix 動作失敗不重試
 # ---------------------------------------------------------------------------
-def test_trip_matrix_retries_failed_actions():
-    """症狀：跳機當下 Modbus 寫失敗會永久漏掉連鎖保護。"""
-    events: list[tuple] = []
-    matrix = TripMatrix(emit=lambda name, **kw: events.append((name, kw)))
+def test_trip_matrix_lives_in_the_plc_program_as_commands():
+    """跳機矩陣改由 OpenPLC 執行，且只能下命令，不得寫控制值。
 
-    first = matrix.evaluate({"turbine": True})
-    assert first, "跳機邊緣必須產生連鎖動作"
-    for action in first:
-        matrix.confirm(action, ok=False)          # 全部寫入失敗
-
-    retry = matrix.evaluate({"turbine": True})
-    assert {a.key for a in retry} == {a.key for a in first}, "失敗的動作必須重試"
-
-    for action in retry:
-        matrix.confirm(action, ok=True)
-    assert matrix.evaluate({"turbine": True}) == [], "成功後不得重複執行"
-    assert any(name == "TRIP_MATRIX_ACTION_FAILED" for name, _ in events)
-
-
-def test_trip_matrix_partial_failure_only_retries_failed_action():
-    matrix = TripMatrix()
-    actions = matrix.evaluate({"boiler": True})
-    assert len(actions) == 2
-    matrix.confirm(actions[0], ok=True)
-    matrix.confirm(actions[1], ok=False)
-
-    retry = matrix.evaluate({"boiler": True})
-    assert [a.key for a in retry] == [actions[1].key]
+    症狀（舊版）：跳機時 PLC 直接寫 MANUAL_OUTPUT／PRIMARY_SETPOINT，
+    與設備本身的自持調節器互相打架。
+    """
+    program = (ROOT / "integrations" / "openplc" / "thermal-plant-v4"
+               / "pous" / "programs" / "main.st").read_text(encoding="utf-8")
+    body = program.rsplit("END_VAR", maxsplit=1)[-1]
+    for source in ("turbine", "boiler", "feedwater_pump", "steam_valve"):
+        assert f"i_{source}_trip_prev" in body, f"{source} 缺少跳機邊緣偵測"
+    assert "generator__coil__breaker_open := TRUE;" in body
+    assert "steam_valve__coil__stop := TRUE;" in body
+    assert "boiler__coil__stop := TRUE;" in body
+    assert "i_overspeed" in body
+    for forbidden in ("__holding__manual_output :=", "__holding__primary_setpoint :=",
+                      "__holding__control_mode :="):
+        assert forbidden not in body, f"PLC 不得寫控制值：{forbidden}"
 
 
-def test_trip_matrix_clears_pending_when_trip_resets():
-    matrix = TripMatrix()
-    for action in matrix.evaluate({"boiler": True}):
-        matrix.confirm(action, ok=False)
-    assert matrix.pending_actions > 0
-    matrix.evaluate({"boiler": False})
-    assert matrix.pending_actions == 0
+def test_plc_only_writes_the_command_registers():
+    """PLC 的南向寫入群組只能包含命令區（40002~40004）。"""
+    import json
+
+    remote_dir = (ROOT / "integrations" / "openplc" / "thermal-plant-v4" / "devices" / "remote")
+    for path in sorted(remote_dir.glob("*.json")):
+        remote = json.loads(path.read_text(encoding="utf-8"))
+        writes = [
+            (int(group["offset"]), int(group["length"]))
+            for group in remote["modbusTcpConfig"]["ioGroups"]
+            if group["functionCode"] == "16"
+        ]
+        assert writes == [(1, 3)], f"{path.name}: 只能寫命令區，實際 {writes}"
 
 
-def test_trip_matrix_snapshot_round_trip_keeps_pending():
-    matrix = TripMatrix()
-    for action in matrix.evaluate({"boiler": True}):
-        matrix.confirm(action, ok=False)
-    data = matrix.to_dict()
-
-    restored = TripMatrix()
-    restored.from_dict(data)
-    assert restored.pending_actions == matrix.pending_actions
-    assert {a.key for a in restored.evaluate({"boiler": True})} == \
-           {a.key for a in matrix.evaluate({"boiler": True})}
-
-
-def test_trip_matrix_does_not_mutate_shared_default_rules():
-    from controller import trip_matrix as module
-
-    TripMatrix()
-    assert all(a.source == "" for rule in module.DEFAULT_MATRIX for a in rule.actions)
-
-
-# ---------------------------------------------------------------------------
-# 其他：感測器故障同一 tick 被多次取樣
-# ---------------------------------------------------------------------------
 def test_sensor_drift_advances_once_per_scan():
     """症狀：drift 在 protection_values / publish / fill_registers 各取樣一次，
     漂移速率變成設定值的 3 倍。"""

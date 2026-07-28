@@ -1,6 +1,6 @@
 [project]
 name = "thermal-plant-simulator"
-version = "3.0.0"
+version = "4.0.0"
 description = "簡化火力發電廠工業控制模擬器（Modbus TCP / 容器化 / 可注入故障）"
 requires-python = ">=3.11"
 dependencies = [
@@ -26,4 +26,4 @@ asyncio_default_fixture_loop_scope = "function"
 filterwarnings = ["ignore::DeprecationWarning"]
 
 [tool.setuptools.packages.find]
-include = ["common*", "devices*", "controller*", "plant_bus*", "historian*", "hmi*", "tools*"]
+include = ["common*", "devices*", "plant_bus*", "historian*", "hmi*", "tools*"]

@@ -1,4 +1,9 @@
-"""各設備物理模型的方向性與守恆檢查。"""
+"""各設備物理模型的方向性與守恆檢查。
+
+物理測試一律把設備切到 LOCAL_MANUAL（40001 = 0）：這樣執行器命令直接來自
+40012 MANUAL_OUTPUT，不會被設備自己的自持調節器改動，才能單獨驗證物理。
+自持行為本身由 tests/integration/test_self_hold.py 驗證。
+"""
 from __future__ import annotations
 
 import pytest
@@ -8,9 +13,11 @@ from common.simbus.protocol import SignalValue
 from tests.harness import CONFIG_DIR, DEVICE_CLASSES
 
 
-def build(name, tmp_path):
+def build(name, tmp_path, auto: bool = False):
     device = DEVICE_CLASSES[name](config_dir=CONFIG_DIR, state_dir=str(tmp_path / name))
     device.bus_ok = True
+    device.self_hold = False                 # 物理測試自己控制狀態機
+    device.set_hr("CONTROL_MODE", 3 if auto else 0)
     return device
 
 
@@ -192,7 +199,6 @@ def test_condenser_pressure_rises_when_overloaded(tmp_path):
 def test_hotwell_level_follows_flow_balance(tmp_path):
     condenser = build("condenser", tmp_path)
     condenser.sm.force(DeviceState.RUNNING, "test")
-    condenser.set_hr("CONTROL_MODE", 0)   # LOCAL_MANUAL：關閉自動補水
     condenser.set_hr("MAKEUP_VALVE_CMD", 0.0)
     condenser.set_hr("MANUAL_OUTPUT", 100.0)
     condenser.cooling_availability = 1.0

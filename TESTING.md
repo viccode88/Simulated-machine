@@ -38,7 +38,7 @@ cp .env.example .env
 ```bash
 LAB_MODE=true        # 開放故障注入區域與 TRIP_TEST（8 個情境有 5 個需要）
 BIND_ADDR=127.0.0.1  # 只綁本機；要從 LAN 連入才改 0.0.0.0
-AUTO_START=true      # 內建 DCS 自動執行冷啟動順序
+SELF_HOLD=true       # 設備自持：允許條件成立就自行啟動（預設）
 MODBUS_TRACE=false   # 需要逐筆封包日誌時改 true
 ```
 
@@ -46,32 +46,39 @@ MODBUS_TRACE=false   # 需要逐筆封包日誌時改 true
 
 ## 路線 A：離線測試（不需 Docker）
 
-`tests/harness.py` 提供行程內的迷你機組，用 lockstep 驅動 8 台設備，
-所以物理、保護、快照邏輯都能在秒級跑完。
+`tests/harness.py` 提供行程內的迷你機組，用 lockstep 驅動 8 台設備。
+設備是自持的，所以 harness 裡**沒有任何控制器**：`plant.step()` 就會讓機組
+自己冷啟動到 60 MW。物理、保護、自持、快照邏輯都能在秒級跑完。
 
 ```bash
 pytest -q
 ```
 
-**預期輸出**：`180 passed in ~40s`
+**預期輸出**：`175 passed in ~70s`
 
 ### 分層執行與各層驗證內容
 
 | 指令 | 測試數 | 驗證什麼 |
 | --- | ---: | --- |
-| `pytest tests/unit -q` | 43 | PID（積分抗飽和、bumpless 切換）、保護門檻與延遲、暫存器映射建構、u32/i16/縮放編碼、警報鎖存與確認狀態機、控制器啟動路徑 |
-| `pytest tests/physics -q` | 21 | 各設備物理模型的方向性與守恆：加熱→壓力升、進水→水位升、質量/能量不憑空產生 |
+| `pytest tests/unit -q` | 34 | 保護門檻與延遲、暫存器映射建構、u32/i16/縮放編碼、警報鎖存與確認狀態機 |
+| `pytest tests/physics -q` | 21 | 各設備物理模型的方向性與守恆（設備切 LOCAL_MANUAL 以隔離物理） |
 | `pytest tests/modbus -q` | 22 | Modbus 規格驗收：支援的功能碼、Exception 01/02/03/04/06 的觸發條件、例外後連線不關閉、無撕裂讀取 |
-| `pytest tests/integration -q` | 24 | 整廠閉迴路、快照存還原往返、跳機鎖存不被還原清掉、持久化、事件與 metrics |
+| `pytest tests/integration -q` | 38 | **自持冷啟動（無控制器到 60 MW）**、整廠行為、快照往返、跳機鎖存、持久化、OpenPLC/ScadaBR 產物契約 |
 | `pytest tests/scenarios -q` | 17 | `scenarios/*.yaml` 8 個情境檔的結構、訊號名稱、門檻合法性（靜態檢查，不需執行中環境） |
-| `pytest tests/regression -q` | 53 | 已修缺陷的回歸測試：DCS 時間基準、回報過的錯誤行為不再重現 |
+| `pytest tests/regression -q` | 43 | 已修缺陷的回歸測試：控制時間基準、PLC 只下命令不寫控制值、回報過的錯誤行為不再重現 |
+
+其中最能代表這個專案的是：
+
+```bash
+pytest tests/integration/test_self_hold.py -q   # 完全沒有控制器，機組自己開到 60 MW
+```
 
 ### 常用旗標
 
 ```bash
 pytest -v                              # 列出每個測試名稱
 pytest -x                              # 第一個失敗就停
-pytest tests/unit/test_pid.py -v       # 只跑單一檔案
+pytest tests/unit/test_protection.py -v   # 只跑單一檔案
 pytest -k "snapshot" -v                # 只跑名稱含 snapshot 的測試
 pytest --durations=10                  # 找出最慢的 10 個測試
 pytest -q 2>&1 | tail -20              # 只看結尾摘要
@@ -84,16 +91,17 @@ pytest -q 2>&1 | tail -20              # 只看結尾摘要
 ### 1. 啟動
 
 ```bash
-docker compose --profile standalone up --build -d
+docker compose up --build -d
 ```
+
+八台設備、plant-bus、HMI 與 historian 一律啟動；profile 只決定 PLC：
 
 | Profile | 內容 |
 | --- | --- |
-| `standalone` | 8 台設備 + plant-bus + **內建 DCS** + HMI + historian |
-| `external-plc` | 同上但**不啟動內建 DCS**，讓外部 PLC 接管（串接方式見 `docs/plc-integration.md`） |
+| `openplc-v4`（預設） | 8 台自持設備 + plant-bus + **OpenPLC v4** + HMI + historian |
+| `openplc-v3` | 同上，改用 OpenPLC v3 Runtime（自原始碼建置） |
+| `no-plc` | 不啟動 PLC——設備自持，照樣會自己併聯發電 |
 | `secure` | 加掛 stunnel sidecar，802 埠提供 Modbus Security（TLS） |
-
-設備服務不綁 profile，任何模式都會啟動；只有控制器、HMI、工具受 profile 控制。
 
 ### 2. 確認全部健康
 
@@ -132,7 +140,7 @@ done
 
 ### 4. 等待冷啟動完成
 
-`AUTO_START=true` 時內建 DCS 會自動走完啟動順序。加速觀察：
+設備自持，開機後會自動完成冷啟動。加速觀察：
 
 ```bash
 plantctl speed 5          # 5 倍速
@@ -163,8 +171,8 @@ plantctl write --device generator --register PRIMARY_SETPOINT --value 90
 plantctl write --device generator --register BREAKER_OPEN --value 1 --coil
 ```
 
-裝置名稱：`dcs-plc` `condenser` `condensate_pump` `feedwater_tank` `feedwater_pump`
-`boiler` `steam_valve` `turbine` `generator`（除 `dcs-plc` 外皆用底線）。
+裝置名稱：`condenser` `condensate_pump` `feedwater_tank` `feedwater_pump`
+`boiler` `steam_valve` `turbine` `generator`（皆用底線）。
 完整暫存器名稱查 `docs/register-map.csv`（688 筆，含「文件地址」與「PDU offset」兩欄）。
 
 ### 例外碼驗收（規格重點）
@@ -257,8 +265,8 @@ plantctl speed 1        # 回到即時
 ### 開機自動還原（CI 用）
 
 ```bash
-docker compose --profile standalone down
-RESTORE_ON_BOOT=steady-60mw docker compose --profile standalone up -d
+docker compose down
+RESTORE_ON_BOOT=steady-60mw docker compose up -d
 ```
 
 ---
@@ -370,7 +378,7 @@ plantctl signal boiler.level_pct --release   # 釋放
 ```bash
 # 讓崩潰能被外部工具觀察到（不自動重啟）、並開啟逐筆封包日誌
 LAB_MODE=true MODBUS_TRACE=true DEVICE_RESTART=no \
-  docker compose --profile external-plc up --build -d
+  COMPOSE_PROFILES=no-plc docker compose up --build -d
 ```
 
 每一輪從同一個起點重複測試（毫秒級，不需重啟容器）：
@@ -421,8 +429,8 @@ openssl s_client -connect 127.0.0.1:15802 -showcerts </dev/null | head -20
 ```bash
 python -m tools.export_docs      # 重新產生 docs/register-map.csv、alarm-codes.csv
 
-docker compose --profile standalone down          # 停止，保留 volume（快照與歷史資料還在）
-docker compose --profile standalone down -v       # 連 volume 一起刪（完全重來）
+docker compose down          # 停止，保留 volume（快照與歷史資料還在）
+docker compose down -v       # 連 volume 一起刪（完全重來）
 docker compose logs --tail 100 boiler             # 單一設備日誌
 ```
 
@@ -432,11 +440,11 @@ docker compose logs --tail 100 boiler             # 單一設備日誌
 
 ```bash
 # 1. 離線（20 秒）
-pip install -e ".[dev]" && pytest -q                  # 期望 180 passed
+pip install -e ".[dev]" && pytest -q                  # 期望 175 passed
 
 # 2. 啟動（LAB_MODE=true）
 sed -i '' 's/^LAB_MODE=.*/LAB_MODE=true/' .env
-docker compose --profile standalone up --build -d
+docker compose up --build -d
 sleep 30 && docker compose ps
 
 # 3. 健康
@@ -476,7 +484,7 @@ time plantctl snapshot restore steady-60mw --clean
 | plant-bus 管理 API | `plant-bus` | 15080 |
 | Historian | `historian` | 15081 |
 | HMI | `hmi` | 15082 |
-| DCS／PLC | `dcs-plc` | 15020 |
+| PLC（OpenPLC 北向） | `openplc-v4` / `openplc-v3` | 15020 |
 | 冷凝器 | `condenser` | 15021 |
 | 凝結水泵 | `condensate-pump` | 15022 |
 | 給水槽 | `feedwater-tank` | 15023 |

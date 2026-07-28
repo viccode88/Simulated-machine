@@ -21,8 +21,28 @@ boiler:
   relief_capacity_kg_s: 40.0
   blowdown_default_pct: 5.0
 
+  # --- 本地自持控制（設備自己維持壓力，PLC 不參與調節） ---
+  control:
+    pressure:               # PV 汽包壓力 / SP 40010 / MV 燃燒器輸出
+      # 壓力是積分型程序（dP/dt ∝ 蒸發量），積分作用必須很小，
+      # 否則會出現週期約 180 秒的振盪：壓力衝到安全閥、洩汽再把水位打亂。
+      kp: 1.5
+      ki: 0.01
+      kd: 3.0
+      out_min: 0.0
+      out_max: 100.0
+      rate_up: 5.0          # 5 %/s 上升
+      rate_down: 10.0       # 10 %/s 下降
+      deadband: 0.2
+      integral_limit: 100.0
+    startup_burner_max_pct: 20.0     # 升壓期間燃燒器上限
+    ramp_release_steam_kg_s: 25.0    # 抽汽超過此值視為帶載，解除升壓限幅
+    runback_pressure_bar: 108.0      # 高壓 runback：達此壓力立即切燃料（＝高壓警報門檻）
+    runback_rate_pct_s: 100.0        # runback 時的燃料下降速率（正常為 10 %/s）
+
 comm:
-  failure_policy: FAIL_LOW  # 燃燒器立即降至 0%
+  # 自持設備：失去 PLC 通訊不改變本地控制（燃燒器仍由本地壓力調節器維持）
+  failure_policy: LOCAL_AUTO
 
 protections:
   LOW_LOW_LEVEL:

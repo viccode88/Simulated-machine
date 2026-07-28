@@ -2,8 +2,8 @@
   "name": "feedwater_pump",
   "protocol": "modbus-tcp",
   "modbusTcpConfig": {
-    "host": "127.0.0.1",
-    "port": 15024,
+    "host": "feedwater-pump",
+    "port": 502,
     "slaveId": 1,
     "timeout": 1000,
     "ioGroups": [
@@ -193,24 +193,24 @@
           },
           {
             "id": "4d2d6d57-35ce-53ce-8201-bdfa010953f2",
-            "name": "feedwater_pump__input__reserved_25",
+            "name": "feedwater_pump__input__local_output",
             "type": "Analog Input (Input Register)",
             "iecLocation": "%IW217",
-            "alias": "feedwater_pump__input__reserved_25"
+            "alias": "feedwater_pump__input__local_output"
           },
           {
             "id": "e140425b-53a2-5d75-96b9-f8a25f2dc563",
-            "name": "feedwater_pump__input__reserved_26",
+            "name": "feedwater_pump__input__self_hold_state",
             "type": "Analog Input (Input Register)",
             "iecLocation": "%IW218",
-            "alias": "feedwater_pump__input__reserved_26"
+            "alias": "feedwater_pump__input__self_hold_state"
           },
           {
             "id": "adef5ca9-6cfa-50b1-ab5f-5711d201be02",
-            "name": "feedwater_pump__input__reserved_27",
+            "name": "feedwater_pump__input__permissive_word",
             "type": "Analog Input (Input Register)",
             "iecLocation": "%IW219",
-            "alias": "feedwater_pump__input__reserved_27"
+            "alias": "feedwater_pump__input__permissive_word"
           },
           {
             "id": "ef4d51f8-71e2-543a-ad29-f57d37a86c3b",
@@ -794,182 +794,34 @@
         ]
       },
       {
-        "id": "107ae884-ac6f-5e11-babf-0189fa5b7a7a",
-        "name": "feedwater_pump_holding_0_13",
+        "id": "26e72cc5-946a-5881-8c45-1b80f287fc7a",
+        "name": "feedwater_pump_holding_1_3",
         "functionCode": "16",
         "cycleTime": 100,
-        "offset": "0",
-        "length": 14,
+        "offset": "1",
+        "length": 3,
         "errorHandling": "keep-last-value",
         "ioPoints": [
           {
-            "id": "54686b3d-0787-50e7-9233-6c8c926e2cff",
-            "name": "feedwater_pump__holding__control_mode",
-            "type": "Analog Output (Multiple Registers)",
-            "iecLocation": "%QW192",
-            "alias": "feedwater_pump__holding__control_mode"
-          },
-          {
-            "id": "3b45a593-f429-5bd3-8f33-00157489276b",
+            "id": "c674e724-0be1-5a15-ab20-701ce562d608",
             "name": "feedwater_pump__holding__command_sequence",
             "type": "Analog Output (Multiple Registers)",
             "iecLocation": "%QW193",
             "alias": "feedwater_pump__holding__command_sequence"
           },
           {
-            "id": "1d110694-c034-5b11-982f-75bc24e79a30",
+            "id": "a8d8ea24-9ccd-5b59-938b-2bc957f74b7f",
             "name": "feedwater_pump__holding__watchdog_counter",
             "type": "Analog Output (Multiple Registers)",
             "iecLocation": "%QW194",
             "alias": "feedwater_pump__holding__watchdog_counter"
           },
           {
-            "id": "d0c3488f-3569-5703-94b7-1da1dd94c943",
+            "id": "3e49078a-8404-5265-8ff4-9225c6b541e8",
             "name": "feedwater_pump__holding__reset_key",
             "type": "Analog Output (Multiple Registers)",
             "iecLocation": "%QW195",
             "alias": "feedwater_pump__holding__reset_key"
-          },
-          {
-            "id": "309743bb-2e3d-52bc-8cd3-494bd6be8d15",
-            "name": "feedwater_pump__holding__simulation_flags",
-            "type": "Analog Output (Multiple Registers)",
-            "iecLocation": "%QW196",
-            "alias": "feedwater_pump__holding__simulation_flags"
-          },
-          {
-            "id": "16bb86f1-28ca-52d2-ad20-6216e96d281a",
-            "name": "feedwater_pump__holding__active_controller_id",
-            "type": "Analog Output (Multiple Registers)",
-            "iecLocation": "%QW197",
-            "alias": "feedwater_pump__holding__active_controller_id"
-          },
-          {
-            "id": "aa03af82-9ddf-52a5-9423-c48bd446f98e",
-            "name": "feedwater_pump__holding__command_lease_time",
-            "type": "Analog Output (Multiple Registers)",
-            "iecLocation": "%QW198",
-            "alias": "feedwater_pump__holding__command_lease_time"
-          },
-          {
-            "id": "3f0a8120-484e-5ae3-ba92-8a041cfe97ec",
-            "name": "feedwater_pump__holding__output_rate_limit",
-            "type": "Analog Output (Multiple Registers)",
-            "iecLocation": "%QW199",
-            "alias": "feedwater_pump__holding__output_rate_limit"
-          },
-          {
-            "id": "25584137-8d8a-55f2-bc36-1f1ef8ac9946",
-            "name": "feedwater_pump__holding__reserved",
-            "type": "Analog Output (Multiple Registers)",
-            "iecLocation": "%QW200",
-            "alias": "feedwater_pump__holding__reserved"
-          },
-          {
-            "id": "57fb8783-5619-5a77-90d1-79747ea409c5",
-            "name": "feedwater_pump__holding__primary_setpoint",
-            "type": "Analog Output (Multiple Registers)",
-            "iecLocation": "%QW201",
-            "alias": "feedwater_pump__holding__primary_setpoint"
-          },
-          {
-            "id": "3a43eea3-329e-50d0-a3e9-b6497d0c0543",
-            "name": "feedwater_pump__holding__secondary_setpoint",
-            "type": "Analog Output (Multiple Registers)",
-            "iecLocation": "%QW202",
-            "alias": "feedwater_pump__holding__secondary_setpoint"
-          },
-          {
-            "id": "de87156e-b0cb-57f2-937a-7300f750c8bb",
-            "name": "feedwater_pump__holding__manual_output",
-            "type": "Analog Output (Multiple Registers)",
-            "iecLocation": "%QW203",
-            "alias": "feedwater_pump__holding__manual_output"
-          },
-          {
-            "id": "cd8c7da6-4248-5d70-99c9-e84de72788f2",
-            "name": "feedwater_pump__holding__output_high_limit",
-            "type": "Analog Output (Multiple Registers)",
-            "iecLocation": "%QW204",
-            "alias": "feedwater_pump__holding__output_high_limit"
-          },
-          {
-            "id": "eb2e3bfb-2105-52d3-98cc-a7157b58fa75",
-            "name": "feedwater_pump__holding__output_low_limit",
-            "type": "Analog Output (Multiple Registers)",
-            "iecLocation": "%QW205",
-            "alias": "feedwater_pump__holding__output_low_limit"
-          }
-        ]
-      },
-      {
-        "id": "d3278ab6-f4e5-5e55-844a-6c7a92000f21",
-        "name": "feedwater_pump_holding_19_24",
-        "functionCode": "16",
-        "cycleTime": 100,
-        "offset": "19",
-        "length": 6,
-        "errorHandling": "keep-last-value",
-        "ioPoints": [
-          {
-            "id": "dfed7800-650d-5c0d-90a6-11aacf92aae0",
-            "name": "feedwater_pump__holding__pid_kp",
-            "type": "Analog Output (Multiple Registers)",
-            "iecLocation": "%QW211",
-            "alias": "feedwater_pump__holding__pid_kp"
-          },
-          {
-            "id": "06b38b89-4ef8-5ed8-a5e2-6653f997c61d",
-            "name": "feedwater_pump__holding__pid_ki",
-            "type": "Analog Output (Multiple Registers)",
-            "iecLocation": "%QW212",
-            "alias": "feedwater_pump__holding__pid_ki"
-          },
-          {
-            "id": "68243c2a-64d7-57cf-8dc2-382def00e719",
-            "name": "feedwater_pump__holding__pid_kd",
-            "type": "Analog Output (Multiple Registers)",
-            "iecLocation": "%QW213",
-            "alias": "feedwater_pump__holding__pid_kd"
-          },
-          {
-            "id": "4871e73f-36e7-5072-b192-7bbaf0696ef2",
-            "name": "feedwater_pump__holding__deadband",
-            "type": "Analog Output (Multiple Registers)",
-            "iecLocation": "%QW214",
-            "alias": "feedwater_pump__holding__deadband"
-          },
-          {
-            "id": "cbd03b2d-1fc9-50a4-afea-d83a38842acd",
-            "name": "feedwater_pump__holding__integral_limit",
-            "type": "Analog Output (Multiple Registers)",
-            "iecLocation": "%QW215",
-            "alias": "feedwater_pump__holding__integral_limit"
-          },
-          {
-            "id": "77781b9e-c458-5c96-b4c2-cbe4637e1f34",
-            "name": "feedwater_pump__holding__controller_scan_time",
-            "type": "Analog Output (Multiple Registers)",
-            "iecLocation": "%QW216",
-            "alias": "feedwater_pump__holding__controller_scan_time"
-          }
-        ]
-      },
-      {
-        "id": "549db968-fad0-5ac4-8c5c-131411c6a515",
-        "name": "feedwater_pump_holding_29_29",
-        "functionCode": "16",
-        "cycleTime": 100,
-        "offset": "29",
-        "length": 1,
-        "errorHandling": "keep-last-value",
-        "ioPoints": [
-          {
-            "id": "e0422a54-70df-52e0-9091-187b3b36ff8a",
-            "name": "feedwater_pump__holding__outlet_valve_cmd",
-            "type": "Analog Output (Multiple Registers)",
-            "iecLocation": "%QW221",
-            "alias": "feedwater_pump__holding__outlet_valve_cmd"
           }
         ]
       }

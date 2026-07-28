@@ -89,7 +89,7 @@ def _read_json(path: Path) -> dict[str, Any]:
 @pytest.fixture(scope="module")
 def register_rows() -> list[dict[str, str]]:
     rows = _read_csv(REGISTER_MAP)
-    assert len(rows) == 688
+    assert len(rows) == 714
     assert tuple(dict.fromkeys(row["device"] for row in rows)) == DEVICE_ORDER
     return rows
 
@@ -115,19 +115,22 @@ def scadabr_export() -> dict[str, Any]:
     return _read_json(paths[0])
 
 
+# 設備自持：PLC 只寫命令區（40002 COMMAND_SEQUENCE / 40003 WATCHDOG_COUNTER /
+# 40004 RESET_KEY）與命令線圈，不再寫任何設定值或手動輸出。
+COMMAND_HOLDING_START = 1
+COMMAND_HOLDING_LENGTH = 3
+
+
 def _expected_groups(device: str) -> set[tuple[int, int, int]]:
     groups = {
         (2, 0, 16),
         (3, 0, 32),
         (4, 0, 50),
         (15, 0, 8),
-        (16, 0, 14),
-        (16, 19, 6),
+        (16, COMMAND_HOLDING_START, COMMAND_HOLDING_LENGTH),
     }
     if device == "generator":
         groups.add((15, 9, 2))
-    if device != "condensate_pump":
-        groups.add((16, 29, 2 if device in {"steam_valve", "turbine", "generator"} else 1))
     return groups
 
 
@@ -188,18 +191,9 @@ def _expected_safe_qw(row: dict[str, str], device_index: int) -> int:
         else 0xFFFF
     )
     fixed = {
-        "CONTROL_MODE": 3,
         "COMMAND_SEQUENCE": 0,
         "WATCHDOG_COUNTER": 1,
         "RESET_KEY": 0,
-        "SIMULATION_FLAGS": 0,
-        "ACTIVE_CONTROLLER_ID": device_index + 1,
-        "COMMAND_LEASE_TIME": 5,
-        "OUTPUT_RATE_LIMIT": 1000,
-        "RESERVED": 0,
-        "OUTPUT_HIGH_LIMIT": 10000,
-        "OUTPUT_LOW_LIMIT": 0,
-        "CONTROLLER_SCAN_TIME": 200,
     }
     value = fixed.get(row["name"], raw_minimum)
     return max(raw_minimum, min(raw_maximum, value))
@@ -298,12 +292,18 @@ def test_openplc_remote_connections_groups_locations_and_aliases(
         assert coil_writes == expected_coil_writes
 
         holding_writes = _covered_offsets(groups, 16)
-        expected_holding_writes = {
+        expected_holding_writes = set(
+            range(COMMAND_HOLDING_START, COMMAND_HOLDING_START + COMMAND_HOLDING_LENGTH)
+        )
+        assert holding_writes == expected_holding_writes, (
+            "PLC 只做資料交換與邏輯判斷：除了命令區之外不得寫任何 Holding Register"
+        )
+        writable = {
             int(row["pdu_offset"])
             for row in contract
             if row["table"] == "HOLDING" and row["writable"] == "yes"
         }
-        assert holding_writes == expected_holding_writes
+        assert holding_writes < writable, "設定值仍可寫，但必須由設備自己決定"
 
     assert all(isinstance(alias, str) and alias.strip() for alias in aliases)
     assert len(aliases) == len(set(aliases)), "OpenPLC aliases must be globally unique"
@@ -374,12 +374,19 @@ def test_openplc_northbound_server_and_project_source(
         for row in register_rows:
             if row["device"] != device or row["table"] != "HOLDING":
                 continue
+            offset = int(row["pdu_offset"])
             stem = f"{device}__holding__{row['name'].lower()}".upper()
-            expected = _expected_safe_qw(row, device_index)
-            assert re.search(
-                rf"\b{re.escape(stem)}\s*:=\s*{expected}\s*;",
-                init_body,
-            ), f"{device}.{row['name']} has no executable safe QW initialization"
+            initialised = re.search(rf"\b{re.escape(stem)}\s*:=\s*\d+\s*;", init_body)
+            if COMMAND_HOLDING_START <= offset < COMMAND_HOLDING_START + COMMAND_HOLDING_LENGTH:
+                expected = _expected_safe_qw(row, device_index)
+                assert re.search(
+                    rf"\b{re.escape(stem)}\s*:=\s*{expected}\s*;",
+                    init_body,
+                ), f"{device}.{row['name']} has no executable safe QW initialization"
+            else:
+                assert not initialised, (
+                    f"{device}.{row['name']} 是設備自持的設定值，PLC 不得初始化或寫入"
+                )
 
     pulse_rows = [row for row in register_rows if row["table"] == "COIL" and row["pulse"] == "yes"]
     assert len(pulse_rows) == 50
@@ -441,9 +448,9 @@ def test_northbound_map_is_a_complete_projection_of_register_map(
     assert len(expected_by_identity) == len(register_rows)
     assert len(generated_by_identity) == len(primary)
     assert generated_by_identity.keys() == expected_by_identity.keys()
-    assert len(primary) == 688
+    assert len(primary) == 714
     assert len(readback) == 170
-    assert len(generated) == 858
+    assert len(generated) == 884
 
     device_indexes = {device: index for index, device in enumerate(DEVICE_ORDER)}
     for key, generated_row in generated_by_identity.items():
@@ -527,7 +534,7 @@ def _point_identity(point: dict[str, Any]) -> tuple[str, str, str]:
     )
 
 
-def test_scadabr_data_source_and_all_661_points(
+def test_scadabr_data_source_and_all_687_points(
     register_rows: list[dict[str, str]],
     scadabr_export: dict[str, Any],
 ) -> None:
@@ -550,9 +557,9 @@ def test_scadabr_data_source_and_all_661_points(
     expected_rows = [
         row for index, row in enumerate(register_rows) if not _is_u32_low_word(register_rows, index)
     ]
-    assert len(expected_rows) == 661
+    assert len(expected_rows) == 687
     points = scadabr_export["dataPoints"]
-    assert len(points) == 661
+    assert len(points) == 687
 
     xids = [point["xid"] for point in points]
     assert len(xids) == len(set(xids))

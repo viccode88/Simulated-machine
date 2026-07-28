@@ -42,7 +42,7 @@ def test_scenario_structure(path):
 
 @pytest.mark.parametrize("path", FILES, ids=[os.path.basename(p) for p in FILES])
 def test_scenario_devices_and_registers_exist(path):
-    from controller.dcs.main import DEVICE_CLASSES, build_map
+    from devices.registry import DEVICE_CLASSES, build_map
     from common.modbus.register_map import Table
 
     with open(path, "r", encoding="utf-8") as handle:

@@ -1,16 +1,17 @@
-# 簡化火力發電廠工業控制模擬器
+# 簡化火力發電廠工業控制模擬器（設備自持 + OpenPLC）
 #
 #   cp .env.example .env
-#   docker compose up --build                           # 自持運轉（.env 預設 standalone）
-#   COMPOSE_PROFILES=external-plc docker compose up     # 不啟動內建 DCS，改由外部 PLC 控制
+#   docker compose up --build                        # 預設：8 台自持設備 + OpenPLC v4 + HMI
+#   COMPOSE_PROFILES=openplc-v3 docker compose up    # 改用 OpenPLC v3 Runtime
+#   COMPOSE_PROFILES=no-plc docker compose up        # 完全不啟動 PLC（設備照樣自己運轉）
 #
-# .env 的 COMPOSE_PROFILES 決定啟動哪一組服務，預設 standalone：
-# 設備 + plant-bus + 內建 DCS + HMI + historian，開機後 DCS 會自動走完
-# 16 步冷啟動並持續發電。設備服務不設 profile，任何模式都會啟動；
-# 只有控制器/HMI/工具受 profile 控制。
+# 八台設備是「自持」的：環境條件成立就自行啟動，並由設備本地的調節器把
+# 程序量維持在可運行範圍。PLC 只做資料交換與邏輯判斷，SCADA 只負責啟停與觀察，
+# 因此沒有 PLC 時機組仍會自己併聯發電。
 #
-# 注意：命令列的 `--profile` 是疊加在 COMPOSE_PROFILES 之上，不是取代。
-# 要單獨跑 external-plc 請用上面的環境變數寫法，否則內建 DCS 會與外部 PLC 搶控制權。
+# .env 的 COMPOSE_PROFILES 決定啟動哪一種 PLC，預設 openplc-v4。
+# 注意：命令列的 `--profile` 是疊加在 COMPOSE_PROFILES 之上，不是取代；
+# 同時帶起 openplc-v3 與 openplc-v4 會搶同一個主機埠。
 
 x-device: &device
   build:
@@ -21,6 +22,7 @@ x-device: &device
   environment: &device-env
     LAB_MODE: ${LAB_MODE:-false}
     MODBUS_TRACE: ${MODBUS_TRACE:-false}
+    SELF_HOLD: ${SELF_HOLD:-true}
     SIM_BUS_HOST: plant-bus
     SIM_BUS_PORT: "7000"
     CONFIG_DIR: /app/configs
@@ -55,8 +57,9 @@ volumes:
   steam-valve-state:
   turbine-state:
   generator-state:
-  dcs-state:
   historian-data:
+  openplc-v3-data:
+  openplc-v4-data:
 
 services:
   # ---------------------------------------------------------------- plant-bus
@@ -152,25 +155,56 @@ services:
     ports: ["${BIND_ADDR:-127.0.0.1}:15028:502"]
     volumes: [generator-state:/var/lib/plant-device]
 
-  # ---------------------------------------------------------------- 內建 DCS
-  dcs-plc:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    image: thermal-plant-simulator:latest
-    container_name: dcs-plc
-    profiles: ["standalone"]
-    command: ["python", "-m", "controller.dcs.main"]
+  # ---------------------------------------------------------------- PLC
+  # PLC 只做資料交換與邏輯判斷：南向輪詢八台設備、北向提供單一 Modbus server
+  # 給 SCADA/HMI，並執行 watchdog、脈衝展寬與跳機矩陣。它不計算任何控制輸出。
+  #
+  # v4：ghcr.io/autonomy-logic/openplc-runtime，程式由 OpenPLC Editor v4 透過
+  #     8443 REST API 部署（容器本身沒有網頁介面）。
+  # v3：官方沒有發佈映像，預設由 integrations/openplc/docker/Dockerfile.v3
+  #     自 GitHub 原始碼建置；已有映像時用 .env 的 OPENPLC_V3_IMAGE 指定即可。
+  openplc-v4:
+    image: ${OPENPLC_V4_IMAGE:-ghcr.io/autonomy-logic/openplc-runtime:latest}
+    container_name: openplc-v4
+    profiles: ["openplc-v4"]
     restart: ${DEVICE_RESTART:-unless-stopped}
+    cap_add: [SYS_NICE, SYS_RESOURCE]
     environment:
-      <<: *device-env
-      AUTO_START: ${AUTO_START:-true}
-      STATE_DIR: /var/lib/plant-device
-    networks: [control_net, sim_net, management_net]
-    ports: ["${BIND_ADDR:-127.0.0.1}:15020:502"]
-    volumes: [dcs-state:/var/lib/plant-device]
+      TZ: ${TZ:-Asia/Taipei}
+    networks: [control_net, management_net]
+    ports:
+      - "${BIND_ADDR:-127.0.0.1}:${PLC_MODBUS_PORT:-15020}:502"   # 北向 Modbus server
+      - "${BIND_ADDR:-127.0.0.1}:15443:8443"                      # Editor v4 部署用 REST API
+    volumes:
+      - openplc-v4-data:/var/run/runtime
+      # 專案原始碼（唯讀）：用 OpenPLC Editor 開啟同一份目錄後編譯部署
+      - ./integrations/openplc/thermal-plant-v4:/projects/thermal-plant-v4:ro
     depends_on:
-      plant-bus: {condition: service_healthy}
+      boiler: {condition: service_started}
+      turbine: {condition: service_started}
+      generator: {condition: service_started}
+
+  openplc-v3:
+    image: ${OPENPLC_V3_IMAGE:-thermal-plant-openplc-v3:latest}
+    build:
+      context: ./integrations/openplc/docker
+      dockerfile: Dockerfile.v3
+      args:
+        OPENPLC_V3_REF: ${OPENPLC_V3_REF:-master}
+    container_name: openplc-v3
+    profiles: ["openplc-v3"]
+    restart: ${DEVICE_RESTART:-unless-stopped}
+    privileged: ${OPENPLC_V3_PRIVILEGED:-false}
+    environment:
+      TZ: ${TZ:-Asia/Taipei}
+    networks: [control_net, management_net]
+    ports:
+      - "${BIND_ADDR:-127.0.0.1}:${PLC_MODBUS_PORT:-15020}:502"   # 北向 Modbus server
+      - "${BIND_ADDR:-127.0.0.1}:15083:8080"                      # v3 網頁介面（openplc/openplc）
+    volumes:
+      - openplc-v3-data:/opt/OpenPLC_v3/webserver/st_files
+      - ./integrations/openplc/thermal-plant-v3:/projects/thermal-plant-v3:ro
+    depends_on:
       boiler: {condition: service_started}
       turbine: {condition: service_started}
       generator: {condition: service_started}
@@ -182,7 +216,6 @@ services:
       dockerfile: Dockerfile
     image: thermal-plant-simulator:latest
     container_name: historian
-    profiles: ["standalone", "external-plc"]
     command: ["python", "-m", "historian.main"]
     restart: ${DEVICE_RESTART:-unless-stopped}
     environment:
@@ -203,7 +236,6 @@ services:
       dockerfile: Dockerfile
     image: thermal-plant-simulator:latest
     container_name: hmi
-    profiles: ["standalone", "external-plc"]
     command: ["python", "-m", "hmi.main"]
     restart: ${DEVICE_RESTART:-unless-stopped}
     environment:

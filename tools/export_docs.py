@@ -10,7 +10,7 @@ import csv
 import os
 
 from common.device.base_device import common_alarms, common_protection_defs
-from controller.dcs.main import DEVICE_CLASSES, build_map
+from devices.registry import DEVICE_CLASSES, build_map
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DOCS = os.path.join(ROOT, "docs")

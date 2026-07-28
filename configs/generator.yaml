@@ -13,9 +13,16 @@ generator:
   sync_frequency_band_hz: [49.5, 50.5]
   sync_voltage_band_pct: [95.0, 105.0]
   sync_angle_limit_deg: 10.0
+  target_load_mw: 60.0            # 自持機組的目標負載（40010 預設值）
+
+  # --- 本地自持控制 ---
+  control:
+    auto_sync: true               # 同步條件成立就自行併聯
+    excite_speed_pct: 90.0        # 轉速達額定 90% 才自行勵磁
+    load_min_pressure_ratio: 0.9  # 鍋爐壓力低於設定值 90% 時暫停加載
 
 comm:
-  failure_policy: HOLD_LAST
+  failure_policy: LOCAL_AUTO
   breaker_open_after_s: 10.0
 
 protections:

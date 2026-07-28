@@ -1,0 +1,567 @@
+device,source_table,name,doc_address,remote_pdu_offset,local_iec,northbound_table,northbound_pdu_offset,dtype,unit,scale,writable,pulse,plc_forwards,description
+condenser,COIL,START,1,0,%QX100.0,COIL,800,u16,,1,yes,yes,yes,脈衝啟動命令
+condenser,COIL,STOP,2,1,%QX100.1,COIL,801,u16,,1,yes,yes,yes,正常停止
+condenser,COIL,RESET_TRIP,3,2,%QX100.2,COIL,802,u16,,1,yes,yes,yes,跳機重置脈衝，需 Reset Key
+condenser,COIL,ACK_ALARM,4,3,%QX100.3,COIL,803,u16,,1,yes,yes,yes,警報確認
+condenser,COIL,EMERGENCY_STOP,5,4,%QX100.4,COIL,804,u16,,1,yes,no,yes,緊急停止（保持型）
+condenser,COIL,FORCE_SAFE,6,5,%QX100.5,COIL,805,u16,,1,yes,no,yes,強制安全狀態
+condenser,COIL,TRIP_TEST,7,6,%QX100.6,COIL,806,u16,,1,yes,yes,yes,實驗模式跳機測試（需 LAB_MODE）
+condenser,COIL,CLEAR_TOTALIZER,8,7,%QX100.7,COIL,807,u16,,1,yes,yes,yes,清除累積值
+condenser,DISCRETE,READY,10001,0,%IX100.0,DISCRETE,800,u16,,1,no,no,no,
+condenser,DISCRETE,RUNNING,10002,1,%IX100.1,DISCRETE,801,u16,,1,no,no,no,
+condenser,DISCRETE,STARTING,10003,2,%IX100.2,DISCRETE,802,u16,,1,no,no,no,
+condenser,DISCRETE,STOPPING,10004,3,%IX100.3,DISCRETE,803,u16,,1,no,no,no,
+condenser,DISCRETE,TRIPPED,10005,4,%IX100.4,DISCRETE,804,u16,,1,no,no,no,
+condenser,DISCRETE,ALARM_ACTIVE,10006,5,%IX100.5,DISCRETE,805,u16,,1,no,no,no,
+condenser,DISCRETE,LOCAL_MODE,10007,6,%IX100.6,DISCRETE,806,u16,,1,no,no,no,
+condenser,DISCRETE,REMOTE_MODE,10008,7,%IX100.7,DISCRETE,807,u16,,1,no,no,no,
+condenser,DISCRETE,AUTO_MODE,10009,8,%IX101.0,DISCRETE,808,u16,,1,no,no,no,
+condenser,DISCRETE,MANUAL_MODE,10010,9,%IX101.1,DISCRETE,809,u16,,1,no,no,no,
+condenser,DISCRETE,CONTROL_WATCHDOG_OK,10011,10,%IX101.2,DISCRETE,810,u16,,1,no,no,no,
+condenser,DISCRETE,SIM_BUS_OK,10012,11,%IX101.3,DISCRETE,811,u16,,1,no,no,no,
+condenser,DISCRETE,INTERLOCKS_OK,10013,12,%IX101.4,DISCRETE,812,u16,,1,no,no,no,
+condenser,DISCRETE,SENSOR_FAULT,10014,13,%IX101.5,DISCRETE,813,u16,,1,no,no,no,
+condenser,DISCRETE,ACTUATOR_FAULT,10015,14,%IX101.6,DISCRETE,814,u16,,1,no,no,no,
+condenser,DISCRETE,MAINTENANCE_MODE,10016,15,%IX101.7,DISCRETE,815,u16,,1,no,no,no,
+condenser,INPUT,STATUS_WORD,30001,0,%IW100,INPUT,100,bitfield,,1,no,no,no,狀態字
+condenser,INPUT,ALARM_WORD_1,30002,1,%IW101,INPUT,101,bitfield,,1,no,no,no,
+condenser,INPUT,ALARM_WORD_2,30003,2,%IW102,INPUT,102,bitfield,,1,no,no,no,
+condenser,INPUT,TRIP_WORD,30004,3,%IW103,INPUT,103,bitfield,,1,no,no,no,
+condenser,INPUT,DEVICE_STATE,30005,4,%IW104,INPUT,104,enum,,1,no,no,no,
+condenser,INPUT,FIRST_OUT_CODE,30006,5,%IW105,INPUT,105,u16,,1,no,no,no,
+condenser,INPUT,OVERALL_QUALITY,30007,6,%IW106,INPUT,106,enum,,1,no,no,no,
+condenser,INPUT,REGISTER_MAP_VERSION,30008,7,%IW107,INPUT,107,u16,,1,no,no,no,
+condenser,INPUT,FIRMWARE_VERSION,30009,8,%IW108,INPUT,108,u16,,1,no,no,no,
+condenser,INPUT,CONDENSER_PRESSURE,30010,9,%IW109,INPUT,109,u16,bar(a),10000,no,no,no,
+condenser,INPUT,VACUUM,30011,10,%IW110,INPUT,110,u16,kPa,100,no,no,no,
+condenser,INPUT,HOTWELL_LEVEL,30012,11,%IW111,INPUT,111,u16,%,100,no,no,no,
+condenser,INPUT,EXHAUST_INFLOW,30013,12,%IW112,INPUT,112,u16,kg/s,100,no,no,no,
+condenser,INPUT,CONDENSING_CAPACITY,30014,13,%IW113,INPUT,113,u16,kg/s,100,no,no,no,
+condenser,INPUT,ACTUAL_CONDENSED,30015,14,%IW114,INPUT,114,u16,kg/s,100,no,no,no,
+condenser,INPUT,CONDENSATE_OUTFLOW,30016,15,%IW115,INPUT,115,u16,kg/s,100,no,no,no,
+condenser,INPUT,COOLING_WATER_AVAILABILITY,30017,16,%IW116,INPUT,116,u16,%,100,no,no,no,
+condenser,INPUT,VACUUM_SYSTEM_OUTPUT,30018,17,%IW117,INPUT,117,u16,%,100,no,no,no,
+condenser,INPUT,CONDENSATE_TEMPERATURE,30019,18,%IW118,INPUT,118,i16,degC,10,no,no,no,
+condenser,INPUT,HOTWELL_MASS_HI,30020,19,%IW119,INPUT,119,u32,kg,1,no,no,no,
+condenser,INPUT,HOTWELL_MASS_LO,30021,20,%IW120,INPUT,120,u16,kg,1,no,no,no,
+condenser,INPUT,MAKEUP_VALVE_POSITION,30022,21,%IW121,INPUT,121,u16,%,100,no,no,no,補水閥實際開度（本地控制）
+condenser,INPUT,MAKEUP_FLOW,30023,22,%IW122,INPUT,122,u16,kg/s,100,no,no,no,
+condenser,INPUT,LOCAL_OUTPUT,30026,25,%IW125,INPUT,125,u16,%,100,no,no,no,本地調節器輸出（自持控制的 MV）
+condenser,INPUT,SELF_HOLD_STATE,30027,26,%IW126,INPUT,126,enum,,1,no,no,no,0=停用 1=待機等允許條件 2=自持運轉 3=操作員停機 4=跳機鎖定 5=維修
+condenser,INPUT,PERMISSIVE_WORD,30028,27,%IW127,INPUT,127,bitfield,,1,no,no,no,各啟動允許條件是否成立（bit0 起）
+condenser,INPUT,WATCHDOG_ECHO,30030,29,%IW129,INPUT,129,u16,,1,no,no,no,回應 40003 之值
+condenser,INPUT,SCAN_TIME_MS,30031,30,%IW130,INPUT,130,u16,ms,10,no,no,no,物理掃描耗時 ×10
+condenser,INPUT,MODBUS_REQUEST_COUNT,30032,31,%IW131,INPUT,131,u16,,1,no,no,no,已處理請求數（模 65536）
+condenser,INPUT,REJECTED_COMMAND_COUNT,30033,32,%IW132,INPUT,132,u16,,1,no,no,no,
+condenser,INPUT,EXCEPTION_COUNT,30034,33,%IW133,INPUT,133,u16,,1,no,no,no,
+condenser,INPUT,SIM_QUALITY_WORD,30035,34,%IW134,INPUT,134,bitfield,,1,no,no,no,每個輸入訊號品質是否 GOOD
+condenser,INPUT,SIM_TICK_LOW,30036,35,%IW135,INPUT,135,u16,,1,no,no,no,
+condenser,INPUT,COMM_LOSS_SECONDS,30037,36,%IW136,INPUT,136,u16,s,10,no,no,no,
+condenser,INPUT,FAULT_INJECT_WORD,30038,37,%IW137,INPUT,137,bitfield,,1,no,no,no,啟用中的故障注入
+condenser,INPUT,SNAPSHOT_GENERATION,30039,38,%IW138,INPUT,138,u16,,1,no,no,no,每次快照還原 +1，供測試判斷環境已重置
+condenser,INPUT,RUN_SECONDS_HI,30040,39,%IW139,INPUT,139,u32,s,1,no,no,no,
+condenser,INPUT,RUN_SECONDS_LO,30041,40,%IW140,INPUT,140,u16,,1,no,no,no,
+condenser,INPUT,START_COUNT,30042,41,%IW141,INPUT,141,u16,,1,no,no,no,
+condenser,INPUT,TRIP_COUNT,30043,42,%IW142,INPUT,142,u16,,1,no,no,no,
+condenser,INPUT,MASS_TOTAL_HI,30044,43,%IW143,INPUT,143,u32,kg,1,no,no,no,
+condenser,INPUT,MASS_TOTAL_LO,30045,44,%IW144,INPUT,144,u16,,1,no,no,no,
+condenser,INPUT,ENERGY_TOTAL_HI,30046,45,%IW145,INPUT,145,u32,kWh,1,no,no,no,
+condenser,INPUT,ENERGY_TOTAL_LO,30047,46,%IW146,INPUT,146,u16,,1,no,no,no,
+condenser,INPUT,ALARM_COUNT,30048,47,%IW147,INPUT,147,u16,,1,no,no,no,
+condenser,INPUT,ACCEPTED_COMMAND_COUNT,30049,48,%IW148,INPUT,148,u16,,1,no,no,no,
+condenser,HOLDING,COMMAND_SEQUENCE,40002,1,%QW100,HOLDING,100,u16,,1,yes,no,yes,命令序號，重置需為新值
+condenser,HOLDING,WATCHDOG_COUNTER,40003,2,%QW101,HOLDING,101,u16,,1,yes,no,yes,控制器每秒 +1
+condenser,HOLDING,RESET_KEY,40004,3,%QW102,HOLDING,102,u16,,1,yes,no,yes,重置鑰匙 0xA55A
+condensate_pump,COIL,START,1,0,%QX101.0,COIL,808,u16,,1,yes,yes,yes,脈衝啟動命令
+condensate_pump,COIL,STOP,2,1,%QX101.1,COIL,809,u16,,1,yes,yes,yes,正常停止
+condensate_pump,COIL,RESET_TRIP,3,2,%QX101.2,COIL,810,u16,,1,yes,yes,yes,跳機重置脈衝，需 Reset Key
+condensate_pump,COIL,ACK_ALARM,4,3,%QX101.3,COIL,811,u16,,1,yes,yes,yes,警報確認
+condensate_pump,COIL,EMERGENCY_STOP,5,4,%QX101.4,COIL,812,u16,,1,yes,no,yes,緊急停止（保持型）
+condensate_pump,COIL,FORCE_SAFE,6,5,%QX101.5,COIL,813,u16,,1,yes,no,yes,強制安全狀態
+condensate_pump,COIL,TRIP_TEST,7,6,%QX101.6,COIL,814,u16,,1,yes,yes,yes,實驗模式跳機測試（需 LAB_MODE）
+condensate_pump,COIL,CLEAR_TOTALIZER,8,7,%QX101.7,COIL,815,u16,,1,yes,yes,yes,清除累積值
+condensate_pump,DISCRETE,READY,10001,0,%IX102.0,DISCRETE,816,u16,,1,no,no,no,
+condensate_pump,DISCRETE,RUNNING,10002,1,%IX102.1,DISCRETE,817,u16,,1,no,no,no,
+condensate_pump,DISCRETE,STARTING,10003,2,%IX102.2,DISCRETE,818,u16,,1,no,no,no,
+condensate_pump,DISCRETE,STOPPING,10004,3,%IX102.3,DISCRETE,819,u16,,1,no,no,no,
+condensate_pump,DISCRETE,TRIPPED,10005,4,%IX102.4,DISCRETE,820,u16,,1,no,no,no,
+condensate_pump,DISCRETE,ALARM_ACTIVE,10006,5,%IX102.5,DISCRETE,821,u16,,1,no,no,no,
+condensate_pump,DISCRETE,LOCAL_MODE,10007,6,%IX102.6,DISCRETE,822,u16,,1,no,no,no,
+condensate_pump,DISCRETE,REMOTE_MODE,10008,7,%IX102.7,DISCRETE,823,u16,,1,no,no,no,
+condensate_pump,DISCRETE,AUTO_MODE,10009,8,%IX103.0,DISCRETE,824,u16,,1,no,no,no,
+condensate_pump,DISCRETE,MANUAL_MODE,10010,9,%IX103.1,DISCRETE,825,u16,,1,no,no,no,
+condensate_pump,DISCRETE,CONTROL_WATCHDOG_OK,10011,10,%IX103.2,DISCRETE,826,u16,,1,no,no,no,
+condensate_pump,DISCRETE,SIM_BUS_OK,10012,11,%IX103.3,DISCRETE,827,u16,,1,no,no,no,
+condensate_pump,DISCRETE,INTERLOCKS_OK,10013,12,%IX103.4,DISCRETE,828,u16,,1,no,no,no,
+condensate_pump,DISCRETE,SENSOR_FAULT,10014,13,%IX103.5,DISCRETE,829,u16,,1,no,no,no,
+condensate_pump,DISCRETE,ACTUATOR_FAULT,10015,14,%IX103.6,DISCRETE,830,u16,,1,no,no,no,
+condensate_pump,DISCRETE,MAINTENANCE_MODE,10016,15,%IX103.7,DISCRETE,831,u16,,1,no,no,no,
+condensate_pump,INPUT,STATUS_WORD,30001,0,%IW149,INPUT,149,bitfield,,1,no,no,no,狀態字
+condensate_pump,INPUT,ALARM_WORD_1,30002,1,%IW150,INPUT,150,bitfield,,1,no,no,no,
+condensate_pump,INPUT,ALARM_WORD_2,30003,2,%IW151,INPUT,151,bitfield,,1,no,no,no,
+condensate_pump,INPUT,TRIP_WORD,30004,3,%IW152,INPUT,152,bitfield,,1,no,no,no,
+condensate_pump,INPUT,DEVICE_STATE,30005,4,%IW153,INPUT,153,enum,,1,no,no,no,
+condensate_pump,INPUT,FIRST_OUT_CODE,30006,5,%IW154,INPUT,154,u16,,1,no,no,no,
+condensate_pump,INPUT,OVERALL_QUALITY,30007,6,%IW155,INPUT,155,enum,,1,no,no,no,
+condensate_pump,INPUT,REGISTER_MAP_VERSION,30008,7,%IW156,INPUT,156,u16,,1,no,no,no,
+condensate_pump,INPUT,FIRMWARE_VERSION,30009,8,%IW157,INPUT,157,u16,,1,no,no,no,
+condensate_pump,INPUT,ACTUAL_SPEED,30010,9,%IW158,INPUT,158,u16,%,100,no,no,no,
+condensate_pump,INPUT,FLOW,30011,10,%IW159,INPUT,159,u16,kg/s,100,no,no,no,
+condensate_pump,INPUT,SUCTION_PRESSURE,30012,11,%IW160,INPUT,160,u16,bar(a),1000,no,no,no,
+condensate_pump,INPUT,DISCHARGE_PRESSURE,30013,12,%IW161,INPUT,161,u16,bar(a),100,no,no,no,
+condensate_pump,INPUT,MOTOR_CURRENT,30014,13,%IW162,INPUT,162,u16,A,10,no,no,no,
+condensate_pump,INPUT,NPSH_MARGIN,30015,14,%IW163,INPUT,163,u16,m,100,no,no,no,
+condensate_pump,INPUT,VIBRATION,30016,15,%IW164,INPUT,164,u16,mm/s,100,no,no,no,
+condensate_pump,INPUT,SOURCE_LEVEL,30017,16,%IW165,INPUT,165,u16,%,100,no,no,no,
+condensate_pump,INPUT,BACKPRESSURE,30018,17,%IW166,INPUT,166,u16,bar(a),100,no,no,no,
+condensate_pump,INPUT,OUTLET_VALVE_POSITION,30019,18,%IW167,INPUT,167,u16,%,100,no,no,no,
+condensate_pump,INPUT,CAVITATION_FACTOR,30020,19,%IW168,INPUT,168,u16,%,100,no,no,no,
+condensate_pump,INPUT,LOCAL_OUTPUT,30026,25,%IW174,INPUT,174,u16,%,100,no,no,no,本地調節器輸出（自持控制的 MV）
+condensate_pump,INPUT,SELF_HOLD_STATE,30027,26,%IW175,INPUT,175,enum,,1,no,no,no,0=停用 1=待機等允許條件 2=自持運轉 3=操作員停機 4=跳機鎖定 5=維修
+condensate_pump,INPUT,PERMISSIVE_WORD,30028,27,%IW176,INPUT,176,bitfield,,1,no,no,no,各啟動允許條件是否成立（bit0 起）
+condensate_pump,INPUT,WATCHDOG_ECHO,30030,29,%IW178,INPUT,178,u16,,1,no,no,no,回應 40003 之值
+condensate_pump,INPUT,SCAN_TIME_MS,30031,30,%IW179,INPUT,179,u16,ms,10,no,no,no,物理掃描耗時 ×10
+condensate_pump,INPUT,MODBUS_REQUEST_COUNT,30032,31,%IW180,INPUT,180,u16,,1,no,no,no,已處理請求數（模 65536）
+condensate_pump,INPUT,REJECTED_COMMAND_COUNT,30033,32,%IW181,INPUT,181,u16,,1,no,no,no,
+condensate_pump,INPUT,EXCEPTION_COUNT,30034,33,%IW182,INPUT,182,u16,,1,no,no,no,
+condensate_pump,INPUT,SIM_QUALITY_WORD,30035,34,%IW183,INPUT,183,bitfield,,1,no,no,no,每個輸入訊號品質是否 GOOD
+condensate_pump,INPUT,SIM_TICK_LOW,30036,35,%IW184,INPUT,184,u16,,1,no,no,no,
+condensate_pump,INPUT,COMM_LOSS_SECONDS,30037,36,%IW185,INPUT,185,u16,s,10,no,no,no,
+condensate_pump,INPUT,FAULT_INJECT_WORD,30038,37,%IW186,INPUT,186,bitfield,,1,no,no,no,啟用中的故障注入
+condensate_pump,INPUT,SNAPSHOT_GENERATION,30039,38,%IW187,INPUT,187,u16,,1,no,no,no,每次快照還原 +1，供測試判斷環境已重置
+condensate_pump,INPUT,RUN_SECONDS_HI,30040,39,%IW188,INPUT,188,u32,s,1,no,no,no,
+condensate_pump,INPUT,RUN_SECONDS_LO,30041,40,%IW189,INPUT,189,u16,,1,no,no,no,
+condensate_pump,INPUT,START_COUNT,30042,41,%IW190,INPUT,190,u16,,1,no,no,no,
+condensate_pump,INPUT,TRIP_COUNT,30043,42,%IW191,INPUT,191,u16,,1,no,no,no,
+condensate_pump,INPUT,MASS_TOTAL_HI,30044,43,%IW192,INPUT,192,u32,kg,1,no,no,no,
+condensate_pump,INPUT,MASS_TOTAL_LO,30045,44,%IW193,INPUT,193,u16,,1,no,no,no,
+condensate_pump,INPUT,ENERGY_TOTAL_HI,30046,45,%IW194,INPUT,194,u32,kWh,1,no,no,no,
+condensate_pump,INPUT,ENERGY_TOTAL_LO,30047,46,%IW195,INPUT,195,u16,,1,no,no,no,
+condensate_pump,INPUT,ALARM_COUNT,30048,47,%IW196,INPUT,196,u16,,1,no,no,no,
+condensate_pump,INPUT,ACCEPTED_COMMAND_COUNT,30049,48,%IW197,INPUT,197,u16,,1,no,no,no,
+condensate_pump,HOLDING,COMMAND_SEQUENCE,40002,1,%QW103,HOLDING,103,u16,,1,yes,no,yes,命令序號，重置需為新值
+condensate_pump,HOLDING,WATCHDOG_COUNTER,40003,2,%QW104,HOLDING,104,u16,,1,yes,no,yes,控制器每秒 +1
+condensate_pump,HOLDING,RESET_KEY,40004,3,%QW105,HOLDING,105,u16,,1,yes,no,yes,重置鑰匙 0xA55A
+feedwater_tank,COIL,START,1,0,%QX102.0,COIL,816,u16,,1,yes,yes,yes,脈衝啟動命令
+feedwater_tank,COIL,STOP,2,1,%QX102.1,COIL,817,u16,,1,yes,yes,yes,正常停止
+feedwater_tank,COIL,RESET_TRIP,3,2,%QX102.2,COIL,818,u16,,1,yes,yes,yes,跳機重置脈衝，需 Reset Key
+feedwater_tank,COIL,ACK_ALARM,4,3,%QX102.3,COIL,819,u16,,1,yes,yes,yes,警報確認
+feedwater_tank,COIL,EMERGENCY_STOP,5,4,%QX102.4,COIL,820,u16,,1,yes,no,yes,緊急停止（保持型）
+feedwater_tank,COIL,FORCE_SAFE,6,5,%QX102.5,COIL,821,u16,,1,yes,no,yes,強制安全狀態
+feedwater_tank,COIL,TRIP_TEST,7,6,%QX102.6,COIL,822,u16,,1,yes,yes,yes,實驗模式跳機測試（需 LAB_MODE）
+feedwater_tank,COIL,CLEAR_TOTALIZER,8,7,%QX102.7,COIL,823,u16,,1,yes,yes,yes,清除累積值
+feedwater_tank,DISCRETE,READY,10001,0,%IX104.0,DISCRETE,832,u16,,1,no,no,no,
+feedwater_tank,DISCRETE,RUNNING,10002,1,%IX104.1,DISCRETE,833,u16,,1,no,no,no,
+feedwater_tank,DISCRETE,STARTING,10003,2,%IX104.2,DISCRETE,834,u16,,1,no,no,no,
+feedwater_tank,DISCRETE,STOPPING,10004,3,%IX104.3,DISCRETE,835,u16,,1,no,no,no,
+feedwater_tank,DISCRETE,TRIPPED,10005,4,%IX104.4,DISCRETE,836,u16,,1,no,no,no,
+feedwater_tank,DISCRETE,ALARM_ACTIVE,10006,5,%IX104.5,DISCRETE,837,u16,,1,no,no,no,
+feedwater_tank,DISCRETE,LOCAL_MODE,10007,6,%IX104.6,DISCRETE,838,u16,,1,no,no,no,
+feedwater_tank,DISCRETE,REMOTE_MODE,10008,7,%IX104.7,DISCRETE,839,u16,,1,no,no,no,
+feedwater_tank,DISCRETE,AUTO_MODE,10009,8,%IX105.0,DISCRETE,840,u16,,1,no,no,no,
+feedwater_tank,DISCRETE,MANUAL_MODE,10010,9,%IX105.1,DISCRETE,841,u16,,1,no,no,no,
+feedwater_tank,DISCRETE,CONTROL_WATCHDOG_OK,10011,10,%IX105.2,DISCRETE,842,u16,,1,no,no,no,
+feedwater_tank,DISCRETE,SIM_BUS_OK,10012,11,%IX105.3,DISCRETE,843,u16,,1,no,no,no,
+feedwater_tank,DISCRETE,INTERLOCKS_OK,10013,12,%IX105.4,DISCRETE,844,u16,,1,no,no,no,
+feedwater_tank,DISCRETE,SENSOR_FAULT,10014,13,%IX105.5,DISCRETE,845,u16,,1,no,no,no,
+feedwater_tank,DISCRETE,ACTUATOR_FAULT,10015,14,%IX105.6,DISCRETE,846,u16,,1,no,no,no,
+feedwater_tank,DISCRETE,MAINTENANCE_MODE,10016,15,%IX105.7,DISCRETE,847,u16,,1,no,no,no,
+feedwater_tank,INPUT,STATUS_WORD,30001,0,%IW198,INPUT,198,bitfield,,1,no,no,no,狀態字
+feedwater_tank,INPUT,ALARM_WORD_1,30002,1,%IW199,INPUT,199,bitfield,,1,no,no,no,
+feedwater_tank,INPUT,ALARM_WORD_2,30003,2,%IW200,INPUT,200,bitfield,,1,no,no,no,
+feedwater_tank,INPUT,TRIP_WORD,30004,3,%IW201,INPUT,201,bitfield,,1,no,no,no,
+feedwater_tank,INPUT,DEVICE_STATE,30005,4,%IW202,INPUT,202,enum,,1,no,no,no,
+feedwater_tank,INPUT,FIRST_OUT_CODE,30006,5,%IW203,INPUT,203,u16,,1,no,no,no,
+feedwater_tank,INPUT,OVERALL_QUALITY,30007,6,%IW204,INPUT,204,enum,,1,no,no,no,
+feedwater_tank,INPUT,REGISTER_MAP_VERSION,30008,7,%IW205,INPUT,205,u16,,1,no,no,no,
+feedwater_tank,INPUT,FIRMWARE_VERSION,30009,8,%IW206,INPUT,206,u16,,1,no,no,no,
+feedwater_tank,INPUT,TANK_LEVEL,30010,9,%IW207,INPUT,207,u16,%,100,no,no,no,
+feedwater_tank,INPUT,TANK_MASS_HI,30011,10,%IW208,INPUT,208,u32,kg,1,no,no,no,
+feedwater_tank,INPUT,TANK_MASS_LO,30012,11,%IW209,INPUT,209,u16,kg,1,no,no,no,
+feedwater_tank,INPUT,CONDENSATE_INFLOW,30013,12,%IW210,INPUT,210,u16,kg/s,100,no,no,no,
+feedwater_tank,INPUT,FEEDWATER_OUTFLOW,30014,13,%IW211,INPUT,211,u16,kg/s,100,no,no,no,
+feedwater_tank,INPUT,WATER_TEMPERATURE,30015,14,%IW212,INPUT,212,i16,degC,10,no,no,no,
+feedwater_tank,INPUT,TANK_PRESSURE,30016,15,%IW213,INPUT,213,u16,bar(a),1000,no,no,no,
+feedwater_tank,INPUT,OVERFLOW_FLOW,30017,16,%IW214,INPUT,214,u16,kg/s,100,no,no,no,
+feedwater_tank,INPUT,NET_FLOW,30018,17,%IW215,INPUT,215,i16,kg/s,100,no,no,no,
+feedwater_tank,INPUT,LOCAL_OUTPUT,30026,25,%IW223,INPUT,223,u16,%,100,no,no,no,本地調節器輸出（自持控制的 MV）
+feedwater_tank,INPUT,SELF_HOLD_STATE,30027,26,%IW224,INPUT,224,enum,,1,no,no,no,0=停用 1=待機等允許條件 2=自持運轉 3=操作員停機 4=跳機鎖定 5=維修
+feedwater_tank,INPUT,PERMISSIVE_WORD,30028,27,%IW225,INPUT,225,bitfield,,1,no,no,no,各啟動允許條件是否成立（bit0 起）
+feedwater_tank,INPUT,WATCHDOG_ECHO,30030,29,%IW227,INPUT,227,u16,,1,no,no,no,回應 40003 之值
+feedwater_tank,INPUT,SCAN_TIME_MS,30031,30,%IW228,INPUT,228,u16,ms,10,no,no,no,物理掃描耗時 ×10
+feedwater_tank,INPUT,MODBUS_REQUEST_COUNT,30032,31,%IW229,INPUT,229,u16,,1,no,no,no,已處理請求數（模 65536）
+feedwater_tank,INPUT,REJECTED_COMMAND_COUNT,30033,32,%IW230,INPUT,230,u16,,1,no,no,no,
+feedwater_tank,INPUT,EXCEPTION_COUNT,30034,33,%IW231,INPUT,231,u16,,1,no,no,no,
+feedwater_tank,INPUT,SIM_QUALITY_WORD,30035,34,%IW232,INPUT,232,bitfield,,1,no,no,no,每個輸入訊號品質是否 GOOD
+feedwater_tank,INPUT,SIM_TICK_LOW,30036,35,%IW233,INPUT,233,u16,,1,no,no,no,
+feedwater_tank,INPUT,COMM_LOSS_SECONDS,30037,36,%IW234,INPUT,234,u16,s,10,no,no,no,
+feedwater_tank,INPUT,FAULT_INJECT_WORD,30038,37,%IW235,INPUT,235,bitfield,,1,no,no,no,啟用中的故障注入
+feedwater_tank,INPUT,SNAPSHOT_GENERATION,30039,38,%IW236,INPUT,236,u16,,1,no,no,no,每次快照還原 +1，供測試判斷環境已重置
+feedwater_tank,INPUT,RUN_SECONDS_HI,30040,39,%IW237,INPUT,237,u32,s,1,no,no,no,
+feedwater_tank,INPUT,RUN_SECONDS_LO,30041,40,%IW238,INPUT,238,u16,,1,no,no,no,
+feedwater_tank,INPUT,START_COUNT,30042,41,%IW239,INPUT,239,u16,,1,no,no,no,
+feedwater_tank,INPUT,TRIP_COUNT,30043,42,%IW240,INPUT,240,u16,,1,no,no,no,
+feedwater_tank,INPUT,MASS_TOTAL_HI,30044,43,%IW241,INPUT,241,u32,kg,1,no,no,no,
+feedwater_tank,INPUT,MASS_TOTAL_LO,30045,44,%IW242,INPUT,242,u16,,1,no,no,no,
+feedwater_tank,INPUT,ENERGY_TOTAL_HI,30046,45,%IW243,INPUT,243,u32,kWh,1,no,no,no,
+feedwater_tank,INPUT,ENERGY_TOTAL_LO,30047,46,%IW244,INPUT,244,u16,,1,no,no,no,
+feedwater_tank,INPUT,ALARM_COUNT,30048,47,%IW245,INPUT,245,u16,,1,no,no,no,
+feedwater_tank,INPUT,ACCEPTED_COMMAND_COUNT,30049,48,%IW246,INPUT,246,u16,,1,no,no,no,
+feedwater_tank,HOLDING,COMMAND_SEQUENCE,40002,1,%QW106,HOLDING,106,u16,,1,yes,no,yes,命令序號，重置需為新值
+feedwater_tank,HOLDING,WATCHDOG_COUNTER,40003,2,%QW107,HOLDING,107,u16,,1,yes,no,yes,控制器每秒 +1
+feedwater_tank,HOLDING,RESET_KEY,40004,3,%QW108,HOLDING,108,u16,,1,yes,no,yes,重置鑰匙 0xA55A
+feedwater_pump,COIL,START,1,0,%QX103.0,COIL,824,u16,,1,yes,yes,yes,脈衝啟動命令
+feedwater_pump,COIL,STOP,2,1,%QX103.1,COIL,825,u16,,1,yes,yes,yes,正常停止
+feedwater_pump,COIL,RESET_TRIP,3,2,%QX103.2,COIL,826,u16,,1,yes,yes,yes,跳機重置脈衝，需 Reset Key
+feedwater_pump,COIL,ACK_ALARM,4,3,%QX103.3,COIL,827,u16,,1,yes,yes,yes,警報確認
+feedwater_pump,COIL,EMERGENCY_STOP,5,4,%QX103.4,COIL,828,u16,,1,yes,no,yes,緊急停止（保持型）
+feedwater_pump,COIL,FORCE_SAFE,6,5,%QX103.5,COIL,829,u16,,1,yes,no,yes,強制安全狀態
+feedwater_pump,COIL,TRIP_TEST,7,6,%QX103.6,COIL,830,u16,,1,yes,yes,yes,實驗模式跳機測試（需 LAB_MODE）
+feedwater_pump,COIL,CLEAR_TOTALIZER,8,7,%QX103.7,COIL,831,u16,,1,yes,yes,yes,清除累積值
+feedwater_pump,DISCRETE,READY,10001,0,%IX106.0,DISCRETE,848,u16,,1,no,no,no,
+feedwater_pump,DISCRETE,RUNNING,10002,1,%IX106.1,DISCRETE,849,u16,,1,no,no,no,
+feedwater_pump,DISCRETE,STARTING,10003,2,%IX106.2,DISCRETE,850,u16,,1,no,no,no,
+feedwater_pump,DISCRETE,STOPPING,10004,3,%IX106.3,DISCRETE,851,u16,,1,no,no,no,
+feedwater_pump,DISCRETE,TRIPPED,10005,4,%IX106.4,DISCRETE,852,u16,,1,no,no,no,
+feedwater_pump,DISCRETE,ALARM_ACTIVE,10006,5,%IX106.5,DISCRETE,853,u16,,1,no,no,no,
+feedwater_pump,DISCRETE,LOCAL_MODE,10007,6,%IX106.6,DISCRETE,854,u16,,1,no,no,no,
+feedwater_pump,DISCRETE,REMOTE_MODE,10008,7,%IX106.7,DISCRETE,855,u16,,1,no,no,no,
+feedwater_pump,DISCRETE,AUTO_MODE,10009,8,%IX107.0,DISCRETE,856,u16,,1,no,no,no,
+feedwater_pump,DISCRETE,MANUAL_MODE,10010,9,%IX107.1,DISCRETE,857,u16,,1,no,no,no,
+feedwater_pump,DISCRETE,CONTROL_WATCHDOG_OK,10011,10,%IX107.2,DISCRETE,858,u16,,1,no,no,no,
+feedwater_pump,DISCRETE,SIM_BUS_OK,10012,11,%IX107.3,DISCRETE,859,u16,,1,no,no,no,
+feedwater_pump,DISCRETE,INTERLOCKS_OK,10013,12,%IX107.4,DISCRETE,860,u16,,1,no,no,no,
+feedwater_pump,DISCRETE,SENSOR_FAULT,10014,13,%IX107.5,DISCRETE,861,u16,,1,no,no,no,
+feedwater_pump,DISCRETE,ACTUATOR_FAULT,10015,14,%IX107.6,DISCRETE,862,u16,,1,no,no,no,
+feedwater_pump,DISCRETE,MAINTENANCE_MODE,10016,15,%IX107.7,DISCRETE,863,u16,,1,no,no,no,
+feedwater_pump,INPUT,STATUS_WORD,30001,0,%IW247,INPUT,247,bitfield,,1,no,no,no,狀態字
+feedwater_pump,INPUT,ALARM_WORD_1,30002,1,%IW248,INPUT,248,bitfield,,1,no,no,no,
+feedwater_pump,INPUT,ALARM_WORD_2,30003,2,%IW249,INPUT,249,bitfield,,1,no,no,no,
+feedwater_pump,INPUT,TRIP_WORD,30004,3,%IW250,INPUT,250,bitfield,,1,no,no,no,
+feedwater_pump,INPUT,DEVICE_STATE,30005,4,%IW251,INPUT,251,enum,,1,no,no,no,
+feedwater_pump,INPUT,FIRST_OUT_CODE,30006,5,%IW252,INPUT,252,u16,,1,no,no,no,
+feedwater_pump,INPUT,OVERALL_QUALITY,30007,6,%IW253,INPUT,253,enum,,1,no,no,no,
+feedwater_pump,INPUT,REGISTER_MAP_VERSION,30008,7,%IW254,INPUT,254,u16,,1,no,no,no,
+feedwater_pump,INPUT,FIRMWARE_VERSION,30009,8,%IW255,INPUT,255,u16,,1,no,no,no,
+feedwater_pump,INPUT,ACTUAL_SPEED,30010,9,%IW256,INPUT,256,u16,%,100,no,no,no,
+feedwater_pump,INPUT,FLOW,30011,10,%IW257,INPUT,257,u16,kg/s,100,no,no,no,
+feedwater_pump,INPUT,SUCTION_PRESSURE,30012,11,%IW258,INPUT,258,u16,bar(a),1000,no,no,no,
+feedwater_pump,INPUT,DISCHARGE_PRESSURE,30013,12,%IW259,INPUT,259,u16,bar(a),100,no,no,no,
+feedwater_pump,INPUT,MOTOR_CURRENT,30014,13,%IW260,INPUT,260,u16,A,10,no,no,no,
+feedwater_pump,INPUT,NPSH_MARGIN,30015,14,%IW261,INPUT,261,u16,m,100,no,no,no,
+feedwater_pump,INPUT,VIBRATION,30016,15,%IW262,INPUT,262,u16,mm/s,100,no,no,no,
+feedwater_pump,INPUT,SOURCE_LEVEL,30017,16,%IW263,INPUT,263,u16,%,100,no,no,no,
+feedwater_pump,INPUT,BACKPRESSURE,30018,17,%IW264,INPUT,264,u16,bar(a),100,no,no,no,
+feedwater_pump,INPUT,OUTLET_VALVE_POSITION,30019,18,%IW265,INPUT,265,u16,%,100,no,no,no,
+feedwater_pump,INPUT,CAVITATION_FACTOR,30020,19,%IW266,INPUT,266,u16,%,100,no,no,no,
+feedwater_pump,INPUT,BOILER_PRESSURE,30021,20,%IW267,INPUT,267,u16,bar(a),100,no,no,no,
+feedwater_pump,INPUT,FEEDWATER_PERMITTED,30022,21,%IW268,INPUT,268,enum,,1,no,no,no,
+feedwater_pump,INPUT,LOCAL_OUTPUT,30026,25,%IW272,INPUT,272,u16,%,100,no,no,no,本地調節器輸出（自持控制的 MV）
+feedwater_pump,INPUT,SELF_HOLD_STATE,30027,26,%IW273,INPUT,273,enum,,1,no,no,no,0=停用 1=待機等允許條件 2=自持運轉 3=操作員停機 4=跳機鎖定 5=維修
+feedwater_pump,INPUT,PERMISSIVE_WORD,30028,27,%IW274,INPUT,274,bitfield,,1,no,no,no,各啟動允許條件是否成立（bit0 起）
+feedwater_pump,INPUT,WATCHDOG_ECHO,30030,29,%IW276,INPUT,276,u16,,1,no,no,no,回應 40003 之值
+feedwater_pump,INPUT,SCAN_TIME_MS,30031,30,%IW277,INPUT,277,u16,ms,10,no,no,no,物理掃描耗時 ×10
+feedwater_pump,INPUT,MODBUS_REQUEST_COUNT,30032,31,%IW278,INPUT,278,u16,,1,no,no,no,已處理請求數（模 65536）
+feedwater_pump,INPUT,REJECTED_COMMAND_COUNT,30033,32,%IW279,INPUT,279,u16,,1,no,no,no,
+feedwater_pump,INPUT,EXCEPTION_COUNT,30034,33,%IW280,INPUT,280,u16,,1,no,no,no,
+feedwater_pump,INPUT,SIM_QUALITY_WORD,30035,34,%IW281,INPUT,281,bitfield,,1,no,no,no,每個輸入訊號品質是否 GOOD
+feedwater_pump,INPUT,SIM_TICK_LOW,30036,35,%IW282,INPUT,282,u16,,1,no,no,no,
+feedwater_pump,INPUT,COMM_LOSS_SECONDS,30037,36,%IW283,INPUT,283,u16,s,10,no,no,no,
+feedwater_pump,INPUT,FAULT_INJECT_WORD,30038,37,%IW284,INPUT,284,bitfield,,1,no,no,no,啟用中的故障注入
+feedwater_pump,INPUT,SNAPSHOT_GENERATION,30039,38,%IW285,INPUT,285,u16,,1,no,no,no,每次快照還原 +1，供測試判斷環境已重置
+feedwater_pump,INPUT,RUN_SECONDS_HI,30040,39,%IW286,INPUT,286,u32,s,1,no,no,no,
+feedwater_pump,INPUT,RUN_SECONDS_LO,30041,40,%IW287,INPUT,287,u16,,1,no,no,no,
+feedwater_pump,INPUT,START_COUNT,30042,41,%IW288,INPUT,288,u16,,1,no,no,no,
+feedwater_pump,INPUT,TRIP_COUNT,30043,42,%IW289,INPUT,289,u16,,1,no,no,no,
+feedwater_pump,INPUT,MASS_TOTAL_HI,30044,43,%IW290,INPUT,290,u32,kg,1,no,no,no,
+feedwater_pump,INPUT,MASS_TOTAL_LO,30045,44,%IW291,INPUT,291,u16,,1,no,no,no,
+feedwater_pump,INPUT,ENERGY_TOTAL_HI,30046,45,%IW292,INPUT,292,u32,kWh,1,no,no,no,
+feedwater_pump,INPUT,ENERGY_TOTAL_LO,30047,46,%IW293,INPUT,293,u16,,1,no,no,no,
+feedwater_pump,INPUT,ALARM_COUNT,30048,47,%IW294,INPUT,294,u16,,1,no,no,no,
+feedwater_pump,INPUT,ACCEPTED_COMMAND_COUNT,30049,48,%IW295,INPUT,295,u16,,1,no,no,no,
+feedwater_pump,HOLDING,COMMAND_SEQUENCE,40002,1,%QW109,HOLDING,109,u16,,1,yes,no,yes,命令序號，重置需為新值
+feedwater_pump,HOLDING,WATCHDOG_COUNTER,40003,2,%QW110,HOLDING,110,u16,,1,yes,no,yes,控制器每秒 +1
+feedwater_pump,HOLDING,RESET_KEY,40004,3,%QW111,HOLDING,111,u16,,1,yes,no,yes,重置鑰匙 0xA55A
+boiler,COIL,START,1,0,%QX104.0,COIL,832,u16,,1,yes,yes,yes,脈衝啟動命令
+boiler,COIL,STOP,2,1,%QX104.1,COIL,833,u16,,1,yes,yes,yes,正常停止
+boiler,COIL,RESET_TRIP,3,2,%QX104.2,COIL,834,u16,,1,yes,yes,yes,跳機重置脈衝，需 Reset Key
+boiler,COIL,ACK_ALARM,4,3,%QX104.3,COIL,835,u16,,1,yes,yes,yes,警報確認
+boiler,COIL,EMERGENCY_STOP,5,4,%QX104.4,COIL,836,u16,,1,yes,no,yes,緊急停止（保持型）
+boiler,COIL,FORCE_SAFE,6,5,%QX104.5,COIL,837,u16,,1,yes,no,yes,強制安全狀態
+boiler,COIL,TRIP_TEST,7,6,%QX104.6,COIL,838,u16,,1,yes,yes,yes,實驗模式跳機測試（需 LAB_MODE）
+boiler,COIL,CLEAR_TOTALIZER,8,7,%QX104.7,COIL,839,u16,,1,yes,yes,yes,清除累積值
+boiler,DISCRETE,READY,10001,0,%IX108.0,DISCRETE,864,u16,,1,no,no,no,
+boiler,DISCRETE,RUNNING,10002,1,%IX108.1,DISCRETE,865,u16,,1,no,no,no,
+boiler,DISCRETE,STARTING,10003,2,%IX108.2,DISCRETE,866,u16,,1,no,no,no,
+boiler,DISCRETE,STOPPING,10004,3,%IX108.3,DISCRETE,867,u16,,1,no,no,no,
+boiler,DISCRETE,TRIPPED,10005,4,%IX108.4,DISCRETE,868,u16,,1,no,no,no,
+boiler,DISCRETE,ALARM_ACTIVE,10006,5,%IX108.5,DISCRETE,869,u16,,1,no,no,no,
+boiler,DISCRETE,LOCAL_MODE,10007,6,%IX108.6,DISCRETE,870,u16,,1,no,no,no,
+boiler,DISCRETE,REMOTE_MODE,10008,7,%IX108.7,DISCRETE,871,u16,,1,no,no,no,
+boiler,DISCRETE,AUTO_MODE,10009,8,%IX109.0,DISCRETE,872,u16,,1,no,no,no,
+boiler,DISCRETE,MANUAL_MODE,10010,9,%IX109.1,DISCRETE,873,u16,,1,no,no,no,
+boiler,DISCRETE,CONTROL_WATCHDOG_OK,10011,10,%IX109.2,DISCRETE,874,u16,,1,no,no,no,
+boiler,DISCRETE,SIM_BUS_OK,10012,11,%IX109.3,DISCRETE,875,u16,,1,no,no,no,
+boiler,DISCRETE,INTERLOCKS_OK,10013,12,%IX109.4,DISCRETE,876,u16,,1,no,no,no,
+boiler,DISCRETE,SENSOR_FAULT,10014,13,%IX109.5,DISCRETE,877,u16,,1,no,no,no,
+boiler,DISCRETE,ACTUATOR_FAULT,10015,14,%IX109.6,DISCRETE,878,u16,,1,no,no,no,
+boiler,DISCRETE,MAINTENANCE_MODE,10016,15,%IX109.7,DISCRETE,879,u16,,1,no,no,no,
+boiler,INPUT,STATUS_WORD,30001,0,%IW296,INPUT,296,bitfield,,1,no,no,no,狀態字
+boiler,INPUT,ALARM_WORD_1,30002,1,%IW297,INPUT,297,bitfield,,1,no,no,no,
+boiler,INPUT,ALARM_WORD_2,30003,2,%IW298,INPUT,298,bitfield,,1,no,no,no,
+boiler,INPUT,TRIP_WORD,30004,3,%IW299,INPUT,299,bitfield,,1,no,no,no,
+boiler,INPUT,DEVICE_STATE,30005,4,%IW300,INPUT,300,enum,,1,no,no,no,
+boiler,INPUT,FIRST_OUT_CODE,30006,5,%IW301,INPUT,301,u16,,1,no,no,no,
+boiler,INPUT,OVERALL_QUALITY,30007,6,%IW302,INPUT,302,enum,,1,no,no,no,
+boiler,INPUT,REGISTER_MAP_VERSION,30008,7,%IW303,INPUT,303,u16,,1,no,no,no,
+boiler,INPUT,FIRMWARE_VERSION,30009,8,%IW304,INPUT,304,u16,,1,no,no,no,
+boiler,INPUT,BOILER_PRESSURE,30010,9,%IW305,INPUT,305,u16,bar(a),100,no,no,no,鍋爐壓力
+boiler,INPUT,LEVEL_INDICATED,30011,10,%IW306,INPUT,306,u16,%,100,no,no,no,顯示水位（含脹縮）
+boiler,INPUT,LEVEL_ACTUAL,30012,11,%IW307,INPUT,307,u16,%,100,no,no,no,實際水位
+boiler,INPUT,FEEDWATER_FLOW,30013,12,%IW308,INPUT,308,u16,kg/s,100,no,no,no,
+boiler,INPUT,STEAM_GENERATION,30014,13,%IW309,INPUT,309,u16,kg/s,100,no,no,no,
+boiler,INPUT,STEAM_OUTFLOW,30015,14,%IW310,INPUT,310,u16,kg/s,100,no,no,no,
+boiler,INPUT,BURNER_OUTPUT,30016,15,%IW311,INPUT,311,u16,%,100,no,no,no,
+boiler,INPUT,STEAM_TEMPERATURE,30017,16,%IW312,INPUT,312,i16,degC,10,no,no,no,
+boiler,INPUT,WATER_MASS_HI,30018,17,%IW313,INPUT,313,u32,kg,1,no,no,no,
+boiler,INPUT,WATER_MASS_LO,30019,18,%IW314,INPUT,314,u16,kg,1,no,no,no,
+boiler,INPUT,FLAME_STATUS,30020,19,%IW315,INPUT,315,enum,,1,no,no,no,0=無火焰 1=點火中 2=穩定
+boiler,INPUT,BLOWDOWN_FLOW,30021,20,%IW316,INPUT,316,u16,kg/s,100,no,no,no,
+boiler,INPUT,PURGE_TIME_REMAINING,30022,21,%IW317,INPUT,317,u16,s,10,no,no,no,
+boiler,INPUT,FEEDWATER_PERMITTED,30023,22,%IW318,INPUT,318,enum,,1,no,no,no,
+boiler,INPUT,RELIEF_FLOW,30024,23,%IW319,INPUT,319,u16,kg/s,100,no,no,no,安全閥排放量
+boiler,INPUT,LOCAL_OUTPUT,30026,25,%IW321,INPUT,321,u16,%,100,no,no,no,本地調節器輸出（自持控制的 MV）
+boiler,INPUT,SELF_HOLD_STATE,30027,26,%IW322,INPUT,322,enum,,1,no,no,no,0=停用 1=待機等允許條件 2=自持運轉 3=操作員停機 4=跳機鎖定 5=維修
+boiler,INPUT,PERMISSIVE_WORD,30028,27,%IW323,INPUT,323,bitfield,,1,no,no,no,各啟動允許條件是否成立（bit0 起）
+boiler,INPUT,WATCHDOG_ECHO,30030,29,%IW325,INPUT,325,u16,,1,no,no,no,回應 40003 之值
+boiler,INPUT,SCAN_TIME_MS,30031,30,%IW326,INPUT,326,u16,ms,10,no,no,no,物理掃描耗時 ×10
+boiler,INPUT,MODBUS_REQUEST_COUNT,30032,31,%IW327,INPUT,327,u16,,1,no,no,no,已處理請求數（模 65536）
+boiler,INPUT,REJECTED_COMMAND_COUNT,30033,32,%IW328,INPUT,328,u16,,1,no,no,no,
+boiler,INPUT,EXCEPTION_COUNT,30034,33,%IW329,INPUT,329,u16,,1,no,no,no,
+boiler,INPUT,SIM_QUALITY_WORD,30035,34,%IW330,INPUT,330,bitfield,,1,no,no,no,每個輸入訊號品質是否 GOOD
+boiler,INPUT,SIM_TICK_LOW,30036,35,%IW331,INPUT,331,u16,,1,no,no,no,
+boiler,INPUT,COMM_LOSS_SECONDS,30037,36,%IW332,INPUT,332,u16,s,10,no,no,no,
+boiler,INPUT,FAULT_INJECT_WORD,30038,37,%IW333,INPUT,333,bitfield,,1,no,no,no,啟用中的故障注入
+boiler,INPUT,SNAPSHOT_GENERATION,30039,38,%IW334,INPUT,334,u16,,1,no,no,no,每次快照還原 +1，供測試判斷環境已重置
+boiler,INPUT,RUN_SECONDS_HI,30040,39,%IW335,INPUT,335,u32,s,1,no,no,no,
+boiler,INPUT,RUN_SECONDS_LO,30041,40,%IW336,INPUT,336,u16,,1,no,no,no,
+boiler,INPUT,START_COUNT,30042,41,%IW337,INPUT,337,u16,,1,no,no,no,
+boiler,INPUT,TRIP_COUNT,30043,42,%IW338,INPUT,338,u16,,1,no,no,no,
+boiler,INPUT,MASS_TOTAL_HI,30044,43,%IW339,INPUT,339,u32,kg,1,no,no,no,
+boiler,INPUT,MASS_TOTAL_LO,30045,44,%IW340,INPUT,340,u16,,1,no,no,no,
+boiler,INPUT,ENERGY_TOTAL_HI,30046,45,%IW341,INPUT,341,u32,kWh,1,no,no,no,
+boiler,INPUT,ENERGY_TOTAL_LO,30047,46,%IW342,INPUT,342,u16,,1,no,no,no,
+boiler,INPUT,ALARM_COUNT,30048,47,%IW343,INPUT,343,u16,,1,no,no,no,
+boiler,INPUT,ACCEPTED_COMMAND_COUNT,30049,48,%IW344,INPUT,344,u16,,1,no,no,no,
+boiler,HOLDING,COMMAND_SEQUENCE,40002,1,%QW112,HOLDING,112,u16,,1,yes,no,yes,命令序號，重置需為新值
+boiler,HOLDING,WATCHDOG_COUNTER,40003,2,%QW113,HOLDING,113,u16,,1,yes,no,yes,控制器每秒 +1
+boiler,HOLDING,RESET_KEY,40004,3,%QW114,HOLDING,114,u16,,1,yes,no,yes,重置鑰匙 0xA55A
+steam_valve,COIL,START,1,0,%QX105.0,COIL,840,u16,,1,yes,yes,yes,脈衝啟動命令
+steam_valve,COIL,STOP,2,1,%QX105.1,COIL,841,u16,,1,yes,yes,yes,正常停止
+steam_valve,COIL,RESET_TRIP,3,2,%QX105.2,COIL,842,u16,,1,yes,yes,yes,跳機重置脈衝，需 Reset Key
+steam_valve,COIL,ACK_ALARM,4,3,%QX105.3,COIL,843,u16,,1,yes,yes,yes,警報確認
+steam_valve,COIL,EMERGENCY_STOP,5,4,%QX105.4,COIL,844,u16,,1,yes,no,yes,緊急停止（保持型）
+steam_valve,COIL,FORCE_SAFE,6,5,%QX105.5,COIL,845,u16,,1,yes,no,yes,強制安全狀態
+steam_valve,COIL,TRIP_TEST,7,6,%QX105.6,COIL,846,u16,,1,yes,yes,yes,實驗模式跳機測試（需 LAB_MODE）
+steam_valve,COIL,CLEAR_TOTALIZER,8,7,%QX105.7,COIL,847,u16,,1,yes,yes,yes,清除累積值
+steam_valve,DISCRETE,READY,10001,0,%IX110.0,DISCRETE,880,u16,,1,no,no,no,
+steam_valve,DISCRETE,RUNNING,10002,1,%IX110.1,DISCRETE,881,u16,,1,no,no,no,
+steam_valve,DISCRETE,STARTING,10003,2,%IX110.2,DISCRETE,882,u16,,1,no,no,no,
+steam_valve,DISCRETE,STOPPING,10004,3,%IX110.3,DISCRETE,883,u16,,1,no,no,no,
+steam_valve,DISCRETE,TRIPPED,10005,4,%IX110.4,DISCRETE,884,u16,,1,no,no,no,
+steam_valve,DISCRETE,ALARM_ACTIVE,10006,5,%IX110.5,DISCRETE,885,u16,,1,no,no,no,
+steam_valve,DISCRETE,LOCAL_MODE,10007,6,%IX110.6,DISCRETE,886,u16,,1,no,no,no,
+steam_valve,DISCRETE,REMOTE_MODE,10008,7,%IX110.7,DISCRETE,887,u16,,1,no,no,no,
+steam_valve,DISCRETE,AUTO_MODE,10009,8,%IX111.0,DISCRETE,888,u16,,1,no,no,no,
+steam_valve,DISCRETE,MANUAL_MODE,10010,9,%IX111.1,DISCRETE,889,u16,,1,no,no,no,
+steam_valve,DISCRETE,CONTROL_WATCHDOG_OK,10011,10,%IX111.2,DISCRETE,890,u16,,1,no,no,no,
+steam_valve,DISCRETE,SIM_BUS_OK,10012,11,%IX111.3,DISCRETE,891,u16,,1,no,no,no,
+steam_valve,DISCRETE,INTERLOCKS_OK,10013,12,%IX111.4,DISCRETE,892,u16,,1,no,no,no,
+steam_valve,DISCRETE,SENSOR_FAULT,10014,13,%IX111.5,DISCRETE,893,u16,,1,no,no,no,
+steam_valve,DISCRETE,ACTUATOR_FAULT,10015,14,%IX111.6,DISCRETE,894,u16,,1,no,no,no,
+steam_valve,DISCRETE,MAINTENANCE_MODE,10016,15,%IX111.7,DISCRETE,895,u16,,1,no,no,no,
+steam_valve,INPUT,STATUS_WORD,30001,0,%IW345,INPUT,345,bitfield,,1,no,no,no,狀態字
+steam_valve,INPUT,ALARM_WORD_1,30002,1,%IW346,INPUT,346,bitfield,,1,no,no,no,
+steam_valve,INPUT,ALARM_WORD_2,30003,2,%IW347,INPUT,347,bitfield,,1,no,no,no,
+steam_valve,INPUT,TRIP_WORD,30004,3,%IW348,INPUT,348,bitfield,,1,no,no,no,
+steam_valve,INPUT,DEVICE_STATE,30005,4,%IW349,INPUT,349,enum,,1,no,no,no,
+steam_valve,INPUT,FIRST_OUT_CODE,30006,5,%IW350,INPUT,350,u16,,1,no,no,no,
+steam_valve,INPUT,OVERALL_QUALITY,30007,6,%IW351,INPUT,351,enum,,1,no,no,no,
+steam_valve,INPUT,REGISTER_MAP_VERSION,30008,7,%IW352,INPUT,352,u16,,1,no,no,no,
+steam_valve,INPUT,FIRMWARE_VERSION,30009,8,%IW353,INPUT,353,u16,,1,no,no,no,
+steam_valve,INPUT,COMMAND_POSITION,30010,9,%IW354,INPUT,354,u16,%,100,no,no,no,
+steam_valve,INPUT,ACTUAL_POSITION,30011,10,%IW355,INPUT,355,u16,%,100,no,no,no,
+steam_valve,INPUT,UPSTREAM_PRESSURE,30012,11,%IW356,INPUT,356,u16,bar(a),100,no,no,no,
+steam_valve,INPUT,DOWNSTREAM_PRESSURE,30013,12,%IW357,INPUT,357,u16,bar(a),10000,no,no,no,
+steam_valve,INPUT,STEAM_FLOW,30014,13,%IW358,INPUT,358,u16,kg/s,100,no,no,no,
+steam_valve,INPUT,STEAM_TEMPERATURE,30015,14,%IW359,INPUT,359,i16,degC,10,no,no,no,
+steam_valve,INPUT,ACTUATOR_SPEED,30016,15,%IW360,INPUT,360,u16,%/s,100,no,no,no,
+steam_valve,INPUT,POSITION_DEVIATION,30017,16,%IW361,INPUT,361,i16,%,100,no,no,no,
+steam_valve,INPUT,FAST_CLOSE_STATUS,30018,17,%IW362,INPUT,362,enum,,1,no,no,no,0=正常 1=快關中 2=快關完成
+steam_valve,INPUT,VALVE_FAULT_CODE,30019,18,%IW363,INPUT,363,enum,,1,no,no,no,
+steam_valve,INPUT,LOCAL_OUTPUT,30026,25,%IW370,INPUT,370,u16,%,100,no,no,no,本地調節器輸出（自持控制的 MV）
+steam_valve,INPUT,SELF_HOLD_STATE,30027,26,%IW371,INPUT,371,enum,,1,no,no,no,0=停用 1=待機等允許條件 2=自持運轉 3=操作員停機 4=跳機鎖定 5=維修
+steam_valve,INPUT,PERMISSIVE_WORD,30028,27,%IW372,INPUT,372,bitfield,,1,no,no,no,各啟動允許條件是否成立（bit0 起）
+steam_valve,INPUT,WATCHDOG_ECHO,30030,29,%IW374,INPUT,374,u16,,1,no,no,no,回應 40003 之值
+steam_valve,INPUT,SCAN_TIME_MS,30031,30,%IW375,INPUT,375,u16,ms,10,no,no,no,物理掃描耗時 ×10
+steam_valve,INPUT,MODBUS_REQUEST_COUNT,30032,31,%IW376,INPUT,376,u16,,1,no,no,no,已處理請求數（模 65536）
+steam_valve,INPUT,REJECTED_COMMAND_COUNT,30033,32,%IW377,INPUT,377,u16,,1,no,no,no,
+steam_valve,INPUT,EXCEPTION_COUNT,30034,33,%IW378,INPUT,378,u16,,1,no,no,no,
+steam_valve,INPUT,SIM_QUALITY_WORD,30035,34,%IW379,INPUT,379,bitfield,,1,no,no,no,每個輸入訊號品質是否 GOOD
+steam_valve,INPUT,SIM_TICK_LOW,30036,35,%IW380,INPUT,380,u16,,1,no,no,no,
+steam_valve,INPUT,COMM_LOSS_SECONDS,30037,36,%IW381,INPUT,381,u16,s,10,no,no,no,
+steam_valve,INPUT,FAULT_INJECT_WORD,30038,37,%IW382,INPUT,382,bitfield,,1,no,no,no,啟用中的故障注入
+steam_valve,INPUT,SNAPSHOT_GENERATION,30039,38,%IW383,INPUT,383,u16,,1,no,no,no,每次快照還原 +1，供測試判斷環境已重置
+steam_valve,INPUT,RUN_SECONDS_HI,30040,39,%IW384,INPUT,384,u32,s,1,no,no,no,
+steam_valve,INPUT,RUN_SECONDS_LO,30041,40,%IW385,INPUT,385,u16,,1,no,no,no,
+steam_valve,INPUT,START_COUNT,30042,41,%IW386,INPUT,386,u16,,1,no,no,no,
+steam_valve,INPUT,TRIP_COUNT,30043,42,%IW387,INPUT,387,u16,,1,no,no,no,
+steam_valve,INPUT,MASS_TOTAL_HI,30044,43,%IW388,INPUT,388,u32,kg,1,no,no,no,
+steam_valve,INPUT,MASS_TOTAL_LO,30045,44,%IW389,INPUT,389,u16,,1,no,no,no,
+steam_valve,INPUT,ENERGY_TOTAL_HI,30046,45,%IW390,INPUT,390,u32,kWh,1,no,no,no,
+steam_valve,INPUT,ENERGY_TOTAL_LO,30047,46,%IW391,INPUT,391,u16,,1,no,no,no,
+steam_valve,INPUT,ALARM_COUNT,30048,47,%IW392,INPUT,392,u16,,1,no,no,no,
+steam_valve,INPUT,ACCEPTED_COMMAND_COUNT,30049,48,%IW393,INPUT,393,u16,,1,no,no,no,
+steam_valve,HOLDING,COMMAND_SEQUENCE,40002,1,%QW115,HOLDING,115,u16,,1,yes,no,yes,命令序號，重置需為新值
+steam_valve,HOLDING,WATCHDOG_COUNTER,40003,2,%QW116,HOLDING,116,u16,,1,yes,no,yes,控制器每秒 +1
+steam_valve,HOLDING,RESET_KEY,40004,3,%QW117,HOLDING,117,u16,,1,yes,no,yes,重置鑰匙 0xA55A
+turbine,COIL,START,1,0,%QX106.0,COIL,848,u16,,1,yes,yes,yes,脈衝啟動命令
+turbine,COIL,STOP,2,1,%QX106.1,COIL,849,u16,,1,yes,yes,yes,正常停止
+turbine,COIL,RESET_TRIP,3,2,%QX106.2,COIL,850,u16,,1,yes,yes,yes,跳機重置脈衝，需 Reset Key
+turbine,COIL,ACK_ALARM,4,3,%QX106.3,COIL,851,u16,,1,yes,yes,yes,警報確認
+turbine,COIL,EMERGENCY_STOP,5,4,%QX106.4,COIL,852,u16,,1,yes,no,yes,緊急停止（保持型）
+turbine,COIL,FORCE_SAFE,6,5,%QX106.5,COIL,853,u16,,1,yes,no,yes,強制安全狀態
+turbine,COIL,TRIP_TEST,7,6,%QX106.6,COIL,854,u16,,1,yes,yes,yes,實驗模式跳機測試（需 LAB_MODE）
+turbine,COIL,CLEAR_TOTALIZER,8,7,%QX106.7,COIL,855,u16,,1,yes,yes,yes,清除累積值
+turbine,DISCRETE,READY,10001,0,%IX112.0,DISCRETE,896,u16,,1,no,no,no,
+turbine,DISCRETE,RUNNING,10002,1,%IX112.1,DISCRETE,897,u16,,1,no,no,no,
+turbine,DISCRETE,STARTING,10003,2,%IX112.2,DISCRETE,898,u16,,1,no,no,no,
+turbine,DISCRETE,STOPPING,10004,3,%IX112.3,DISCRETE,899,u16,,1,no,no,no,
+turbine,DISCRETE,TRIPPED,10005,4,%IX112.4,DISCRETE,900,u16,,1,no,no,no,
+turbine,DISCRETE,ALARM_ACTIVE,10006,5,%IX112.5,DISCRETE,901,u16,,1,no,no,no,
+turbine,DISCRETE,LOCAL_MODE,10007,6,%IX112.6,DISCRETE,902,u16,,1,no,no,no,
+turbine,DISCRETE,REMOTE_MODE,10008,7,%IX112.7,DISCRETE,903,u16,,1,no,no,no,
+turbine,DISCRETE,AUTO_MODE,10009,8,%IX113.0,DISCRETE,904,u16,,1,no,no,no,
+turbine,DISCRETE,MANUAL_MODE,10010,9,%IX113.1,DISCRETE,905,u16,,1,no,no,no,
+turbine,DISCRETE,CONTROL_WATCHDOG_OK,10011,10,%IX113.2,DISCRETE,906,u16,,1,no,no,no,
+turbine,DISCRETE,SIM_BUS_OK,10012,11,%IX113.3,DISCRETE,907,u16,,1,no,no,no,
+turbine,DISCRETE,INTERLOCKS_OK,10013,12,%IX113.4,DISCRETE,908,u16,,1,no,no,no,
+turbine,DISCRETE,SENSOR_FAULT,10014,13,%IX113.5,DISCRETE,909,u16,,1,no,no,no,
+turbine,DISCRETE,ACTUATOR_FAULT,10015,14,%IX113.6,DISCRETE,910,u16,,1,no,no,no,
+turbine,DISCRETE,MAINTENANCE_MODE,10016,15,%IX113.7,DISCRETE,911,u16,,1,no,no,no,
+turbine,INPUT,STATUS_WORD,30001,0,%IW394,INPUT,394,bitfield,,1,no,no,no,狀態字
+turbine,INPUT,ALARM_WORD_1,30002,1,%IW395,INPUT,395,bitfield,,1,no,no,no,
+turbine,INPUT,ALARM_WORD_2,30003,2,%IW396,INPUT,396,bitfield,,1,no,no,no,
+turbine,INPUT,TRIP_WORD,30004,3,%IW397,INPUT,397,bitfield,,1,no,no,no,
+turbine,INPUT,DEVICE_STATE,30005,4,%IW398,INPUT,398,enum,,1,no,no,no,
+turbine,INPUT,FIRST_OUT_CODE,30006,5,%IW399,INPUT,399,u16,,1,no,no,no,
+turbine,INPUT,OVERALL_QUALITY,30007,6,%IW400,INPUT,400,enum,,1,no,no,no,
+turbine,INPUT,REGISTER_MAP_VERSION,30008,7,%IW401,INPUT,401,u16,,1,no,no,no,
+turbine,INPUT,FIRMWARE_VERSION,30009,8,%IW402,INPUT,402,u16,,1,no,no,no,
+turbine,INPUT,SPEED_RPM,30010,9,%IW403,INPUT,403,u16,RPM,1,no,no,no,
+turbine,INPUT,MECHANICAL_POWER,30011,10,%IW404,INPUT,404,u16,MW,100,no,no,no,
+turbine,INPUT,STEAM_FLOW,30012,11,%IW405,INPUT,405,u16,kg/s,100,no,no,no,
+turbine,INPUT,EXHAUST_FLOW,30013,12,%IW406,INPUT,406,u16,kg/s,100,no,no,no,
+turbine,INPUT,MAIN_STEAM_PRESSURE,30014,13,%IW407,INPUT,407,u16,bar(a),100,no,no,no,
+turbine,INPUT,EXHAUST_PRESSURE,30015,14,%IW408,INPUT,408,u16,bar(a),10000,no,no,no,
+turbine,INPUT,VIBRATION,30016,15,%IW409,INPUT,409,u16,mm/s,100,no,no,no,
+turbine,INPUT,BEARING_TEMPERATURE,30017,16,%IW410,INPUT,410,i16,degC,10,no,no,no,
+turbine,INPUT,GOVERNOR_OUTPUT,30018,17,%IW411,INPUT,411,u16,%,100,no,no,no,
+turbine,INPUT,ACCELERATION,30019,18,%IW412,INPUT,412,i16,RPM/s,10,no,no,no,
+turbine,INPUT,EFFICIENCY,30020,19,%IW413,INPUT,413,u16,%,100,no,no,no,
+turbine,INPUT,LOCAL_OUTPUT,30026,25,%IW419,INPUT,419,u16,%,100,no,no,no,本地調節器輸出（自持控制的 MV）
+turbine,INPUT,SELF_HOLD_STATE,30027,26,%IW420,INPUT,420,enum,,1,no,no,no,0=停用 1=待機等允許條件 2=自持運轉 3=操作員停機 4=跳機鎖定 5=維修
+turbine,INPUT,PERMISSIVE_WORD,30028,27,%IW421,INPUT,421,bitfield,,1,no,no,no,各啟動允許條件是否成立（bit0 起）
+turbine,INPUT,WATCHDOG_ECHO,30030,29,%IW423,INPUT,423,u16,,1,no,no,no,回應 40003 之值
+turbine,INPUT,SCAN_TIME_MS,30031,30,%IW424,INPUT,424,u16,ms,10,no,no,no,物理掃描耗時 ×10
+turbine,INPUT,MODBUS_REQUEST_COUNT,30032,31,%IW425,INPUT,425,u16,,1,no,no,no,已處理請求數（模 65536）
+turbine,INPUT,REJECTED_COMMAND_COUNT,30033,32,%IW426,INPUT,426,u16,,1,no,no,no,
+turbine,INPUT,EXCEPTION_COUNT,30034,33,%IW427,INPUT,427,u16,,1,no,no,no,
+turbine,INPUT,SIM_QUALITY_WORD,30035,34,%IW428,INPUT,428,bitfield,,1,no,no,no,每個輸入訊號品質是否 GOOD
+turbine,INPUT,SIM_TICK_LOW,30036,35,%IW429,INPUT,429,u16,,1,no,no,no,
+turbine,INPUT,COMM_LOSS_SECONDS,30037,36,%IW430,INPUT,430,u16,s,10,no,no,no,
+turbine,INPUT,FAULT_INJECT_WORD,30038,37,%IW431,INPUT,431,bitfield,,1,no,no,no,啟用中的故障注入
+turbine,INPUT,SNAPSHOT_GENERATION,30039,38,%IW432,INPUT,432,u16,,1,no,no,no,每次快照還原 +1，供測試判斷環境已重置
+turbine,INPUT,RUN_SECONDS_HI,30040,39,%IW433,INPUT,433,u32,s,1,no,no,no,
+turbine,INPUT,RUN_SECONDS_LO,30041,40,%IW434,INPUT,434,u16,,1,no,no,no,
+turbine,INPUT,START_COUNT,30042,41,%IW435,INPUT,435,u16,,1,no,no,no,
+turbine,INPUT,TRIP_COUNT,30043,42,%IW436,INPUT,436,u16,,1,no,no,no,
+turbine,INPUT,MASS_TOTAL_HI,30044,43,%IW437,INPUT,437,u32,kg,1,no,no,no,
+turbine,INPUT,MASS_TOTAL_LO,30045,44,%IW438,INPUT,438,u16,,1,no,no,no,
+turbine,INPUT,ENERGY_TOTAL_HI,30046,45,%IW439,INPUT,439,u32,kWh,1,no,no,no,
+turbine,INPUT,ENERGY_TOTAL_LO,30047,46,%IW440,INPUT,440,u16,,1,no,no,no,
+turbine,INPUT,ALARM_COUNT,30048,47,%IW441,INPUT,441,u16,,1,no,no,no,
+turbine,INPUT,ACCEPTED_COMMAND_COUNT,30049,48,%IW442,INPUT,442,u16,,1,no,no,no,
+turbine,HOLDING,COMMAND_SEQUENCE,40002,1,%QW118,HOLDING,118,u16,,1,yes,no,yes,命令序號，重置需為新值
+turbine,HOLDING,WATCHDOG_COUNTER,40003,2,%QW119,HOLDING,119,u16,,1,yes,no,yes,控制器每秒 +1
+turbine,HOLDING,RESET_KEY,40004,3,%QW120,HOLDING,120,u16,,1,yes,no,yes,重置鑰匙 0xA55A
+generator,COIL,START,1,0,%QX107.0,COIL,856,u16,,1,yes,yes,yes,脈衝啟動命令
+generator,COIL,STOP,2,1,%QX107.1,COIL,857,u16,,1,yes,yes,yes,正常停止
+generator,COIL,RESET_TRIP,3,2,%QX107.2,COIL,858,u16,,1,yes,yes,yes,跳機重置脈衝，需 Reset Key
+generator,COIL,ACK_ALARM,4,3,%QX107.3,COIL,859,u16,,1,yes,yes,yes,警報確認
+generator,COIL,EMERGENCY_STOP,5,4,%QX107.4,COIL,860,u16,,1,yes,no,yes,緊急停止（保持型）
+generator,COIL,FORCE_SAFE,6,5,%QX107.5,COIL,861,u16,,1,yes,no,yes,強制安全狀態
+generator,COIL,TRIP_TEST,7,6,%QX107.6,COIL,862,u16,,1,yes,yes,yes,實驗模式跳機測試（需 LAB_MODE）
+generator,COIL,CLEAR_TOTALIZER,8,7,%QX107.7,COIL,863,u16,,1,yes,yes,yes,清除累積值
+generator,DISCRETE,READY,10001,0,%IX114.0,DISCRETE,912,u16,,1,no,no,no,
+generator,DISCRETE,RUNNING,10002,1,%IX114.1,DISCRETE,913,u16,,1,no,no,no,
+generator,DISCRETE,STARTING,10003,2,%IX114.2,DISCRETE,914,u16,,1,no,no,no,
+generator,DISCRETE,STOPPING,10004,3,%IX114.3,DISCRETE,915,u16,,1,no,no,no,
+generator,DISCRETE,TRIPPED,10005,4,%IX114.4,DISCRETE,916,u16,,1,no,no,no,
+generator,DISCRETE,ALARM_ACTIVE,10006,5,%IX114.5,DISCRETE,917,u16,,1,no,no,no,
+generator,DISCRETE,LOCAL_MODE,10007,6,%IX114.6,DISCRETE,918,u16,,1,no,no,no,
+generator,DISCRETE,REMOTE_MODE,10008,7,%IX114.7,DISCRETE,919,u16,,1,no,no,no,
+generator,DISCRETE,AUTO_MODE,10009,8,%IX115.0,DISCRETE,920,u16,,1,no,no,no,
+generator,DISCRETE,MANUAL_MODE,10010,9,%IX115.1,DISCRETE,921,u16,,1,no,no,no,
+generator,DISCRETE,CONTROL_WATCHDOG_OK,10011,10,%IX115.2,DISCRETE,922,u16,,1,no,no,no,
+generator,DISCRETE,SIM_BUS_OK,10012,11,%IX115.3,DISCRETE,923,u16,,1,no,no,no,
+generator,DISCRETE,INTERLOCKS_OK,10013,12,%IX115.4,DISCRETE,924,u16,,1,no,no,no,
+generator,DISCRETE,SENSOR_FAULT,10014,13,%IX115.5,DISCRETE,925,u16,,1,no,no,no,
+generator,DISCRETE,ACTUATOR_FAULT,10015,14,%IX115.6,DISCRETE,926,u16,,1,no,no,no,
+generator,DISCRETE,MAINTENANCE_MODE,10016,15,%IX115.7,DISCRETE,927,u16,,1,no,no,no,
+generator,INPUT,STATUS_WORD,30001,0,%IW443,INPUT,443,bitfield,,1,no,no,no,狀態字
+generator,INPUT,ALARM_WORD_1,30002,1,%IW444,INPUT,444,bitfield,,1,no,no,no,
+generator,INPUT,ALARM_WORD_2,30003,2,%IW445,INPUT,445,bitfield,,1,no,no,no,
+generator,INPUT,TRIP_WORD,30004,3,%IW446,INPUT,446,bitfield,,1,no,no,no,
+generator,INPUT,DEVICE_STATE,30005,4,%IW447,INPUT,447,enum,,1,no,no,no,
+generator,INPUT,FIRST_OUT_CODE,30006,5,%IW448,INPUT,448,u16,,1,no,no,no,
+generator,INPUT,OVERALL_QUALITY,30007,6,%IW449,INPUT,449,enum,,1,no,no,no,
+generator,INPUT,REGISTER_MAP_VERSION,30008,7,%IW450,INPUT,450,u16,,1,no,no,no,
+generator,INPUT,FIRMWARE_VERSION,30009,8,%IW451,INPUT,451,u16,,1,no,no,no,
+generator,INPUT,ELECTRICAL_POWER,30010,9,%IW452,INPUT,452,u16,MW,100,no,no,no,
+generator,INPUT,LOAD_DEMAND,30011,10,%IW453,INPUT,453,u16,MW,100,no,no,no,
+generator,INPUT,FREQUENCY,30012,11,%IW454,INPUT,454,u16,Hz,100,no,no,no,
+generator,INPUT,VOLTAGE,30013,12,%IW455,INPUT,455,u16,kV,100,no,no,no,
+generator,INPUT,CURRENT,30014,13,%IW456,INPUT,456,u16,A,1,no,no,no,
+generator,INPUT,POWER_FACTOR,30015,14,%IW457,INPUT,457,u16,,1000,no,no,no,
+generator,INPUT,BREAKER_STATUS,30016,15,%IW458,INPUT,458,enum,,1,no,no,no,0=開路 1=閉合
+generator,INPUT,SYNC_PERMISSIVE,30017,16,%IW459,INPUT,459,bitfield,,1,no,no,no,
+generator,INPUT,PHASE_ANGLE_DIFF,30018,17,%IW460,INPUT,460,i16,deg,100,no,no,no,
+generator,INPUT,ELECTRICAL_TORQUE,30019,18,%IW461,INPUT,461,u16,MW,100,no,no,no,
+generator,INPUT,OPERATING_MODE,30020,19,%IW462,INPUT,462,enum,,1,no,no,no,0=孤島 1=強電網
+generator,INPUT,LOCAL_OUTPUT,30026,25,%IW468,INPUT,468,u16,%,100,no,no,no,本地調節器輸出（自持控制的 MV）
+generator,INPUT,SELF_HOLD_STATE,30027,26,%IW469,INPUT,469,enum,,1,no,no,no,0=停用 1=待機等允許條件 2=自持運轉 3=操作員停機 4=跳機鎖定 5=維修
+generator,INPUT,PERMISSIVE_WORD,30028,27,%IW470,INPUT,470,bitfield,,1,no,no,no,各啟動允許條件是否成立（bit0 起）
+generator,INPUT,WATCHDOG_ECHO,30030,29,%IW472,INPUT,472,u16,,1,no,no,no,回應 40003 之值
+generator,INPUT,SCAN_TIME_MS,30031,30,%IW473,INPUT,473,u16,ms,10,no,no,no,物理掃描耗時 ×10
+generator,INPUT,MODBUS_REQUEST_COUNT,30032,31,%IW474,INPUT,474,u16,,1,no,no,no,已處理請求數（模 65536）
+generator,INPUT,REJECTED_COMMAND_COUNT,30033,32,%IW475,INPUT,475,u16,,1,no,no,no,
+generator,INPUT,EXCEPTION_COUNT,30034,33,%IW476,INPUT,476,u16,,1,no,no,no,
+generator,INPUT,SIM_QUALITY_WORD,30035,34,%IW477,INPUT,477,bitfield,,1,no,no,no,每個輸入訊號品質是否 GOOD
+generator,INPUT,SIM_TICK_LOW,30036,35,%IW478,INPUT,478,u16,,1,no,no,no,
+generator,INPUT,COMM_LOSS_SECONDS,30037,36,%IW479,INPUT,479,u16,s,10,no,no,no,
+generator,INPUT,FAULT_INJECT_WORD,30038,37,%IW480,INPUT,480,bitfield,,1,no,no,no,啟用中的故障注入
+generator,INPUT,SNAPSHOT_GENERATION,30039,38,%IW481,INPUT,481,u16,,1,no,no,no,每次快照還原 +1，供測試判斷環境已重置
+generator,INPUT,RUN_SECONDS_HI,30040,39,%IW482,INPUT,482,u32,s,1,no,no,no,
+generator,INPUT,RUN_SECONDS_LO,30041,40,%IW483,INPUT,483,u16,,1,no,no,no,
+generator,INPUT,START_COUNT,30042,41,%IW484,INPUT,484,u16,,1,no,no,no,
+generator,INPUT,TRIP_COUNT,30043,42,%IW485,INPUT,485,u16,,1,no,no,no,
+generator,INPUT,MASS_TOTAL_HI,30044,43,%IW486,INPUT,486,u32,kg,1,no,no,no,
+generator,INPUT,MASS_TOTAL_LO,30045,44,%IW487,INPUT,487,u16,,1,no,no,no,
+generator,INPUT,ENERGY_TOTAL_HI,30046,45,%IW488,INPUT,488,u32,kWh,1,no,no,no,
+generator,INPUT,ENERGY_TOTAL_LO,30047,46,%IW489,INPUT,489,u16,,1,no,no,no,
+generator,INPUT,ALARM_COUNT,30048,47,%IW490,INPUT,490,u16,,1,no,no,no,
+generator,INPUT,ACCEPTED_COMMAND_COUNT,30049,48,%IW491,INPUT,491,u16,,1,no,no,no,
+generator,HOLDING,COMMAND_SEQUENCE,40002,1,%QW121,HOLDING,121,u16,,1,yes,no,yes,命令序號，重置需為新值
+generator,HOLDING,WATCHDOG_COUNTER,40003,2,%QW122,HOLDING,122,u16,,1,yes,no,yes,控制器每秒 +1
+generator,HOLDING,RESET_KEY,40004,3,%QW123,HOLDING,123,u16,,1,yes,no,yes,重置鑰匙 0xA55A

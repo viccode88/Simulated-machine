@@ -2,8 +2,8 @@
   "name": "generator",
   "protocol": "modbus-tcp",
   "modbusTcpConfig": {
-    "host": "127.0.0.1",
-    "port": 15028,
+    "host": "generator",
+    "port": 502,
     "slaveId": 1,
     "timeout": 1000,
     "ioGroups": [
@@ -193,24 +193,24 @@
           },
           {
             "id": "f79635f2-f786-541c-9b9c-386ed686553e",
-            "name": "generator__input__reserved_25",
+            "name": "generator__input__local_output",
             "type": "Analog Input (Input Register)",
             "iecLocation": "%IW473",
-            "alias": "generator__input__reserved_25"
+            "alias": "generator__input__local_output"
           },
           {
             "id": "0d9e1768-7c34-5a5f-b8d0-28921369a78b",
-            "name": "generator__input__reserved_26",
+            "name": "generator__input__self_hold_state",
             "type": "Analog Input (Input Register)",
             "iecLocation": "%IW474",
-            "alias": "generator__input__reserved_26"
+            "alias": "generator__input__self_hold_state"
           },
           {
             "id": "496e57d6-bee2-5d19-b37e-74c06e55567b",
-            "name": "generator__input__reserved_27",
+            "name": "generator__input__permissive_word",
             "type": "Analog Input (Input Register)",
             "iecLocation": "%IW475",
-            "alias": "generator__input__reserved_27"
+            "alias": "generator__input__permissive_word"
           },
           {
             "id": "e36ff46f-1d87-5e8d-9723-236cbcaee3f4",
@@ -819,189 +819,34 @@
         ]
       },
       {
-        "id": "eec0fb43-26eb-593c-8d68-a4b8954c242c",
-        "name": "generator_holding_0_13",
+        "id": "3175f10a-517a-5d30-9668-581ce8f76376",
+        "name": "generator_holding_1_3",
         "functionCode": "16",
         "cycleTime": 100,
-        "offset": "0",
-        "length": 14,
+        "offset": "1",
+        "length": 3,
         "errorHandling": "keep-last-value",
         "ioPoints": [
           {
-            "id": "435d0200-7b5c-5e4f-b0f5-7b82cfb5364f",
-            "name": "generator__holding__control_mode",
-            "type": "Analog Output (Multiple Registers)",
-            "iecLocation": "%QW448",
-            "alias": "generator__holding__control_mode"
-          },
-          {
-            "id": "84d11b19-c3d8-57c7-9551-79992c44ff27",
+            "id": "f3b5dc6b-5106-545f-9cc4-4085781f8099",
             "name": "generator__holding__command_sequence",
             "type": "Analog Output (Multiple Registers)",
             "iecLocation": "%QW449",
             "alias": "generator__holding__command_sequence"
           },
           {
-            "id": "a9b049fb-7164-5557-89e2-8fe4b70df009",
+            "id": "aa3c8770-1a00-5f3a-bfaf-1b1a698cd607",
             "name": "generator__holding__watchdog_counter",
             "type": "Analog Output (Multiple Registers)",
             "iecLocation": "%QW450",
             "alias": "generator__holding__watchdog_counter"
           },
           {
-            "id": "864bc6b3-8939-5fde-9871-feb7f7130693",
+            "id": "3eb26cc0-460b-59f9-8fbb-3c5cccd5bd97",
             "name": "generator__holding__reset_key",
             "type": "Analog Output (Multiple Registers)",
             "iecLocation": "%QW451",
             "alias": "generator__holding__reset_key"
-          },
-          {
-            "id": "01ef408d-811a-5d61-8c54-5980363b6b68",
-            "name": "generator__holding__simulation_flags",
-            "type": "Analog Output (Multiple Registers)",
-            "iecLocation": "%QW452",
-            "alias": "generator__holding__simulation_flags"
-          },
-          {
-            "id": "6834d004-01cf-5c8e-9f4f-49378fe6cd0b",
-            "name": "generator__holding__active_controller_id",
-            "type": "Analog Output (Multiple Registers)",
-            "iecLocation": "%QW453",
-            "alias": "generator__holding__active_controller_id"
-          },
-          {
-            "id": "3f2e88fb-41ab-50df-acd7-98114fabc811",
-            "name": "generator__holding__command_lease_time",
-            "type": "Analog Output (Multiple Registers)",
-            "iecLocation": "%QW454",
-            "alias": "generator__holding__command_lease_time"
-          },
-          {
-            "id": "73ddc331-586b-5747-bf07-c042ca91592a",
-            "name": "generator__holding__output_rate_limit",
-            "type": "Analog Output (Multiple Registers)",
-            "iecLocation": "%QW455",
-            "alias": "generator__holding__output_rate_limit"
-          },
-          {
-            "id": "d5cfa87a-8c52-58df-8c98-11e34e545044",
-            "name": "generator__holding__reserved",
-            "type": "Analog Output (Multiple Registers)",
-            "iecLocation": "%QW456",
-            "alias": "generator__holding__reserved"
-          },
-          {
-            "id": "ef81bd0c-8cfa-561a-a679-ecd47470fe8f",
-            "name": "generator__holding__primary_setpoint",
-            "type": "Analog Output (Multiple Registers)",
-            "iecLocation": "%QW457",
-            "alias": "generator__holding__primary_setpoint"
-          },
-          {
-            "id": "dd726e12-97e2-5ba3-a331-59f92834d6c4",
-            "name": "generator__holding__secondary_setpoint",
-            "type": "Analog Output (Multiple Registers)",
-            "iecLocation": "%QW458",
-            "alias": "generator__holding__secondary_setpoint"
-          },
-          {
-            "id": "0535c449-889a-54db-90b3-1229bb3a863f",
-            "name": "generator__holding__manual_output",
-            "type": "Analog Output (Multiple Registers)",
-            "iecLocation": "%QW459",
-            "alias": "generator__holding__manual_output"
-          },
-          {
-            "id": "1e32f7d6-0c7c-5e71-9789-072f70dd82cc",
-            "name": "generator__holding__output_high_limit",
-            "type": "Analog Output (Multiple Registers)",
-            "iecLocation": "%QW460",
-            "alias": "generator__holding__output_high_limit"
-          },
-          {
-            "id": "dd5c2ff4-fe5c-5492-a92d-9cfabaa0c21f",
-            "name": "generator__holding__output_low_limit",
-            "type": "Analog Output (Multiple Registers)",
-            "iecLocation": "%QW461",
-            "alias": "generator__holding__output_low_limit"
-          }
-        ]
-      },
-      {
-        "id": "23c6af1b-96eb-57a3-bc7e-30bb134e04a4",
-        "name": "generator_holding_19_24",
-        "functionCode": "16",
-        "cycleTime": 100,
-        "offset": "19",
-        "length": 6,
-        "errorHandling": "keep-last-value",
-        "ioPoints": [
-          {
-            "id": "6359497f-176a-531e-9b41-41c93b2313bf",
-            "name": "generator__holding__pid_kp",
-            "type": "Analog Output (Multiple Registers)",
-            "iecLocation": "%QW467",
-            "alias": "generator__holding__pid_kp"
-          },
-          {
-            "id": "20594319-d888-5b5f-896c-01ca86845227",
-            "name": "generator__holding__pid_ki",
-            "type": "Analog Output (Multiple Registers)",
-            "iecLocation": "%QW468",
-            "alias": "generator__holding__pid_ki"
-          },
-          {
-            "id": "63c6a057-c374-5f2b-9276-935f6a8bc599",
-            "name": "generator__holding__pid_kd",
-            "type": "Analog Output (Multiple Registers)",
-            "iecLocation": "%QW469",
-            "alias": "generator__holding__pid_kd"
-          },
-          {
-            "id": "6ee56e08-2ced-5647-8c2f-7e3fd674eeea",
-            "name": "generator__holding__deadband",
-            "type": "Analog Output (Multiple Registers)",
-            "iecLocation": "%QW470",
-            "alias": "generator__holding__deadband"
-          },
-          {
-            "id": "8f07d4aa-0001-5034-b6e8-6f547e241546",
-            "name": "generator__holding__integral_limit",
-            "type": "Analog Output (Multiple Registers)",
-            "iecLocation": "%QW471",
-            "alias": "generator__holding__integral_limit"
-          },
-          {
-            "id": "0065e66d-81d1-57c5-bcb4-cd916d4bfcf4",
-            "name": "generator__holding__controller_scan_time",
-            "type": "Analog Output (Multiple Registers)",
-            "iecLocation": "%QW472",
-            "alias": "generator__holding__controller_scan_time"
-          }
-        ]
-      },
-      {
-        "id": "e0d3e675-b844-5ad5-9dd8-c6e205ea2f98",
-        "name": "generator_holding_29_30",
-        "functionCode": "16",
-        "cycleTime": 100,
-        "offset": "29",
-        "length": 2,
-        "errorHandling": "keep-last-value",
-        "ioPoints": [
-          {
-            "id": "d2f1cad5-f4d8-5493-90f1-d4e4debf404e",
-            "name": "generator__holding__operating_mode",
-            "type": "Analog Output (Multiple Registers)",
-            "iecLocation": "%QW477",
-            "alias": "generator__holding__operating_mode"
-          },
-          {
-            "id": "d3566b86-1b35-5238-9265-e2b12df8c1d4",
-            "name": "generator__holding__load_rate_limit",
-            "type": "Analog Output (Multiple Registers)",
-            "iecLocation": "%QW478",
-            "alias": "generator__holding__load_rate_limit"
           }
         ]
       }

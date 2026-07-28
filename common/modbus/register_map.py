@@ -10,8 +10,8 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from enum import IntEnum
 
-REGISTER_MAP_VERSION = 3
-FIRMWARE_VERSION = 300  # 3.00
+REGISTER_MAP_VERSION = 4
+FIRMWARE_VERSION = 400  # 4.00（設備自持版）
 
 
 class Table(IntEnum):
@@ -92,6 +92,15 @@ COMMON_INPUTS: list[RegSpec] = [
     RegSpec(8, "FIRMWARE_VERSION"),
 ]
 
+# 自持控制區 30026～30028（offset 25～27）
+# 設備自己完成調節與啟停，PLC/SCADA 只需要能「看見」本地控制在做什麼。
+COMMON_SELF_HOLD: list[RegSpec] = [
+    RegSpec(25, "LOCAL_OUTPUT", scale=100, unit="%", desc="本地調節器輸出（自持控制的 MV）"),
+    RegSpec(26, "SELF_HOLD_STATE", dtype="enum",
+            desc="0=停用 1=待機等允許條件 2=自持運轉 3=操作員停機 4=跳機鎖定 5=維修"),
+    RegSpec(27, "PERMISSIVE_WORD", dtype="bitfield", desc="各啟動允許條件是否成立（bit0 起）"),
+]
+
 # 診斷區 30030～30039（offset 29～38）
 COMMON_DIAGNOSTICS: list[RegSpec] = [
     RegSpec(29, "WATCHDOG_ECHO", desc="回應 40003 之值"),
@@ -156,6 +165,17 @@ class ControlMode(IntEnum):
     REMOTE_MANUAL = 2
     REMOTE_AUTO = 3
     MAINTENANCE = 4
+
+
+class SelfHoldState(IntEnum):
+    """設備自持狀態（30026）。"""
+
+    DISABLED = 0        # 自持功能關閉，只接受外部命令
+    STANDBY = 1         # 等待啟動允許條件成立
+    RUNNING = 2         # 自持運轉中，本地調節器維持程序量
+    OPERATOR_STOP = 3   # 操作員（SCADA）下達停止，需再次 START 才會自持
+    TRIP_LOCKED = 4     # 跳機鎖存，需重置
+    MAINTENANCE = 5     # 維修模式
 
 
 class Quality(IntEnum):
@@ -236,7 +256,8 @@ class RegisterMap:
             rmap.coils[spec.offset] = spec
         for spec in COMMON_DISCRETES:
             rmap.discretes[spec.offset] = spec
-        for spec in COMMON_INPUTS + COMMON_DIAGNOSTICS + COMMON_TOTALIZERS + (process_inputs or []):
+        for spec in (COMMON_INPUTS + COMMON_SELF_HOLD + COMMON_DIAGNOSTICS
+                     + COMMON_TOTALIZERS + (process_inputs or [])):
             rmap.inputs[spec.offset] = spec
         for spec in COMMON_HOLDINGS + (extra_holdings or []):
             rmap.holdings[spec.offset] = spec

@@ -10,7 +10,7 @@ feedwater_tank:
   level_setpoint_pct: 60.0
 
 comm:
-  failure_policy: HOLD_LAST
+  failure_policy: LOCAL_AUTO
 
 protections:
   LOW_LEVEL:

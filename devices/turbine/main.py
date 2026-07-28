@@ -1,4 +1,7 @@
-"""汽輪機設備容器。
+"""汽輪機設備容器（自持）。
+
+汽輪機本身沒有執行器（調速器閥門是獨立設備），自持行為＝真空與主蒸汽壓力
+允許條件成立就自行進汽升速，轉速由主蒸汽閥的本地調速器維持。
 
 機械功率 Pmech = Kturbine × Msteam × (Psteam/Prated)^0.2 × Efficiency
 轉速     dω/dt = (Pmech - Pelec - D×(ω-ω0)) / EquivalentInertia
@@ -23,7 +26,7 @@ RPM_PER_RAD_S = 60.0 / (2.0 * math.pi)
 class Turbine(BaseDevice):
     NAME = "turbine"
     CODE_BASE = CODE
-    DEFAULT_COMM_POLICY = "HOLD_LAST"
+    DEFAULT_COMM_POLICY = "LOCAL_AUTO"
 
     PROCESS_INPUTS = [
         RegSpec(9, "SPEED_RPM", "RPM", 1),
@@ -66,7 +69,8 @@ class Turbine(BaseDevice):
     PUBLISHES = ["turbine.speed_rpm", "turbine.mechanical_power_mw", "turbine.exhaust_flow_kg_s",
                  "turbine.tripped", "turbine.vibration_mm_s"]
     SUBSCRIBES = ["steam_valve.steam_flow_kg_s", "boiler.pressure_bar_abs", "boiler.steam_temp_c",
-                  "condenser.pressure_bar_abs", "generator.electrical_power_mw"]
+                  "condenser.pressure_bar_abs", "generator.electrical_power_mw",
+                  "steam_valve.position_pct"]
 
     STATE_VARS = ["omega", "speed_rpm", "mech_power", "steam_flow", "exhaust_flow", "vibration",
                   "bearing_temp", "acceleration", "efficiency", "internal_steam", "electrical_power",
@@ -114,7 +118,8 @@ class Turbine(BaseDevice):
         }
 
     def control_output(self) -> float:
-        return self.hr("MANUAL_OUTPUT")
+        # 汽輪機的「控制輸出」就是主蒸汽閥開度（調速器在閥門端）
+        return self.sig("steam_valve.position_pct", 0.0)
 
     def start_permissives(self) -> list[tuple[str, bool]]:
         vacuum_ok = self.sig("condenser.pressure_bar_abs", 1.0) <= float(
@@ -199,13 +204,14 @@ class Turbine(BaseDevice):
         target_temp += float(self.faults.factor("bearing_temp_add", 0.0))
         self.bearing_temp = first_order(self.bearing_temp, target_temp, self.bearing_tau, dt)
 
+        self.local_output = self.sig("steam_valve.position_pct", 0.0)
         self.alarms.set(CODE + 15, self.sm.running and self.speed_rpm < self.rated_speed * 0.95,
                         self.speed_rpm, self.rated_speed * 0.95)
         self.energy_total += self.mech_power * dt / 3.6  # MW·s -> kWh
 
     def apply_comm_loss(self, policy: str) -> None:
-        # 汽輪機：進入安全減速（要求關閥）或跳機，由設定決定
-        if policy == "TRIP":
+        # LOCAL_AUTO（預設）：調速器在主蒸汽閥本地執行，失去 PLC 不必減速
+        if policy in ("TRIP", "LOCAL_AUTO", "HOLD_LAST"):
             return
         self.set_hr("MANUAL_OUTPUT", 0.0)
 
@@ -240,7 +246,7 @@ class Turbine(BaseDevice):
         regs[14] = enc_u16(self.exhaust_pressure, 10000)
         regs[15] = enc_u16(self.vibration, 100)
         regs[16] = enc_i16(self.bearing_temp, 10)
-        regs[17] = enc_u16(self.hr("MANUAL_OUTPUT"), 100)
+        regs[17] = enc_u16(self.sig("steam_valve.position_pct", 0.0), 100)
         regs[18] = enc_i16(clamp(self.acceleration, -3000, 3000), 10)
         regs[19] = enc_u16(self.efficiency * 100.0, 100)
 

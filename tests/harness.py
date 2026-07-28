@@ -1,4 +1,8 @@
-"""測試用的行程內迷你機組：不需要 docker 也能跑完整 lockstep 物理迴圈。"""
+"""測試用的行程內迷你機組：不需要 docker 也能跑完整 lockstep 物理迴圈。
+
+設備是自持的，因此這個 harness 不含任何控制器：只要推進時間，機組就會自己
+啟動、併聯並維持負載。`kick_watchdog=False` 可以模擬「完全沒有 PLC」的情況。
+"""
 from __future__ import annotations
 
 import os
@@ -7,27 +11,9 @@ import tempfile
 from common.modbus.register_map import Table
 from common.simbus.protocol import SignalValue
 
-from devices.boiler.main import Boiler
-from devices.condensate_pump.main import CondensatePump
-from devices.condenser.main import Condenser
-from devices.feedwater_pump.main import FeedwaterPump
-from devices.feedwater_tank.main import FeedwaterTank
-from devices.generator.main import Generator
-from devices.steam_valve.main import SteamValve
-from devices.turbine.main import Turbine
+from devices.registry import DEVICE_CLASSES
 
 CONFIG_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "configs")
-
-DEVICE_CLASSES = {
-    "condenser": Condenser,
-    "condensate_pump": CondensatePump,
-    "feedwater_tank": FeedwaterTank,
-    "feedwater_pump": FeedwaterPump,
-    "boiler": Boiler,
-    "steam_valve": SteamValve,
-    "turbine": Turbine,
-    "generator": Generator,
-}
 
 
 class MiniPlant:
@@ -123,72 +109,23 @@ class MiniPlant:
             device.log.close()
 
 
-def bring_to_steady(plant: MiniPlant, load_mw: float = 60.0, seconds: float = 900.0) -> None:
-    """以簡化流程把機組帶到接近穩態，供物理與快照測試使用。"""
-    plant.write("condenser", "MANUAL_OUTPUT", 100.0)
-    plant.pulse("condenser", "START")
-    plant.write("condensate_pump", "MANUAL_OUTPUT", 20.0)
-    plant.pulse("condensate_pump", "START")
-    plant.write("feedwater_pump", "MANUAL_OUTPUT", 20.0)
-    plant.pulse("feedwater_pump", "START")
-    _run_controlled(plant, 40.0, load_mw, boiler_started=False)
+def bring_to_steady(plant: MiniPlant, load_mw: float = 60.0, seconds: float = 1200.0) -> None:
+    """把機組帶到接近穩態。
 
-    plant.pulse("boiler", "START")
-    plant.pulse("steam_valve", "START")
-    plant.pulse("turbine", "START")
-    plant.pulse("generator", "START")
-    _run_controlled(plant, seconds, load_mw)
+    設備自持：不需要任何控制器介入，只要給它時間。負載目標寫進發電機的
+    40010 PRIMARY_SETPOINT（SCADA 也只能做到這個層級的設定）。
+    """
+    plant.write("generator", "PRIMARY_SETPOINT", load_mw)
+    plant.run_seconds(seconds)
 
 
-def _run_controlled(plant: MiniPlant, seconds: float, load_mw: float,
-                    boiler_started: bool = True) -> None:
-    for _ in range(int(seconds * 2)):     # 每 0.5 秒執行一次簡化控制
-        simple_control(plant, load_mw, boiler_started)
-        plant.step(5)
-
-
-def simple_control(plant: MiniPlant, load_mw: float, boiler_started: bool = True) -> None:
-    """測試用的簡化控制器（與 DCS 邏輯獨立，避免測試依賴 Modbus）。"""
-    boiler = plant.dev("boiler")
-    valve = plant.dev("steam_valve")
-    turbine = plant.dev("turbine")
-    generator = plant.dev("generator")
-    fw_pump = plant.dev("feedwater_pump")
-    cd_pump = plant.dev("condensate_pump")
-    tank = plant.dev("feedwater_tank")
-
-    # 壓力 -> 燃燒器（含蒸汽流量前饋；升壓期間限制輸出避免超壓，達壓後解除）
-    if boiler.pressure > 95.0:
-        plant.pressure_ramp_done = True
-    if boiler_started and not boiler.sm.tripped:
-        burner = 0.9 * boiler.steam_outflow + 1.0 * (100.0 - boiler.pressure)
-        cap = 100.0 if getattr(plant, "pressure_ramp_done", False) else 20.0
-        plant.write("boiler", "MANUAL_OUTPUT", max(0.0, min(cap, burner)))
-
-    # 三元素水位 -> 給水泵
-    speed = 100.0 * boiler.evaporation / 120.0 + 2.0 * (66.7 - boiler.level_indicated)
-    plant.write("feedwater_pump", "MANUAL_OUTPUT", max(0.0, min(100.0, speed)))
-
-    # 給水槽水位 -> 凝結水泵
-    cd_speed = 100.0 * fw_pump.flow / 120.0 + 1.5 * (60.0 - tank.level)
-    plant.write("condensate_pump", "MANUAL_OUTPUT", max(0.0, min(100.0, cd_speed)))
-
-    # 轉速 -> 主蒸汽閥（升速期間限制開度，避免瞬間超速）
-    limit = 3.0 if generator.breaker_closed else 2.0
-    delta = max(-limit, min(limit, 0.01 * (3000.0 - turbine.speed_rpm)
-                            + 0.05 * (generator.electrical_power - turbine.mech_power)))
-    position = max(0.0, min(100.0, valve.hr("MANUAL_OUTPUT") + delta))
-    if turbine.speed_rpm < 2900.0 and not generator.breaker_closed:
-        position = min(position, 15.0)
-    plant.write("steam_valve", "MANUAL_OUTPUT", position)
-
-    # 併聯與負載（併聯後緩慢加載，避免蒸汽供應跟不上）
-    if not generator.breaker_closed and abs(turbine.speed_rpm - 3000.0) < 25.0 \
-            and abs(generator.phase_angle) < 10.0 and generator.sm.running \
-            and boiler.pressure > 90.0:
-        plant.pulse("generator", "BREAKER_CLOSE")
-    if generator.breaker_closed:
-        setpoint = min(load_mw, generator.hr("PRIMARY_SETPOINT") + 0.25)
-    else:
-        setpoint = 0.0
-    plant.write("generator", "PRIMARY_SETPOINT", setpoint)
+def run_until(plant: MiniPlant, predicate, timeout_s: float = 1200.0,
+              step_ticks: int = 5, **kwargs) -> float:
+    """推進模擬直到 predicate(plant) 成立，回傳耗費的模擬秒數（逾時則回傳 -1）。"""
+    elapsed = 0.0
+    while elapsed < timeout_s:
+        if predicate(plant):
+            return elapsed
+        plant.step(step_ticks, **kwargs)
+        elapsed += step_ticks * plant.dt
+    return elapsed if predicate(plant) else -1.0

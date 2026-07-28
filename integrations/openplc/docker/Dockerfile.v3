@@ -1,0 +1,31 @@
+# OpenPLC Runtime v3 容器
+#
+# 官方沒有發佈 v3 的 Docker 映像（OpenPLC_v3 已標示 End of Life，官方建議改用
+# v4），因此這裡依照 OpenPLC_v3 README 的做法，從原始碼以 `install.sh docker`
+# 建置。第一次建置需要數分鐘。
+#
+#   docker compose --profile openplc-v3 build openplc-v3
+#
+# 已經有現成映像時，改用 .env 的 OPENPLC_V3_IMAGE 指定即可，compose 就不會建置。
+FROM debian:bookworm-slim
+
+ARG OPENPLC_V3_REF=master
+ARG OPENPLC_V3_REPO=https://github.com/thiagoralves/OpenPLC_v3.git
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends git ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /opt
+RUN git clone --depth 1 --branch "${OPENPLC_V3_REF}" "${OPENPLC_V3_REPO}" OpenPLC_v3
+
+WORKDIR /opt/OpenPLC_v3
+RUN ./install.sh docker
+
+# 8080：v3 網頁介面（預設帳密 openplc / openplc）
+# 502 ：北向 Modbus TCP server，SCADA/HMI 連這裡
+EXPOSE 8080 502
+
+CMD ["./start_openplc.sh"]

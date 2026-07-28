@@ -26,7 +26,7 @@ def saturation_pressure_bar(temp_c: float) -> float:
 class FeedwaterTank(BaseDevice):
     NAME = "feedwater_tank"
     CODE_BASE = CODE
-    DEFAULT_COMM_POLICY = "HOLD_LAST"
+    DEFAULT_COMM_POLICY = "LOCAL_AUTO"
     HAS_START_STOP = False
 
     PROCESS_INPUTS = [
@@ -98,7 +98,7 @@ class FeedwaterTank(BaseDevice):
         return 100.0 * (mass - self.mass_min) / (self.mass_max - self.mass_min)
 
     def control_output(self) -> float:
-        return self.hr("MANUAL_OUTPUT")
+        return self.local_output
 
     def start_permissives(self) -> list[tuple[str, bool]]:
         return [("被動容器", True)]
@@ -123,7 +123,9 @@ class FeedwaterTank(BaseDevice):
         self.net_flow = self.inflow - self.outflow
 
         # 溫度：加熱器輸出 + 進水溫度混合
-        heating = self.hr("MANUAL_OUTPUT") / 100.0
+        # 除氧器是被動容器，自動模式下加熱固定全開（除氧需要維持飽和溫度）
+        self.local_output = 100.0 if self.auto_mode else clamp(self.hr("MANUAL_OUTPUT"), 0.0, 100.0)
+        heating = self.local_output / 100.0
         inlet_temp = self.sig("condenser.condensate_temp_c", 40.0)
         target = inlet_temp + (self.hr("HEATING_SETPOINT") - inlet_temp) * heating
         self.temperature = first_order(self.temperature, target, self.heating_tau, dt)

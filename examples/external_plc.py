@@ -1,10 +1,15 @@
 #!/usr/bin/env python3
-"""外部 PLC 骨架 —— 示範如何以 Modbus TCP 串接 8 台設備。
+"""外部 PLC 骨架 —— 示範如何以 Modbus TCP 串接 8 台自持設備。
+
+設備是自持的：它們自己啟動、自己調節，PLC 只負責**資料交換與邏輯判斷**，
+不計算任何控制輸出。這支骨架示範的就是那個角色：
+
+    輪詢（FC4/FC2/FC3）→ watchdog → 跳機矩陣（只下命令）→ 回報
 
 刻意**不 import 專案內的設備類別**，介面契約只來自 docs/register-map.csv，
 所以這支程式跟真正的第三方 PLC 處於同樣的資訊條件。
 
-    docker compose --profile external-plc up -d      # 不啟動內建 DCS
+    COMPOSE_PROFILES=no-plc docker compose up -d     # 不啟動 OpenPLC
     python examples/external_plc.py --host 127.0.0.1
 
     python examples/external_plc.py --selftest        # 離線自我檢查（不需設備）
@@ -30,7 +35,7 @@ UNIT_ID = 1
 RESET_KEY_VALUE = 0xA55A          # 42330
 WATCHDOG_PERIOD_S = 1.0           # 必須 < comm.watchdog_timeout (3.0)
 POLL_PERIOD_S = 0.25
-CONTROL_PERIOD_S = 0.5
+LOGIC_PERIOD_S = 0.5              # 邏輯判斷週期（不是控制週期）
 OVERSPEED_CLOSE_RPM = 3150.0      # 比設備跳機門檻 3300 早動作
 
 # 主機模式的埠對映（compose.yaml）；容器模式一律用 502
@@ -41,17 +46,22 @@ HOST_PORTS = {
 }
 CONTAINER_HOSTS = {name: name.replace("_", "-") for name in HOST_PORTS}
 
-# 跳機矩陣：來源設備 TRIPPED 上升緣 -> 要執行的動作
+# 30027 SELF_HOLD_STATE：設備自持狀態
+SELF_HOLD_STATES = {0: "disabled", 1: "standby", 2: "self-hold", 3: "op-stop",
+                    4: "trip", 5: "maint"}
+
+# 跳機矩陣：來源設備 TRIPPED 上升緣 -> 要下達的**命令**。
+# 一律使用命令線圈，不寫設定值或手動輸出：那些屬於設備自己的調節器，
+# PLC 去寫只會跟本地控制打架。STOP 是脈衝命令，被停下的設備會維持停機
+# 直到操作員按 START（也就是重新允許自持運轉）。
 TRIP_MATRIX = {
-    "turbine": [("generator", "coil", "BREAKER_OPEN", 1),
-                ("steam_valve", "hr", "MANUAL_OUTPUT", 0.0),
-                ("generator", "hr", "PRIMARY_SETPOINT", 0.0)],
-    "boiler": [("boiler", "hr", "MANUAL_OUTPUT", 0.0),
-               ("steam_valve", "hr", "MANUAL_OUTPUT", 0.0)],
-    "condenser": [("generator", "hr", "PRIMARY_SETPOINT", 0.0)],
-    "feedwater_pump": [("boiler", "hr", "MANUAL_OUTPUT", 0.0)],
-    "condensate_pump": [("feedwater_pump", "hr", "MANUAL_OUTPUT", 20.0)],
-    "steam_valve": [("boiler", "hr", "MANUAL_OUTPUT", 0.0)],
+    "turbine": [("generator", "coil", "BREAKER_OPEN"),
+                ("steam_valve", "coil", "STOP")],
+    "boiler": [("steam_valve", "coil", "STOP")],
+    "condenser": [("generator", "coil", "BREAKER_OPEN")],
+    "feedwater_pump": [("boiler", "coil", "STOP")],
+    "condensate_pump": [],          # 給水泵自己會保護給水槽
+    "steam_valve": [("boiler", "coil", "STOP")],
 }
 
 
@@ -116,43 +126,7 @@ def encode(spec: Spec, value: float) -> int:
 
 
 # --------------------------------------------------------------------------
-# 2. PID（含抗飽和與 bumpless transfer）
-# --------------------------------------------------------------------------
-@dataclass
-class PID:
-    kp: float
-    ki: float
-    setpoint: float
-    out_min: float = 0.0
-    out_max: float = 100.0
-    integral: float = 0.0
-    output: float = 0.0
-    auto: bool = False
-
-    def to_auto(self, current_output: float) -> None:
-        """接手時把積分項預載成目前輸出 -> 切換瞬間不跳動（bumpless）。"""
-        self.output = current_output
-        self.integral = current_output
-        self.auto = True
-
-    def force_output(self, value: float) -> None:
-        """安全邏輯介入時用；同時清積分，避免解除後暴衝。"""
-        self.output = value
-        self.integral = value
-
-    def update(self, pv: float, dt: float, feedforward: float = 0.0) -> float:
-        error = self.setpoint - pv
-        candidate = self.integral + self.ki * error * dt
-        output = self.kp * error + candidate + feedforward
-        # 抗飽和：只有輸出沒有飽和時才累積積分
-        if self.out_min < output < self.out_max:
-            self.integral = candidate
-        self.output = max(self.out_min, min(self.out_max, output))
-        return self.output
-
-
-# --------------------------------------------------------------------------
-# 3. 單一設備的連線與資料快取
+# 2. 單一設備的連線與資料快取
 # --------------------------------------------------------------------------
 class DeviceLink:
     def __init__(self, name: str, host: str, port: int, specs: dict, read_only: bool) -> None:
@@ -285,15 +259,14 @@ class DeviceLink:
 
 
 # --------------------------------------------------------------------------
-# 4. PLC 本體
+# 3. PLC 本體
 # --------------------------------------------------------------------------
 class ExternalPLC:
     def __init__(self, links: dict[str, DeviceLink], read_only: bool) -> None:
         self.links = links
         self.read_only = read_only
         self.fired: set[str] = set()
-        self.boiler_pressure = PID(kp=2.0, ki=0.08, setpoint=100.0)
-        self.turbine_speed = PID(kp=0.05, ki=0.005, setpoint=3000.0)
+        self.overspeed_fired = False
         self.started = time.monotonic()
 
     def link(self, name: str) -> DeviceLink | None:
@@ -313,23 +286,23 @@ class ExternalPLC:
                     await link.kick_watchdog()
             await asyncio.sleep(WATCHDOG_PERIOD_S)
 
-    async def control_loop(self) -> None:
+    async def logic_loop(self) -> None:
         while True:
             started = time.monotonic()
             try:
-                await self.control_step(CONTROL_PERIOD_S)
+                await self.logic_step()
             except Exception as exc:
-                print(f"[CONTROL_ERROR] {exc!r}", file=sys.stderr)
-            await asyncio.sleep(max(0.0, CONTROL_PERIOD_S - (time.monotonic() - started)))
+                print(f"[LOGIC_ERROR] {exc!r}", file=sys.stderr)
+            await asyncio.sleep(max(0.0, LOGIC_PERIOD_S - (time.monotonic() - started)))
 
-    async def control_step(self, dt: float) -> None:
-        # --- 快照還原偵測：積分項必須跟著重置，否則還原後暴衝 ---
+    async def logic_step(self) -> None:
+        """只做判斷與下命令，不計算任何控制值。"""
+        # --- 快照還原偵測：邊緣記憶必須跟著重置 ---
         for link in self.links.values():
             if link.online and link.snapshot_changed():
-                print(f"[SNAPSHOT] {link.name} 已還原 -> 重置控制器狀態")
-                self.boiler_pressure.auto = False
-                self.turbine_speed.auto = False
+                print(f"[SNAPSHOT] {link.name} 已還原 -> 重置邊緣記憶")
                 self.fired.clear()
+                self.overspeed_fired = False
 
         # --- 跳機矩陣：只在 TRIPPED 上升緣觸發一次 ---
         for source, actions in TRIP_MATRIX.items():
@@ -337,42 +310,22 @@ class ExternalPLC:
             tripped = bool(link and link.di("TRIPPED"))
             if tripped and source not in self.fired:
                 self.fired.add(source)
-                print(f"[TRIP_MATRIX] {source} 跳機 -> 執行 {len(actions)} 個連鎖動作")
-                for device, kind, target, value in actions:
+                print(f"[TRIP_MATRIX] {source} 跳機 -> 下達 {len(actions)} 個命令")
+                for device, _, target in actions:
                     target_link = self.link(device)
-                    if not target_link:
-                        continue
-                    if kind == "hr":
-                        await target_link.write_hr(target, value)
-                    else:
+                    if target_link:
                         await target_link.pulse_coil(target)
             elif not tripped:
                 self.fired.discard(source)
 
-        # --- 迴路 1：鍋爐壓力 -> 燃燒器輸出 ---
-        boiler = self.link("boiler")
-        if boiler:
-            if not self.boiler_pressure.auto:
-                self.boiler_pressure.to_auto(boiler.ir("BURNER_OUTPUT"))
-            burner = self.boiler_pressure.update(boiler.ir("BOILER_PRESSURE"), dt)
-            # 安全邏輯優先於 PID
-            if boiler.di("TRIPPED"):
-                self.boiler_pressure.force_output(0.0)
-                burner = 0.0
-            await boiler.write_hr("MANUAL_OUTPUT", burner)
-
-        # --- 迴路 2：汽輪機轉速 -> 主蒸汽閥開度 ---
+        # --- 超速：獨立於設備自己的調速器，再關一次閥 ---
         turbine, valve = self.link("turbine"), self.link("steam_valve")
-        if turbine and valve:
-            if not self.turbine_speed.auto:
-                self.turbine_speed.to_auto(valve.ir("ACTUAL_POSITION"))
-            speed = turbine.ir("SPEED_RPM")
-            position = self.turbine_speed.update(speed, dt)
-            # 超速無條件關閥，優先於任何 PID 輸出
-            if speed > OVERSPEED_CLOSE_RPM or turbine.di("TRIPPED"):
-                self.turbine_speed.force_output(0.0)
-                position = 0.0
-            await valve.write_hr("MANUAL_OUTPUT", position)
+        overspeed = bool(turbine and (turbine.ir("SPEED_RPM") > OVERSPEED_CLOSE_RPM
+                                      or turbine.di("TRIPPED")))
+        if overspeed and not self.overspeed_fired and valve:
+            print("[OVERSPEED] 主蒸汽閥停機命令")
+            await valve.pulse_coil("STOP")
+        self.overspeed_fired = overspeed
 
     async def report_loop(self) -> None:
         while True:
@@ -385,20 +338,21 @@ class ExternalPLC:
                 flags = "TRIP" if link.di("TRIPPED") else ("RUN" if link.di("RUNNING") else "off")
                 rejected = int(link.ir("REJECTED_COMMAND_COUNT"))
                 wd = "wd:ok" if link.di("CONTROL_WATCHDOG_OK") else "wd:LOST"
-                rows.append(f"{name}={flags},{wd},rej={rejected}")
+                hold = SELF_HOLD_STATES.get(int(link.ir("SELF_HOLD_STATE")), "?")
+                rows.append(f"{name}={flags}/{hold},{wd},rej={rejected}")
             print(f"[{time.monotonic() - self.started:7.1f}s] " + "  ".join(rows), flush=True)
 
     async def run(self) -> None:
         for link in self.links.values():
             await link.connect()
-        mode = "READ-ONLY（不寫入、不搶控制權）" if self.read_only else "CONTROL"
-        print(f"外部 PLC 啟動：{len(self.links)} 台設備，模式 {mode}", flush=True)
+        mode = "READ-ONLY（不寫入、不搶控制權）" if self.read_only else "DATA+LOGIC"
+        print(f"外部 PLC 啟動：{len(self.links)} 台自持設備，模式 {mode}", flush=True)
         await asyncio.gather(self.poll_loop(), self.watchdog_loop(),
-                             self.control_loop(), self.report_loop())
+                             self.logic_loop(), self.report_loop())
 
 
 # --------------------------------------------------------------------------
-# 5. 離線自我檢查：驗證 CSV 解析與編解碼，不需要任何設備
+# 4. 離線自我檢查：驗證 CSV 解析與編解碼，不需要任何設備
 # --------------------------------------------------------------------------
 def selftest(rmap: dict) -> int:
     failures: list[str] = []
@@ -437,14 +391,16 @@ def selftest(rmap: dict) -> int:
         check(f"{device} SNAPSHOT_GENERATION offset",
               specs[("INPUT", "SNAPSHOT_GENERATION")].offset, 38)
 
-    # PID 行為
-    pid = PID(kp=1.0, ki=0.5, setpoint=100.0)
-    pid.to_auto(42.0)
-    check("bumpless：切 auto 後輸出不跳動", round(pid.output, 6), 42.0)
-    pid.update(100.0, 0.5)   # 無誤差
-    check("無誤差時輸出維持", round(pid.output, 6), 42.0)
-    pid.force_output(0.0)
-    check("force_output 同時清積分", (pid.output, pid.integral), (0.0, 0.0))
+    # 自持設備的觀測點：PLC 不做控制，但必須看得懂設備在做什麼
+    for device, specs in rmap.items():
+        check(f"{device} SELF_HOLD_STATE offset", specs[("INPUT", "SELF_HOLD_STATE")].offset, 26)
+        check(f"{device} LOCAL_OUTPUT offset", specs[("INPUT", "LOCAL_OUTPUT")].offset, 25)
+        check(f"{device} PERMISSIVE_WORD offset", specs[("INPUT", "PERMISSIVE_WORD")].offset, 27)
+
+    # 跳機矩陣只能下命令：不得出現任何 Holding Register 動作
+    for actions in TRIP_MATRIX.values():
+        for action in actions:
+            check(f"跳機動作只用 coil：{action}", action[1], "coil")
 
     for line in failures:
         print(f"  [FAIL] {line}")

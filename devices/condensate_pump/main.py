@@ -1,4 +1,8 @@
-"""凝結水泵設備容器。"""
+"""凝結水泵設備容器（自持）。
+
+本地自持控制：以給水槽水位（40010 PRIMARY_SETPOINT，預設 60%）為設定值，
+加上給水泵流量前饋決定轉速；水位足夠時自行進入待機。
+"""
 from __future__ import annotations
 
 from common.device.alarm import AlarmSpec
@@ -13,7 +17,7 @@ CODE = 5500
 class CondensatePump(PumpDevice):
     NAME = "condensate_pump"
     CODE_BASE = CODE
-    DEFAULT_COMM_POLICY = "LOCAL_FALLBACK"
+    DEFAULT_COMM_POLICY = "LOCAL_AUTO"
 
     PROCESS_INPUTS = PUMP_PROCESS_INPUTS
     EXTRA_HOLDINGS = [
@@ -41,8 +45,10 @@ class CondensatePump(PumpDevice):
 
     PUBLISHES = ["condensate_pump.flow_kg_s", "condensate_pump.speed_pct",
                  "condensate_pump.discharge_bar_abs"]
+    # feedwater_pump.flow_kg_s 是本地控制的前饋量：給水泵抽走多少就補多少
     SUBSCRIBES = ["condenser.hotwell_level_pct", "condenser.pressure_bar_abs",
-                  "feedwater_tank.level_pct", "feedwater_tank.pressure_bar_abs"]
+                  "feedwater_tank.level_pct", "feedwater_tank.pressure_bar_abs",
+                  "feedwater_pump.flow_kg_s"]
 
     def configure(self) -> None:
         self.configure_pump(self.cfg.get("condensate_pump", {}))
@@ -65,6 +71,21 @@ class CondensatePump(PumpDevice):
 
     def source_level(self) -> float:
         return self.sig("condenser.hotwell_level_pct", 0.0)
+
+    def controlled_level(self) -> float:
+        return self.sig("feedwater_tank.level_pct", 0.0)
+
+    def local_speed_demand(self, dt: float) -> float:
+        """給水槽水位控制 + 給水泵流量前饋。
+
+        前饋讓凝結水泵在負載變動時直接補上被抽走的水量，水位迴路只負責修正殘差；
+        沒有前饋時，積分要等水位真的掉下去才會反應，60 MW 的加載過程會讓
+        給水槽一路掉到低水位警報。
+        """
+        self.speed_ctl.setpoint = self.level_setpoint()
+        feedforward = 100.0 * self.sig("feedwater_pump.flow_kg_s", 0.0) / max(1.0, self.rated_flow)
+        return self.local_demand(self.speed_ctl, self.controlled_level(), dt,
+                                 feedforward=feedforward)
 
     def step(self, dt: float) -> None:
         self.step_pump(dt)

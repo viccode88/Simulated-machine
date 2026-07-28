@@ -28,9 +28,9 @@ import urllib.request
 BUS_API = os.environ.get("BUS_API", "http://127.0.0.1:15080")
 MODBUS_HOST = os.environ.get("MODBUS_HOST", "127.0.0.1")
 
-# 設備 -> 主機埠（compose 預設）
+# 設備 -> 主機埠（compose 預設）。15020 是 OpenPLC 的 Modbus server（北向）。
 DEVICE_PORTS = {
-    "dcs-plc": 15020,
+    "openplc": 15020,
     "condenser": 15021,
     "condensate_pump": 15022,
     "feedwater_tank": 15023,
@@ -76,7 +76,7 @@ def show(data) -> None:
 # --------------------------------------------------------------------------
 def _register_map(device: str):
     from common.modbus.register_map import RegisterMap
-    from controller.dcs.main import DEVICE_CLASSES
+    from devices.registry import DEVICE_CLASSES
 
     klass = DEVICE_CLASSES[device]
     return RegisterMap.build(device, klass.PROCESS_INPUTS, klass.EXTRA_HOLDINGS, klass.EXTRA_COILS)

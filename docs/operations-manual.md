@@ -30,24 +30,26 @@
 
 ```bash
 cp .env.example .env
-docker compose up --build          # 預設就是 standalone：開起來會自己發電
+docker compose up --build          # 設備自持：開起來就會自己發電
 ```
 
-| Profile | 內容 | 適用 |
+八台設備、plant-bus、HMI 與 historian 一律啟動；profile 只決定要哪一種 PLC：
+
+| Profile | PLC | 適用 |
 | --- | --- | --- |
-| `standalone`（**預設**） | 8 台設備 + plant-bus + **內建 DCS** + HMI + historian | 自持運轉：開機後自動冷啟動並持續發電 |
-| `external-plc` | 8 台設備 + plant-bus + HMI + historian（**無 DCS**） | 自己寫 PLC 程式來控制 |
+| `openplc-v4`（**預設**） | OpenPLC Runtime v4（官方映像） | 一般使用；Editor 由 15443 部署專案 |
+| `openplc-v3` | OpenPLC Runtime v3（自原始碼建置） | 需要 v3 網頁介面或舊版相容測試 |
+| `no-plc` | 無 | 驗證設備真的自持、或接自己的 PLC |
 | `secure` | 額外以 stunnel 在 802 埠提供 Modbus Security | 協定安全測試 |
 
 profile 由 `.env` 的 `COMPOSE_PROFILES` 決定。切換寫法：
 
 ```bash
-COMPOSE_PROFILES=external-plc docker compose up
+COMPOSE_PROFILES=openplc-v3 docker compose up
 ```
 
-> **不要用 `--profile external-plc`**。命令列的 `--profile` 是疊加在
-> `COMPOSE_PROFILES` 之上而非取代，結果會同時啟動內建 DCS 與你的外部 PLC，
-> 兩個控制器搶同一個寫入租約（`modbus.single_writer`），命令會互相被拒。
+> 命令列的 `--profile` 是**疊加**在 `COMPOSE_PROFILES` 之上而非取代。
+> v3 與 v4 會搶同一個主機埠（`PLC_MODBUS_PORT`，預設 15020），不要同時啟動。
 
 啟動後可用位址：
 
@@ -56,7 +58,9 @@ COMPOSE_PROFILES=external-plc docker compose up
 | HMI | <http://127.0.0.1:15082> | 監看 + 模擬控制 + 快照 |
 | plant-bus API | <http://127.0.0.1:15080/state> | 全廠狀態 JSON |
 | Historian | <http://127.0.0.1:15081/events> | 事件查詢 |
-| Modbus TCP | 15020（DCS）、15021～15028（各設備） | 控制介面 |
+| PLC 北向 Modbus | 15020 | SCADA／HMI 連這裡 |
+| OpenPLC 介面 | 15443（v4 Editor API）／15083（v3 網頁） | 部署 PLC 程式 |
+| 設備 Modbus TCP | 15021～15028 | 直連單一設備（工程用） |
 
 準備 CLI：
 
@@ -69,28 +73,38 @@ plantctl status          # 確認 8 台設備都 online
 
 1. `plantctl status` 的 `offline_devices` 必須為空。
 2. plant-bus 的 `paused` 為 `false`（HMI 右上角顯示 `RUN`）。
-3. 每台設備 `CONTROL_WATCHDOG_OK`(10011) 與 `SIM_BUS_OK`(10012) 都為 1。
+3. 每台設備 `SIM_BUS_OK`(10012) 為 1。
+   （`CONTROL_WATCHDOG_OK`(10011) 只在有 PLC 時才會是 1；沒有 PLC 也能運轉。）
 4. 沒有殘留的跳機鎖存：`TRIP_WORD`(30004) 全為 0。
    容器重啟後鎖存會保留（`WARM_START` 事件），必須先重置才能啟動。
 
 > **注意**：冷啟動時冷凝器壓力是 1.0 bar(a)（大氣壓），此時 `ALARM_ACTIVE` 為 1
 > 是**正常現象**，不是故障。詳見[第十章](#十案例冷凝器永遠停在-alarm-active)。
 
-### 全廠沒有任何動作？先確認 DCS 有沒有起來
+### 全廠沒有動作？先看自持狀態
 
-最常見的「全廠靜止不動、冷凝器一直亮警報」不是設備故障，而是**沒有人在控制**：
+設備是自持的，「全廠靜止不動」表示**允許條件沒成立**或**被操作員停機鎖住**，
+不是沒有控制器：
 
 ```bash
-docker compose ps | grep dcs-plc          # 沒有這個容器 = 沒有控制器
-plantctl events --device dcs --limit 20   # 應該看得到 DCS_STARTED / SEQUENCE_STEP_ENTER
+plantctl events --event SELF_START --limit 20      # 誰自己啟動了
+plantctl read --device condenser --register SELF_HOLD_STATE
+plantctl read --device condenser --register PERMISSIVE_WORD
 ```
 
-| 現象 | 原因 | 處理 |
+| `SELF_HOLD_STATE`(30027) | 意義 | 處理 |
+| ---: | --- | --- |
+| 0 | 自持被關閉 | `.env` 的 `SELF_HOLD=true`，重啟該容器 |
+| 1 | 待機，等允許條件 | 讀 `PERMISSIVE_WORD`(30028)，哪個位元是 0 就是在等哪一項 |
+| 2 | 自持運轉中 | 正常 |
+| 3 | 操作員停機鎖 | 下一次 `START` 脈衝即可恢復 |
+| 4 | 跳機鎖定 | 走[第八章](#八跳機重置標準程序)的重置程序 |
+| 5 | 維修模式 | `CONTROL_MODE`(40001) 從 4 改回 1 |
+
+| 其他現象 | 原因 | 處理 |
 | --- | --- | --- |
-| 沒有 `dcs-plc` 容器 | `COMPOSE_PROFILES` 沒有 `standalone`（舊版預設不啟動 DCS） | 確認 `.env` 有 `COMPOSE_PROFILES=standalone`，或用 `COMPOSE_PROFILES=standalone docker compose up` |
-| 有 `dcs-plc`，但沒有 `STARTUP_SEQUENCE_STARTED` | `AUTO_START=false` | 改 `.env` 的 `AUTO_START=true` |
-| 有順序事件但停在某一步 | guard 不成立 | `plantctl events --event SEQUENCE_BLOCKED` 看原因 |
 | 設備都在但 `plantctl status` 顯示 offline | Modbus 埠沒開或容器沒健康 | `docker compose ps`、`docker logs <service>` |
+| 有 PLC 但 `CONTROL_WATCHDOG_OK` 為 0 | PLC 程式沒部署或沒在跑 | 檢查 OpenPLC（15443／15083）是否已載入專案並 Start PLC |
 
 ---
 
@@ -100,75 +114,71 @@ plantctl events --device dcs --limit 20   # 應該看得到 DCS_STARTED / SEQUEN
 
 | 介面 | 能做 | 不能做 |
 | --- | --- | --- |
-| **HMI 網頁**（15082） | 看程序量與品質、看事件與第一故障、暫停／繼續／單步、存取快照 | **不能啟停設備、不能寫設定值**（HMI 是唯讀監看 + 模擬控制） |
+| **HMI 網頁**（15082） | 看程序量與品質、看事件與第一故障、暫停／繼續／單步、存取快照 | **不能啟停設備、不能寫設定值**（是唯讀監看 + 模擬控制） |
 | **plantctl CLI** | 上述全部，外加 Modbus 讀寫、故障注入、訊號強制、情境執行 | — |
-| **Modbus TCP**（外部 PLC / OpenPLC / ScadaBR） | 完整控制：啟停、設定值、重置、確認警報 | 不能改模擬時間或快照（那是 management_net 的事） |
+| **SCADA／Modbus TCP**（經 PLC，或直連設備） | 啟動、停止、跳機重置、確認警報、觀察 | 不能改模擬時間或快照（那是 management_net 的事） |
 
 所以：
 
-* **想「看」** → HMI。
+* **想「看」** → HMI 或 ScadaBR。
 * **想「臨時操作一下」** → `plantctl write` / `plantctl read`。
-* **想「自動運轉」** → 用 `standalone` profile 讓內建 DCS 跑，或用 `external-plc`
-  profile 自己接 PLC（骨架見 `examples/external_plc.py`）。
+* **想「自動運轉」** → 什麼都不用做，設備自己會跑。想要 PLC 的資料交換與跳機矩陣，
+  就用預設的 `openplc-v4` profile（或接自己的 PLC，骨架見 `examples/external_plc.py`）。
 
-### 三種介面的等價操作對照
+### 等價操作對照
 
-| 動作 | 內建 DCS | plantctl | Modbus（位址／PDU offset） |
+| 動作 | 誰負責 | plantctl | Modbus（位址／PDU offset） |
 | --- | --- | --- | --- |
-| 啟動設備 | 順序自動下 | `plantctl write --device boiler --register START --value 1 --coil` | Coil `00001` / offset 0，脈衝 |
-| 停止設備 | 順序或跳機矩陣 | `--register STOP --coil` | Coil `00002` / offset 1，脈衝 |
-| 跳機重置 | 不自動做 | 見[第八章](#八跳機重置標準程序) | Coil `00003` / offset 2，脈衝 |
-| 確認警報 | 不自動做 | `--register ACK_ALARM --coil` | Coil `00004` / offset 3，脈衝 |
-| 緊急停止 | — | `--register EMERGENCY_STOP --coil` | Coil `00005` / offset 4，**保持型** |
-| 改設定值 | PID 自動寫 | `--register PRIMARY_SETPOINT --value 100` | Holding `40010` / offset 9 |
-| 改手動輸出 | AUTO 時由 PID 寫 | `--register MANUAL_OUTPUT --value 50` | Holding `40012` / offset 11 |
-| 切自動／手動 | — | `--register CONTROL_MODE --value 3` | Holding `40001` / offset 0 |
+| 啟動設備 | 設備自持；SCADA 可手動 | `plantctl write --device boiler --register START --value 1 --coil` | Coil `00001` / offset 0，脈衝 |
+| 停止設備 | SCADA（會鎖住自持啟動） | `--register STOP --coil` | Coil `00002` / offset 1，脈衝 |
+| 跳機重置 | SCADA | 見[第八章](#八跳機重置標準程序) | Coil `00003` / offset 2，脈衝 |
+| 確認警報 | SCADA | `--register ACK_ALARM --coil` | Coil `00004` / offset 3，脈衝 |
+| 緊急停止 | SCADA | `--register EMERGENCY_STOP --coil` | Coil `00005` / offset 4，**保持型** |
+| 調整目標值 | 工程操作（非日常） | `--register PRIMARY_SETPOINT --value 100` | Holding `40010` / offset 9 |
+| 人工接管輸出 | 工程操作 | 先 `CONTROL_MODE=0`，再 `--register MANUAL_OUTPUT --value 50` | Holding `40001` → `40012` |
 
-`CONTROL_MODE`：`0=LOCAL_MANUAL 1=LOCAL_AUTO 2=REMOTE_MANUAL 3=REMOTE_AUTO 4=MAINTENANCE`。
-**`4=MAINTENANCE` 會讓所有 START 命令被拒絕**，這是另一個常見的「按了沒反應」。
+`CONTROL_MODE`：`0=LOCAL_MANUAL 1=LOCAL_AUTO（預設） 2=REMOTE_MANUAL 3=REMOTE_AUTO 4=MAINTENANCE`。
+
+* **AUTO（1／3）時 `MANUAL_OUTPUT` 會被忽略**：執行器由設備本地調節器決定。
+  這是「寫了 MANUAL_OUTPUT 卻沒反應」最常見的原因——要人工接管請先寫 `CONTROL_MODE=0`。
+* **`4=MAINTENANCE` 會讓所有 START 命令被拒絕**，這是另一個常見的「按了沒反應」。
+* **STOP 之後設備不會自己重啟**（操作員停機鎖），要再按一次 START。
 
 > 寫入不會立即生效：所有 Modbus 寫入先進 command queue，
 > 下一個 scan cycle 才由狀態機與安全邏輯決定是否套用（`base_device.py: _apply_commands`）。
 
 ---
 
-## 三、正常冷啟動並發電（16 步）
+## 三、正常冷啟動並發電（設備自持，不需下命令）
 
-`standalone` profile 下，DCS 在 `dcs.start_delay_s`（預設 8 秒）後自動執行下列順序
-（`controller/startup_sequence.py` 的 `build_sequence()`，共 16 個 Step）。
-手動操作時請依同樣順序，不要跳步。
+開機之後什麼都不用做。每台設備只看自己的允許條件，順序是這些條件互相扣住後
+自然浮現的（完整說明見 [sequence-of-operation.md](sequence-of-operation.md)）。
 
-> 編號與 [sequence-of-operation.md](sequence-of-operation.md) 的 Step 名稱一一對應。
-
-| # | 步驟 | DCS 下的命令 | 完成條件 | 順序禁止（guard） |
-| ---: | --- | --- | --- | --- |
-| 1 | 啟動冷凝器冷卻 | `condenser` MANUAL_OUTPUT=100 + START | `COOLING_WATER_AVAILABILITY`(30017) > 90% | — |
-| 2 | 建立真空 | — | `CONDENSER_PRESSURE`(30010) ≤ 0.12 bar(a) | — |
-| 3 | 確認熱井水位 | — | `HOTWELL_LEVEL`(30012) ≥ 20% | — |
-| 4 | 啟動凝結水泵 | `condensate_pump` MANUAL_OUTPUT=40 + START | `RUNNING`(10002)=1 | 熱井 < 20% 則禁止 |
-| 5 | 給水槽水位到 60% | tank_level PID 轉 AUTO | \|`TANK_LEVEL` − 60\| < 5% | — |
-| 6 | 啟動給水泵 | `OUTLET_VALVE_CMD`=100、MANUAL_OUTPUT=40 + START | `RUNNING`=1 | 給水槽 < 25% 則禁止 |
-| 7 | 鍋爐水位到 66.7% | 三元素水位 PID 轉 AUTO | \|`LEVEL_INDICATED` − 66.7\| < 5% | — |
-| 8 | 鍋爐吹掃 | `boiler` START | 進入 PURGING/IGNITING/RUNNING | 水位須在 30～80% |
-| 9 | 點火 | `boiler` MANUAL_OUTPUT=15 | `FLAME_STATUS`(30020) ≥ 2（穩定） | — |
-| 10 | 緩慢升壓 | 壓力 PID 轉 AUTO（燃燒器上限 20%） | `BOILER_PRESSURE` ≥ **30 bar(a)**（`boiler.min_turbine_pressure_bar`） | — |
-| 11 | 開主蒸汽閥並升速 | `steam_valve` START、`turbine` START、轉速 PID AUTO | `SPEED_RPM` > 300 | **冷凝器壓力 > 0.15 bar(a) 則禁止** |
-| 12 | 升速到 3000 RPM | 閥門上限 15% | \|`SPEED_RPM` − 3000\| ≤ 30 | — |
-| 13 | 同步檢查 | — | `SYNC_PERMISSIVE`(30017) = 0x3F（6 項全成立） | — |
-| 14 | 閉合斷路器 | `generator` START + BREAKER_CLOSE | `BREAKER_STATUS`(30016) ≥ 1 | 轉速偏差 > 30 RPM 則禁止 |
-| 15 | 逐步加載 | `PRIMARY_SETPOINT` = 目標負載 | `ELECTRICAL_POWER` ≥ 目標 × 95% | — |
-| 16 | 正常自動控制 | — | — | — |
-
-任一步驟 guard 不成立時，順序**停在該步驟**並記錄 `SEQUENCE_BLOCKED` 事件，
-不會硬闖；超過 `timeout` 則記錄 `SEQUENCE_STEP_TIMEOUT` 並停止順序。
+| 約略時間 | 發生的事 | 觸發它的允許條件 |
+| ---: | --- | --- |
+| 0 s | 冷凝器啟動、抽真空 | 熱井水位 > 5% |
+| 0 s | 凝結水泵、給水泵啟動 | 熱井 ≥ 20%、給水槽 ≥ 25% |
+| 0 s | 鍋爐吹掃 30 秒 | 水位 30～80%、主蒸汽閥接近關閉 |
+| 35 s | 點火，升壓（燃燒器限幅 20%） | `FLAME_STATUS`(30020) ≥ 2 |
+| 60 s | 冷凝器真空 ≤ 0.15 bar(a) | — |
+| 145 s | 主蒸汽閥開啟（限幅 15%） | 壓力 ≥ 30 bar + 真空良好 |
+| 150 s | 汽輪機升速 | 真空良好 + 主蒸汽壓力 ≥ 10 bar |
+| 220 s | 發電機勵磁 | 轉速 ≥ 額定 90% |
+| 235 s | **自動併聯** | `SYNC_PERMISSIVE`(30017) = 0x3F |
+| 235 s～ | 負載以 0.5 MW/s 爬升，壓力不足時自動暫停 | 鍋爐壓力 ≥ 設定值 90% |
+| 930 s | 60 MW 穩態（99 bar / 3002 RPM） | — |
 
 ### 監看啟動進度
 
 ```bash
 plantctl watch                                  # 即時追蹤重點程序量
-plantctl events --event SEQUENCE_STEP_ENTER     # 目前走到第幾步
-plantctl events --event SEQUENCE_BLOCKED        # 卡在哪個 guard
+plantctl events --event SELF_START              # 哪些設備自己啟動了
+plantctl events --event SELF_HOLD_STANDBY       # 哪些設備自己進了待機
+plantctl read --device boiler --register PERMISSIVE_WORD   # 還在等哪個條件
 ```
+
+卡住時的判讀：讀該設備的 `PERMISSIVE_WORD`(30028)，位元順序與
+`start_permissives()` 一致（見 [自持設計](self-holding.md) 或該設備原始碼）。
 
 ### 免等冷啟動：存一份滿載基準快照
 
@@ -179,59 +189,26 @@ plantctl baseline                    # 等到 ≥57 MW 後存成 steady-60mw
 ```
 
 把 `.env` 改成 `RESTORE_ON_BOOT=steady-60mw`，之後每次 `docker compose up`
-plant-bus 都會在所有設備連上後直接還原（實測 **15 ms**，9 個參與者全部成功），
-機組開機即在 60 MW 滿載，不必再等 11 分鐘。
+plant-bus 都會在所有設備連上後直接還原（毫秒級），機組開機即在 60 MW 滿載。
 
 `plantctl baseline` 的行為：每 2 秒輪詢一次，發現任何設備跳機就中止並回非零
 （避免把故障狀態存成基準）；逾時預設 1800 秒。
 
-### 時間尺度（整廠實測值）
+覺得太慢就加速模擬：`plantctl speed 20`。本地調節器與物理在同一個 scan cycle，
+控制週期永遠等於 dt，**加速不會改變控制行為**。
 
-以 plant-bus + 8 台設備容器 + 內建 DCS 走真實 Modbus 實測的完整冷啟動：
-
-| 步驟 | 完成時的模擬時間 | 該步驟耗時 |
-| --- | ---: | ---: |
-| DCS 開始執行順序 | 約 8 s | — |
-| `COOLING_WATER` 冷卻水就緒 | 180 s | 8 s |
-| `PULL_VACUUM` 真空建立（1.0 → 0.12 bar(a)） | 237 s | **57 s** |
-| `START_CONDENSATE_PUMP` / `TANK_LEVEL` / `START_FEEDWATER_PUMP` | 245 s | 8 s |
-| `BOILER_PURGE` 吹掃 | 278 s | 31 s |
-| `IGNITE` 點火 | 285 s | 6 s |
-| `RAISE_PRESSURE` 升壓到 30 bar(a) | 375 s | **90 s** |
-| `OPEN_MSV` 開閥、轉速 > 300 RPM | 386 s | 11 s |
-| `RUN_UP` 升速到 3000 RPM | 471 s | **85 s** |
-| `SYNC_CHECK` 勵磁與同步條件成立 | 539 s | 68 s |
-| `CLOSE_BREAKER` 併聯 | 540 s | 1 s |
-| `RAMP_LOAD` 加載到 60 MW | 685 s | **145 s**（含等壓力回穩） |
-| `SEQUENCE_COMPLETE` | **約 687 s（11.5 分鐘）** | |
-
-之後穩態實測值：60.00 MW、3000 RPM、鍋爐 99.8 bar(a)、主蒸汽閥 46.9%、
-冷凝器 0.064 bar(a)，連續運轉 745 模擬秒無跳機。
-
-覺得太慢就加速模擬：`plantctl speed 20`。
-（DCS 的輪詢、PID 與啟動順序都以模擬時間計時，加速不會改變控制行為。）
-
-### 手動啟動（external-plc / 自己下 Modbus）
-
-外部 PLC 必須自己做三件事，否則設備會判定「控制器不見了」：
-
-1. **每秒遞增 `WATCHDOG_COUNTER`(40003)**。停止遞增超過
-   `comm.watchdog_timeout`（預設 3 秒）→ `CONTROL_WATCHDOG_LOST` 警報 +
-   套用通訊失效策略。
-2. **設定 `CONTROL_MODE`(40001)**：遠端控制請用 `2`(REMOTE_MANUAL) 或 `3`(REMOTE_AUTO)。
-3. **依序啟動**，每一步先讀 `READY`(10001) 與 `INTERLOCKS_OK`(10013) 確認允許條件成立，
-   再下 START 脈衝。
-
-範例（用 plantctl 手動走前四步）：
+### 想手動走一次（把自持關掉）
 
 ```bash
-plantctl write --device condenser --register MANUAL_OUTPUT --value 100
+SELF_HOLD=false docker compose up -d        # 設備只待機，等外部命令
 plantctl write --device condenser --register START --value 1 --coil
-# 等到 CONDENSER_PRESSURE <= 0.12
 plantctl read  --device condenser --register CONDENSER_PRESSURE
-plantctl write --device condensate_pump --register MANUAL_OUTPUT --value 40
 plantctl write --device condensate_pump --register START --value 1 --coil
 ```
+
+每一步先讀 `READY`(10001) 與 `INTERLOCKS_OK`(10013) 確認允許條件成立再下 START。
+注意此時仍不需要（也不該）寫 `MANUAL_OUTPUT`：調節器還是設備自己的，
+除非再把 `CONTROL_MODE` 改成 0。
 
 ---
 
@@ -239,22 +216,31 @@ plantctl write --device condensate_pump --register START --value 1 --coil
 
 ### 控制迴路
 
-| 迴路 | PV | SP | MV | 特性 |
-| --- | --- | --- | --- | --- |
-| 鍋爐壓力 | `BOILER_PRESSURE` | 100 bar(a) | 燃燒器輸出 | kp 1.5 / ki 0.01 / kd 3.0，上升 5 %/s、下降 10 %/s、死區 0.2 |
-| 鍋爐水位 | `LEVEL_INDICATED` | 66.7% | 給水泵速度 | **三元素**：水位修正 + 蒸汽流量前饋(×1.0) − 給水流量回授 |
-| 給水槽水位 | `TANK_LEVEL` | 60% | 凝結水泵速度 | 輸出變化限制 3 %/s |
-| 汽輪機轉速 | `SPEED_RPM` | 3000 RPM | 主蒸汽閥開度 | 死區 2 RPM、負載前饋、**超速無條件關閥** |
-| 有功功率 | `ELECTRICAL_POWER` | 負載設定 | 主蒸汽閥開度 | 強電網模式（`OPERATING_MODE`=1）才啟用 |
+全部的調節都在**設備內**（`configs/<device>.yaml` 的 `control:` 區塊）：
 
-自動／手動切換採 **bumpless transfer**：切換瞬間以目前輸出反推積分項，
-所以切過去不會跳動。
+| 迴路 | 執行者 | PV | SP | MV | 特性 |
+| --- | --- | --- | --- | --- | --- |
+| 鍋爐壓力 | 鍋爐 | `BOILER_PRESSURE` | 40010（100 bar） | 燃燒器輸出 | kp 1.5 / ki 0.01 / kd 3.0，上升 5 %/s、下降 10 %/s、死區 0.2 |
+| 鍋爐水位 | 給水泵 | `boiler.level_pct` | 40010（66.7%） | 泵浦轉速 | **三元素**：水位修正 + 蒸汽流量前饋(×1.0) − 給水流量回授 |
+| 給水槽水位 | 凝結水泵 | `feedwater_tank.level_pct` | 40010（60%） | 泵浦轉速 | 給水泵流量前饋；水位過高自行待機 |
+| 熱井水位 | 冷凝器 | `HOTWELL_LEVEL` | 40011（55%） | 補水閥 | — |
+| 汽輪機轉速 | 主蒸汽閥 | `turbine.speed_rpm` | 40010（3000 RPM） | 閥門開度 | 死區 2 RPM、負載前饋、**超速無條件關閥** |
+| 有功功率 | 主蒸汽閥 | `generator.electrical_power_mw` | 發電機負載需求 | 閥門開度 | 強電網模式（`OPERATING_MODE`=1）併聯後接手 |
+| 負載爬升 | 發電機 | — | 40010（60 MW） | 負載需求 | 0.5 MW/s；鍋爐壓力不足自動暫停 |
 
-啟動期間的兩個暫時限幅（`dcs.startup_burner_max_pct` 20%、
-`dcs.startup_valve_max_pct` 15%）是直接套在 PID 的 `out_max` 上，
+本地調節器的輸出可直接讀 `LOCAL_OUTPUT`(30026)。自動／手動切換與轉速↔負載接手都採
+**bumpless transfer**：切換瞬間以目前輸出反推積分項，所以切過去不會跳動。
+
+啟動期間的兩個暫時限幅（`boiler.control.startup_burner_max_pct` 20%、
+`steam_valve.control.startup_valve_max_pct` 15%）是直接套在調節器的 `out_max` 上，
 不是把 PID 輸出砍掉。這件事很重要：若在 PID 外面 `min()`，
 積分項會對著看不見的限幅一路累積到上限，限幅解除的瞬間執行器從 15% 跳到 100%，
 汽輪機必定超速跳機、鍋爐必定超壓跳機。
+
+**高壓 runback**：壓力達 108 bar（高壓警報門檻）時，鍋爐立即切燃料且不受
+正常降載速率限制（10 %/s → 100 %/s），壓力回到門檻以下才恢復調節。
+甩載時蒸汽需求瞬間消失，沒有這個動作壓力會直接衝過安全閥到 115 bar 超壓跳機。
+事件：`PRESSURE_RUNBACK`。
 
 | 限幅 | 值 | 解除條件 |
 | --- | ---: | --- |
@@ -414,15 +400,19 @@ plantctl events --event COMMAND_REJECTED
 | `同步條件不成立` | 發電機六項同步允許未全成立 | 見 7.5 |
 | `TRIP_TEST 僅在 LAB_MODE 開放` | `LAB_MODE=false` | 改 `.env` 後重啟 |
 
-**順序禁止**（DCS 層，記錄 `SEQUENCE_BLOCKED`）另外有七條：
+**允許條件不成立**（設備層，`INTERLOCKS_OK`=0、`PERMISSIVE_WORD` 有位元為 0）
+常見的七項：
 
-* 冷凝器真空不良時啟動汽輪機
-* 鍋爐水位不安全時點火
-* 鍋爐壓力不足時快速開啟主蒸汽閥
+* 冷凝器真空不良時啟動汽輪機／主蒸汽閥
+* 鍋爐水位不在 30～80% 時點火
+* 鍋爐壓力不足時開啟主蒸汽閥
 * 汽輪機轉速不符時閉合發電機斷路器
 * 跳機未重置時重新啟動設備
 * 給水槽低低水位時啟動給水泵
 * 熱井低低水位時啟動凝結水泵
+
+這些條件同時也是自持啟動的條件——設備不會硬闖，會停在待機
+（`SELF_HOLD_STATE`=1）直到條件成立。
 
 ### 7.2 Modbus 協定層錯誤（Exception Code）
 
@@ -591,7 +581,7 @@ plantctl fault set --target turbine --category comm --name modbus \
 | turbine | 5203 | `LOW_VACUUM` | 0.15 | **> 0.25 bar(a)** | 2 s | 0.12 | 10 s |
 | turbine | 5204 | `HIGH_BEARING_TEMP` | 95 | **> 110 °C** | 5 s | 90 | 10 s |
 | generator | 5301 | `OVERCURRENT` | 1.05 | **> 1.2 pu** | 2 s | 1.0 | 5 s |
-| generator | 5302 | `OVERFREQUENCY` | 51.0 | **> 52.0 Hz** | 1 s | 50.5 | 5 s |
+| generator | 5302 | `OVERFREQUENCY` | 51.0 | **> 52.0 Hz** | 1 s | 50.5 | 5 s |（斷路器打開時抑制：超速由汽輪機 3300 RPM 保護負責）
 | generator | 5303 | `UNDERFREQUENCY` | 48.5 | **< 47.5 Hz** | 1 s | 49.5 | 5 s |
 | generator | 5304 | `REVERSE_POWER` | — | 逆功率 | 3 s | — | 5 s |
 | condensate_pump | 5501 | `LOW_LOW_SUCTION` | 20% | **< 10%** | 2 s | 25% | 5 s |
@@ -613,19 +603,20 @@ plantctl fault set --target turbine --category comm --name modbus \
 1. **設備自身**立即安全動作：燃燒器歸零、閥門快關、斷路器跳脫。
 2. **鄰接設備**透過 sim_net 訊號連鎖，例如 `turbine.tripped` → 主蒸汽閥快關、
    `boiler.feedwater_permitted`=0 → 給水泵實際停轉。
-3. **DCS 跳機矩陣**作為第二層防護（`controller/trip_matrix.py`）：
+3. **PLC 跳機矩陣**作為第二層防護（OpenPLC 專案的 `main.st`）。PLC 只下命令，
+   不寫控制值：
 
-   | 來源跳機 | DCS 連鎖動作 |
+   | 來源跳機 | PLC 下達的命令 |
    | --- | --- |
-   | `turbine` | 開斷路器 + 主蒸汽閥歸零 + 負載設定歸零 |
-   | `boiler` | 燃燒器歸零 + 主蒸汽閥歸零 |
-   | `condenser` | 負載設定歸零 |
-   | `feedwater_pump` | 燃燒器歸零（避免鍋爐低水位） |
-   | `condensate_pump` | 給水泵降到 20% |
-   | `steam_valve` | 燃燒器歸零 |
+   | `turbine` | 發電機 `BREAKER_OPEN` + 主蒸汽閥 `STOP` |
+   | `boiler` | 主蒸汽閥 `STOP` |
+   | `condenser` | 發電機 `BREAKER_OPEN` |
+   | `feedwater_pump` | 鍋爐 `STOP`（避免低水位） |
+   | `condensate_pump` | 無（給水泵自己保護給水槽） |
+   | `steam_valve` | 鍋爐 `STOP` |
 
-   動作必須由執行端 `confirm()` 回報成功，失敗的動作會在下一輪重試
-   （事件 `TRIP_MATRIX_ACTION_FAILED`）。
+   另有獨立的超速保護：轉速 > 3150 RPM 時對主蒸汽閥下 `STOP`。
+   被 `STOP` 停下的設備會維持停機，直到操作員按 `START`。
 
 4. **第一故障原因**寫入事件記錄與持久化，容器重啟也保留。
 
@@ -750,7 +741,7 @@ def _interlocks_ok(self) -> bool:
 | 緊急停止未啟動 | Coil 00005 = 0 | E-Stop |
 
 > **給水泵最常見的 NOT OK 是「排出路徑可用」**：只下了 START 卻沒先寫
-> `OUTLET_VALVE_CMD=100`。DCS 順序第 6 步會自動先寫這個值。
+> `OUTLET_VALVE_CMD=100`（預設值就是 100，通常不需要動）。
 
 ### 9.3 鍋爐 `boiler`（6 項）— 條件最多，最常 NOT OK
 
@@ -921,7 +912,7 @@ plantctl read --device condenser --register DEVICE_STATE                  # 0=OF
 
 | 診斷 | 根因 | 處理 |
 | --- | --- | --- |
-| `5411` 亮、`DEVICE_STATE=0`、`P=1.0` | **冷凝器根本沒啟動** | 下 START。`standalone` 模式應由 DCS 順序第 1 步自動下，依序檢查：`dcs-plc` 容器有沒有起來（`COMPOSE_PROFILES` 是否含 `standalone`）→ `AUTO_START`／`dcs.auto_start` 是否被關掉 → `plantctl events --device dcs` |
+| `5411` 亮、`DEVICE_STATE=0`、`P=1.0` | **冷凝器根本沒啟動** | 自持設備應該自己啟動，依序檢查 `SELF_HOLD_STATE`(30027)：3=被操作員 STOP 過（下 START）、1=允許條件不成立（讀 `PERMISSIVE_WORD`，通常是熱井水位 ≤ 5%）、0=`SELF_HOLD` 被關掉 |
 | `5411` 亮、`DEVICE_STATE=1`(STARTING)、P 正在下降 | **真空建立中** | 正常，等約 57 秒即可（`vacuum_pull_time_s: 60`） |
 | `5414` 亮、`COOLING_WATER_AVAILABILITY≈0` | START 了但沒寫 `MANUAL_OUTPUT` | `plantctl write --device condenser --register MANUAL_OUTPUT --value 100` |
 | `5414`+`5495` 亮 | 冷卻水故障注入還在 | `plantctl fault clear --target condenser` |
@@ -937,7 +928,7 @@ plantctl read --device condenser --register DEVICE_STATE                  # 0=OF
 
 真正被擋住的是**汽輪機**：它的允許條件「冷凝器真空良好（≤ 0.15 bar(a)）」不成立，
 所以在真空建立之前，汽輪機的 `INTERLOCKS_OK` 一直是 NOT OK，
-DCS 順序第 11 步的 guard「冷凝器真空不良，禁止啟動汽輪機」也會擋下命令。
+主蒸汽閥與汽輪機的允許條件「冷凝器真空良好」也會擋下啟動（`PERMISSIVE_WORD` 對應位元為 0）。
 
 **這條連鎖就是這座電廠最典型的「一個警報 + 一個 interlock」組合**：
 冷凝器發警報，汽輪機擋啟動。

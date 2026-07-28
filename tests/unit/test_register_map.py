@@ -2,7 +2,7 @@
 import pytest
 
 from common.modbus.register_map import RegisterMap, Table
-from controller.dcs.main import DEVICE_CLASSES, build_map
+from devices.registry import DEVICE_CLASSES, build_map
 
 
 def test_doc_address_vs_pdu_offset():

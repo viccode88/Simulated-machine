@@ -10,9 +10,21 @@ condensate_pump:
   vibration_base_mm_s: 1.0
   start_level_min_pct: 20.0
   has_outlet_valve: false
+  standby_margin_pct: 4.0     # 給水槽水位高於設定值 +4% 進入待機
+  restart_margin_pct: 1.0
+
+  # --- 本地自持控制：給水槽水位 ---
+  control:
+    level:
+      kp: 2.0
+      ki: 0.05
+      rate_up: 3.0
+      rate_down: 3.0
+      deadband: 0.5
+      integral_limit: 100.0
 
 comm:
-  failure_policy: LOCAL_FALLBACK
+  failure_policy: LOCAL_AUTO
 
 protections:
   LOW_LOW_SUCTION:

@@ -1,7 +1,12 @@
-"""設備共通框架。
+"""設備共通框架（自持設備）。
 
-    Modbus Server ──► Command Queue ──► Scan Cycle ──► 狀態機 ──► 物理模型
-                                                   └──► 保護/警報 ──► 原子暫存器映像
+    Modbus Server ──► Command Queue ──► Scan Cycle ──► 自持邏輯 ──► 狀態機 ──► 物理模型
+                                                    └──► 本地調節器 ──► 執行器
+                                                    └──► 保護/警報 ──► 原子暫存器映像
+
+每台設備都是「自持」的：環境條件（允許條件）成立就自行啟動，並由自己的
+本地調節器把程序量維持在可運行的範圍，不需要外部控制器下達設定值或輸出。
+PLC 只做資料交換與邏輯判斷，SCADA 只下 START／STOP 與觀察。
 
 Modbus request handler 不直接修改物理變數：所有寫入先進 command queue，
 下一個 scan cycle 才由狀態機與安全邏輯決定是否套用。
@@ -25,6 +30,7 @@ from ..modbus.register_map import (
     Quality,
     RegisterMap,
     RegSpec,
+    SelfHoldState,
     StatusBit,
     Table,
 )
@@ -45,9 +51,10 @@ from .persistence import StateStore
 from .protection import ProtectionEngine, build_protections
 from .state_machine import DEFAULT_TRANSITIONS, StateMachine
 
-COMM_POLICIES = ("HOLD_LAST", "FAIL_LOW", "FAIL_HIGH", "FAIL_CLOSE", "FAIL_OPEN", "LOCAL_FALLBACK", "TRIP")
+COMM_POLICIES = ("LOCAL_AUTO", "HOLD_LAST", "FAIL_LOW", "FAIL_HIGH", "FAIL_CLOSE", "FAIL_OPEN",
+                 "LOCAL_FALLBACK", "TRIP")
 
-SNAPSHOT_VERSION = 1
+SNAPSHOT_VERSION = 2
 
 
 def common_protection_defs(base: int) -> list[dict]:
@@ -87,8 +94,10 @@ class BaseDevice:
     SUBSCRIBES: list[str] = []
     STATE_VARS: list[str] = []
     TRANSITIONS = DEFAULT_TRANSITIONS
-    DEFAULT_COMM_POLICY = "HOLD_LAST"
+    DEFAULT_COMM_POLICY = "LOCAL_AUTO"
     HAS_START_STOP = True
+    # 自持設備預設開機即自行啟動；被動容器（例如給水槽）覆寫為 False
+    SELF_HOLD_DEFAULT = True
 
     # -- 初始化 ------------------------------------------------------------
     def __init__(self, config_dir: str = "/app/configs", state_dir: str = "/var/lib/plant-device") -> None:
@@ -144,6 +153,19 @@ class BaseDevice:
         self._busy = False
         self._background: list[asyncio.Task] = []
         self._running = True
+
+        # 自持（self-hold）
+        self.self_hold = env_bool(
+            "SELF_HOLD", bool(cfg_get(self.cfg, "control.self_hold", self.SELF_HOLD_DEFAULT))
+        ) and self.HAS_START_STOP
+        self.self_start_delay = float(cfg_get(self.cfg, "control.self_start_delay_s", 2.0))
+        self.self_restart_delay = float(cfg_get(self.cfg, "control.self_restart_delay_s", 10.0))
+        self.operator_stop = False      # SCADA 下過 STOP：自持啟動被鎖住，直到再次 START
+        self.permissive_timer = 0.0     # 允許條件連續成立的時間
+        self.self_stop_timer = 0.0      # 本地需求消失的持續時間
+        self.local_output = 0.0         # 本地調節器輸出（30026 LOCAL_OUTPUT）
+        self.self_hold_state = SelfHoldState.DISABLED
+        self.permissive_word = 0
 
         # 通訊監控
         self.watchdog_value = 0
@@ -228,6 +250,19 @@ class BaseDevice:
     def on_stop(self) -> None: ...
     def on_trip(self, codes: list[int]) -> None: ...
     def step(self, dt: float) -> None: ...
+
+    # -- 自持掛勾 ----------------------------------------------------------
+    def self_start_ready(self) -> tuple[bool, str]:
+        """允許條件之外的「本地需求」條件。
+
+        允許條件（start_permissives）回答「可不可以跑」，這個掛勾回答
+        「現在需不需要跑」。例如泵浦在來源水位已經高於設定值時不需要啟動。
+        """
+        return True, ""
+
+    def self_stop_request(self) -> tuple[bool, str]:
+        """運轉中是否應該自行停機（本地需求消失）。回傳 (要停, 原因)。"""
+        return False, ""
     def protection_values(self) -> dict[str, float]:
         return {}
 
@@ -237,7 +272,7 @@ class BaseDevice:
     def fill_registers(self, regs: list[int]) -> None: ...
     def apply_comm_loss(self, policy: str) -> None: ...
     def control_output(self) -> float:
-        return 0.0
+        return self.local_output
 
     def snapshot_extra(self) -> dict:
         return {}
@@ -424,7 +459,84 @@ class BaseDevice:
             self.watchdog_value = watchdog
             self.watchdog_age = 0.0
 
+    # -- 自持邏輯 ----------------------------------------------------------
+    def local_demand(self, regulator, pv: float, dt: float, **kwargs) -> float:
+        """自動模式由本地調節器決定輸出；手動模式沿用 40012 MANUAL_OUTPUT。
+
+        手動時調節器持續追隨實際輸出，切回自動不會跳變。設備永遠不會回頭寫自己的
+        Holding Register：40012 屬於操作端，本地調節結果一律經由 30026 LOCAL_OUTPUT
+        與各設備的程序量暫存器回報。
+        """
+        if self.auto_mode:
+            value = regulator.update(pv, dt, **kwargs)
+        else:
+            value = clamp(self.hr("MANUAL_OUTPUT"), regulator.out_min, regulator.out_max)
+            regulator.track(value)
+        self.local_output = value
+        return value
+
+    def _self_hold_step(self, dt: float) -> None:
+        """自持：允許條件成立就自行啟動，本地需求消失就自行停機。
+
+        操作員（SCADA）的 STOP 會鎖住自持啟動，必須再按一次 START 才會恢復，
+        否則按下停止的設備會在下一個掃描週期自己又啟動起來。
+        """
+        permissives = self.start_permissives()
+        self.permissive_word = bits_to_word([ok for _, ok in permissives])
+        allowed = all(ok for _, ok in permissives)
+
+        if not self.self_hold:
+            self.self_hold_state = SelfHoldState.DISABLED
+            return
+        if self.maintenance:
+            self.self_hold_state = SelfHoldState.MAINTENANCE
+            return
+        if self.sm.tripped or self.protection.any_latched or self.estop or self.force_safe:
+            self.permissive_timer = 0.0
+            self.self_stop_timer = 0.0
+            self.self_hold_state = SelfHoldState.TRIP_LOCKED
+            return
+        if self.operator_stop:
+            self.permissive_timer = 0.0
+            self.self_hold_state = SelfHoldState.OPERATOR_STOP
+            return
+
+        if self.sm.running or self.sm.starting:
+            self.self_hold_state = SelfHoldState.RUNNING
+            self.permissive_timer = 0.0
+            stop, reason = self.self_stop_request()
+            if stop:
+                self.self_stop_timer += dt
+                if self.self_stop_timer >= self.self_restart_delay:
+                    self.self_stop_timer = 0.0
+                    self._emit("SELF_HOLD_STANDBY", reason=reason)
+                    self.on_stop()
+            else:
+                self.self_stop_timer = 0.0
+            return
+
+        self.self_stop_timer = 0.0
+        if self.sm.stopping:
+            self.self_hold_state = SelfHoldState.RUNNING
+            return
+
+        # 停止狀態：等允許條件與本地需求同時成立
+        self.self_hold_state = SelfHoldState.STANDBY
+        needed, need_reason = self.self_start_ready()
+        if not (allowed and needed):
+            self.permissive_timer = 0.0
+            return
+        self.permissive_timer += dt
+        if self.permissive_timer < self.self_start_delay:
+            return
+        self.permissive_timer = 0.0
+        self._emit("SELF_START", reason=need_reason or "允許條件成立",
+                   state=self.sm.state.name)
+        self.on_start()
+        self.self_hold_state = SelfHoldState.RUNNING
+
     def _handle_start(self) -> None:
+        self.operator_stop = False
         if self.sm.tripped or self.protection.any_latched:
             self._reject("跳機未重置", command="START")
             return
@@ -444,7 +556,11 @@ class BaseDevice:
         self._emit("START_ACCEPTED")
 
     def _handle_stop(self) -> None:
+        # 自持設備必須鎖住停機意圖，否則下一個掃描週期就會自己再啟動
+        self.operator_stop = True
+        self.permissive_timer = 0.0
         if self.sm.in_any([DeviceState.OFF, DeviceState.TRIPPED]):
+            self._emit("STOP_ACCEPTED", already_stopped=True)
             return
         self.on_stop()
         self._emit("STOP_ACCEPTED")
@@ -499,10 +615,9 @@ class BaseDevice:
             self._apply_commands()
             self._update_comm_status(dt)
             self.sm.tick(dt)
-            if not self.sm.tripped:
-                self.step(dt)
-            else:
-                self.step(dt)  # 跳機後仍需計算慣性/散熱等物理
+            # 自持邏輯在物理之前：本掃描才啟動的設備，這一拍就開始動作
+            self._self_hold_step(dt)
+            self.step(dt)  # 跳機後仍需計算慣性/散熱等物理
             values = self.protection_values()
             new_trips = self.protection.evaluate(dt, values, self.sim_time, self.control_output())
             if new_trips:
@@ -527,7 +642,10 @@ class BaseDevice:
             if was_ok:
                 self._emit("CONTROL_WATCHDOG_LOST", age=round(age, 2), policy=self.comm_policy)
             if self.comm_loss_seconds >= self.comm_hold_seconds:
-                self.apply_comm_loss(self.comm_policy)
+                # LOCAL_AUTO：設備是自持的，失去 PLC 通訊不影響本地控制，
+                # 只降級品質與點亮警報。其餘政策維持原本的失效輸出行為。
+                if self.comm_policy != "LOCAL_AUTO":
+                    self.apply_comm_loss(self.comm_policy)
                 if self.comm_policy == "TRIP" and not self.sm.tripped:
                     self.protection.force_trip(self.CODE_BASE + 97, self.sim_time,
                                                control_output=self.control_output(),
@@ -629,6 +747,10 @@ class BaseDevice:
         regs[7] = REGISTER_MAP_VERSION
         regs[8] = FIRMWARE_VERSION
 
+        regs[25] = enc_u16(clamp(self.local_output, 0.0, 655.0), 100)
+        regs[26] = int(self.self_hold_state)
+        regs[27] = self.permissive_word & 0xFFFF
+
         regs[29] = self.watchdog_value & 0xFFFF
         regs[30] = enc_u16(self.scan_time_ms, 10)
         regs[31] = self.server.request_count & 0xFFFF
@@ -714,6 +836,11 @@ class BaseDevice:
             },
             "last_good": dict(self._last_good),
             "last_command_sequence": self._last_command_sequence,
+            "self_hold": {
+                "operator_stop": self.operator_stop,
+                "permissive_timer": self.permissive_timer,
+                "self_stop_timer": self.self_stop_timer,
+            },
             "comm": {"watchdog_value": self.watchdog_value, "watchdog_age": self.watchdog_age,
                      "comm_loss_seconds": self.comm_loss_seconds},
             "extra": self.snapshot_extra(),
@@ -761,6 +888,10 @@ class BaseDevice:
             self.rejected_commands = int(totals.get("rejected_commands", 0))
         self._last_good = dict(data.get("last_good") or {})
         self._last_command_sequence = int(data.get("last_command_sequence", -1))
+        hold = data.get("self_hold") or {}
+        self.operator_stop = bool(hold.get("operator_stop", False))
+        self.permissive_timer = float(hold.get("permissive_timer", 0.0))
+        self.self_stop_timer = float(hold.get("self_stop_timer", 0.0))
         comm = data.get("comm") or {}
         self.watchdog_value = int(comm.get("watchdog_value", self.watchdog_value))
         self.comm_loss_seconds = float(comm.get("comm_loss_seconds", 0.0))
@@ -769,6 +900,8 @@ class BaseDevice:
         if options.get("clear_latches", False):
             self.protection.clear_all_latches()
             self.alarms.ack_all()
+            # 乾淨起點：解除操作員停機鎖，設備會依允許條件重新自持啟動
+            self.operator_stop = False
             if self.sm.tripped:
                 self.sm.force(DeviceState.OFF, "SNAPSHOT_CLEAN_RESTORE")
 
@@ -797,6 +930,8 @@ class BaseDevice:
             },
             "snapshot_generation": self.snapshot_generation,
             "last_command_sequence": self._last_command_sequence,
+            # 操作員停機必須跨容器重啟保留：被按過停止的設備不該因為重啟就自己開起來
+            "operator_stop": self.operator_stop,
         }
 
     def _restore_persisted(self) -> None:
@@ -817,6 +952,7 @@ class BaseDevice:
         self.rejected_commands = int(totals.get("rejected_commands", 0))
         self.snapshot_generation = int(data.get("snapshot_generation", 0))
         self._last_command_sequence = int(data.get("last_command_sequence", -1))
+        self.operator_stop = bool(data.get("operator_stop", False))
         # 容器重啟後：跳機鎖存保留，設備回到安全輸出（OFF/TRIPPED）
         if self.protection.any_latched:
             self.sm.force(DeviceState.TRIPPED, "RESTART_WITH_LATCHED_TRIP")

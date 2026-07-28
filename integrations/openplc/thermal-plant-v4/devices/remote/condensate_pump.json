@@ -2,8 +2,8 @@
   "name": "condensate_pump",
   "protocol": "modbus-tcp",
   "modbusTcpConfig": {
-    "host": "127.0.0.1",
-    "port": 15022,
+    "host": "condensate-pump",
+    "port": 502,
     "slaveId": 1,
     "timeout": 1000,
     "ioGroups": [
@@ -193,24 +193,24 @@
           },
           {
             "id": "a2479de7-e224-5cae-af17-e7e780740ed6",
-            "name": "condensate_pump__input__reserved_25",
+            "name": "condensate_pump__input__local_output",
             "type": "Analog Input (Input Register)",
             "iecLocation": "%IW89",
-            "alias": "condensate_pump__input__reserved_25"
+            "alias": "condensate_pump__input__local_output"
           },
           {
             "id": "68d38c2a-2fe7-5440-85a4-46be16a8d79c",
-            "name": "condensate_pump__input__reserved_26",
+            "name": "condensate_pump__input__self_hold_state",
             "type": "Analog Input (Input Register)",
             "iecLocation": "%IW90",
-            "alias": "condensate_pump__input__reserved_26"
+            "alias": "condensate_pump__input__self_hold_state"
           },
           {
             "id": "7284d3ac-49d2-5aaa-90a0-327b0fd96fd0",
-            "name": "condensate_pump__input__reserved_27",
+            "name": "condensate_pump__input__permissive_word",
             "type": "Analog Input (Input Register)",
             "iecLocation": "%IW91",
-            "alias": "condensate_pump__input__reserved_27"
+            "alias": "condensate_pump__input__permissive_word"
           },
           {
             "id": "a6001a0a-295b-50ae-b7d4-7697084ae241",
@@ -794,164 +794,34 @@
         ]
       },
       {
-        "id": "a7ff26f2-cf75-54e8-bab6-2bb5ed0fc34d",
-        "name": "condensate_pump_holding_0_13",
+        "id": "a7d45944-3d27-5ff0-9850-11b2676d3d9a",
+        "name": "condensate_pump_holding_1_3",
         "functionCode": "16",
         "cycleTime": 100,
-        "offset": "0",
-        "length": 14,
+        "offset": "1",
+        "length": 3,
         "errorHandling": "keep-last-value",
         "ioPoints": [
           {
-            "id": "3ddd2e37-dc93-5867-8279-c177a3eeb74a",
-            "name": "condensate_pump__holding__control_mode",
-            "type": "Analog Output (Multiple Registers)",
-            "iecLocation": "%QW64",
-            "alias": "condensate_pump__holding__control_mode"
-          },
-          {
-            "id": "e61bde61-cc57-524e-97ac-97bd79efda71",
+            "id": "0a17e62c-e548-5f40-a86f-d391c4535cdd",
             "name": "condensate_pump__holding__command_sequence",
             "type": "Analog Output (Multiple Registers)",
             "iecLocation": "%QW65",
             "alias": "condensate_pump__holding__command_sequence"
           },
           {
-            "id": "a131d425-934d-59c9-b4c0-2eb8f51df3fa",
+            "id": "c2990a97-886b-5893-b138-1eb7f20ce223",
             "name": "condensate_pump__holding__watchdog_counter",
             "type": "Analog Output (Multiple Registers)",
             "iecLocation": "%QW66",
             "alias": "condensate_pump__holding__watchdog_counter"
           },
           {
-            "id": "f5c6c349-7ba7-5300-883c-315c68bcd745",
+            "id": "1c1c0c40-6da3-590c-ae16-7e5b92278b46",
             "name": "condensate_pump__holding__reset_key",
             "type": "Analog Output (Multiple Registers)",
             "iecLocation": "%QW67",
             "alias": "condensate_pump__holding__reset_key"
-          },
-          {
-            "id": "0ac4a710-30f0-5d19-a2c8-ac9ee6b28ad5",
-            "name": "condensate_pump__holding__simulation_flags",
-            "type": "Analog Output (Multiple Registers)",
-            "iecLocation": "%QW68",
-            "alias": "condensate_pump__holding__simulation_flags"
-          },
-          {
-            "id": "1dc2c10f-40b5-5c8f-b796-756c23386634",
-            "name": "condensate_pump__holding__active_controller_id",
-            "type": "Analog Output (Multiple Registers)",
-            "iecLocation": "%QW69",
-            "alias": "condensate_pump__holding__active_controller_id"
-          },
-          {
-            "id": "da7c03ca-c152-5af6-b378-f523fcbdffd8",
-            "name": "condensate_pump__holding__command_lease_time",
-            "type": "Analog Output (Multiple Registers)",
-            "iecLocation": "%QW70",
-            "alias": "condensate_pump__holding__command_lease_time"
-          },
-          {
-            "id": "4168b74e-0aa7-5336-92dd-262d149559a2",
-            "name": "condensate_pump__holding__output_rate_limit",
-            "type": "Analog Output (Multiple Registers)",
-            "iecLocation": "%QW71",
-            "alias": "condensate_pump__holding__output_rate_limit"
-          },
-          {
-            "id": "66167346-e885-5908-963f-2f71d5cf590a",
-            "name": "condensate_pump__holding__reserved",
-            "type": "Analog Output (Multiple Registers)",
-            "iecLocation": "%QW72",
-            "alias": "condensate_pump__holding__reserved"
-          },
-          {
-            "id": "29360263-458e-51cf-bb21-f3bf8e98310a",
-            "name": "condensate_pump__holding__primary_setpoint",
-            "type": "Analog Output (Multiple Registers)",
-            "iecLocation": "%QW73",
-            "alias": "condensate_pump__holding__primary_setpoint"
-          },
-          {
-            "id": "0494968a-3563-5bfe-8b92-93b2167c648f",
-            "name": "condensate_pump__holding__secondary_setpoint",
-            "type": "Analog Output (Multiple Registers)",
-            "iecLocation": "%QW74",
-            "alias": "condensate_pump__holding__secondary_setpoint"
-          },
-          {
-            "id": "f61c6901-620f-55d3-975f-11c19797e73c",
-            "name": "condensate_pump__holding__manual_output",
-            "type": "Analog Output (Multiple Registers)",
-            "iecLocation": "%QW75",
-            "alias": "condensate_pump__holding__manual_output"
-          },
-          {
-            "id": "fec7979d-7123-514e-a1a2-f26f7d03d7e6",
-            "name": "condensate_pump__holding__output_high_limit",
-            "type": "Analog Output (Multiple Registers)",
-            "iecLocation": "%QW76",
-            "alias": "condensate_pump__holding__output_high_limit"
-          },
-          {
-            "id": "ecef9fc4-4c35-51e4-8067-761aebd58699",
-            "name": "condensate_pump__holding__output_low_limit",
-            "type": "Analog Output (Multiple Registers)",
-            "iecLocation": "%QW77",
-            "alias": "condensate_pump__holding__output_low_limit"
-          }
-        ]
-      },
-      {
-        "id": "5c642018-f7a1-5dec-8d74-d4b16c12bc30",
-        "name": "condensate_pump_holding_19_24",
-        "functionCode": "16",
-        "cycleTime": 100,
-        "offset": "19",
-        "length": 6,
-        "errorHandling": "keep-last-value",
-        "ioPoints": [
-          {
-            "id": "514a34b5-4156-5dda-9067-032140fd9408",
-            "name": "condensate_pump__holding__pid_kp",
-            "type": "Analog Output (Multiple Registers)",
-            "iecLocation": "%QW83",
-            "alias": "condensate_pump__holding__pid_kp"
-          },
-          {
-            "id": "2e737369-1f9b-5fdc-b025-8a44ece3b23e",
-            "name": "condensate_pump__holding__pid_ki",
-            "type": "Analog Output (Multiple Registers)",
-            "iecLocation": "%QW84",
-            "alias": "condensate_pump__holding__pid_ki"
-          },
-          {
-            "id": "486c95ab-3bd5-5d8f-9f55-201234b900be",
-            "name": "condensate_pump__holding__pid_kd",
-            "type": "Analog Output (Multiple Registers)",
-            "iecLocation": "%QW85",
-            "alias": "condensate_pump__holding__pid_kd"
-          },
-          {
-            "id": "1ec1e8ff-5417-587b-8d92-8aa20feb9a35",
-            "name": "condensate_pump__holding__deadband",
-            "type": "Analog Output (Multiple Registers)",
-            "iecLocation": "%QW86",
-            "alias": "condensate_pump__holding__deadband"
-          },
-          {
-            "id": "9f2c2dde-d5f9-5b52-9d9a-713fbd5245c7",
-            "name": "condensate_pump__holding__integral_limit",
-            "type": "Analog Output (Multiple Registers)",
-            "iecLocation": "%QW87",
-            "alias": "condensate_pump__holding__integral_limit"
-          },
-          {
-            "id": "5317434a-f8df-5aab-8275-91fc716d245f",
-            "name": "condensate_pump__holding__controller_scan_time",
-            "type": "Analog Output (Multiple Registers)",
-            "iecLocation": "%QW88",
-            "alias": "condensate_pump__holding__controller_scan_time"
           }
         ]
       }

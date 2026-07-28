@@ -4,7 +4,7 @@
 {
   "meta": {"name","created","sim_time","tick","devices","description","tags","checksum"},
   "bus":  {"tick","sim_time","signals"},
-  "participants": {"boiler": {...}, "dcs-plc": {...}}
+  "participants": {"boiler": {...}, "turbine": {...}}
 }
 """
 from __future__ import annotations

@@ -1,6 +1,19 @@
 #!/usr/bin/env python3
 """Generate the OpenPLC Editor v4 thermal-plant gateway project.
 
+The devices are self-holding: they start themselves and run their own
+regulators.  The PLC therefore only does two things:
+
+1. **Data exchange** - poll all eight devices southbound and expose one flat
+   northbound Modbus image for SCADA/HMI.
+2. **Logic** - watchdog and echo supervision, pulse stretching for HMI
+   commands, and the plant trip matrix expressed purely as *commands*
+   (STOP pulses and the generator BREAKER_OPEN coil).
+
+It never computes a control value: no setpoint, no manual output, no PID.
+The only holding registers it writes are 40002 COMMAND_SEQUENCE,
+40003 WATCHDOG_COUNTER and 40004 RESET_KEY.
+
 The generated project is source-only: the stale ``build/`` directory from the
 reference v4.rar is deliberately not copied.  All southbound point names,
 offsets, scaling metadata, writable flags, and pulse semantics come from
@@ -40,6 +53,11 @@ DEVICE_ORDER = (
 )
 CONTAINER_HOSTS = {name: name.replace("_", "-") for name in DEVICE_ORDER}
 HOST_PORTS = {name: 15021 + index for index, name in enumerate(DEVICE_ORDER)}
+
+# The only holding registers the PLC is allowed to write.  Setpoints and
+# manual outputs stay with the devices, which regulate themselves.
+COMMAND_HOLDING_START = 1      # COMMAND_SEQUENCE
+COMMAND_HOLDING_LENGTH = 3     # .. WATCHDOG_COUNTER, RESET_KEY
 
 WORD_BLOCK = 64
 BIT_BLOCK = 16
@@ -238,35 +256,16 @@ def device_groups(device_index: int, device: str,
             GroupSpec("15", 9, 2, "QX", bit_base + 9, "coil", "COIL",
                       WRITE_CYCLE_MS, "coil_9_10")
         )
-    groups.extend(
-        [
-            GroupSpec("16", 0, 14, "QW", word_base, "holding", "HOLDING",
-                      WRITE_CYCLE_MS, "holding_0_13"),
-            GroupSpec("16", 19, 6, "QW", word_base + 19, "holding", "HOLDING",
-                      WRITE_CYCLE_MS, "holding_19_24"),
-        ]
+    # Only the command area is written.  Setpoints, manual outputs, limits and
+    # PID parameters belong to the self-holding devices; a gateway that wrote
+    # them would be doing control, and would fight the device's own regulator.
+    groups.append(
+        GroupSpec("16", COMMAND_HOLDING_START, COMMAND_HOLDING_LENGTH, "QW",
+                  word_base + COMMAND_HOLDING_START, "holding", "HOLDING",
+                  WRITE_CYCLE_MS,
+                  f"holding_{COMMAND_HOLDING_START}_"
+                  f"{COMMAND_HOLDING_START + COMMAND_HOLDING_LENGTH - 1}")
     )
-    extra_offsets = sorted(
-        row.offset
-        for row in rows
-        if row.device == device and row.table == "HOLDING" and row.offset >= 29
-    )
-    if extra_offsets:
-        if extra_offsets != list(range(extra_offsets[0], extra_offsets[-1] + 1)):
-            raise ValueError(f"{device}: device-specific holding offsets are not contiguous")
-        groups.append(
-            GroupSpec(
-                "16",
-                extra_offsets[0],
-                len(extra_offsets),
-                "QW",
-                word_base + extra_offsets[0],
-                "holding",
-                "HOLDING",
-                WRITE_CYCLE_MS,
-                f"holding_{extra_offsets[0]}_{extra_offsets[-1]}",
-            )
-        )
     return groups
 
 
@@ -401,20 +400,11 @@ def raw_maximum(row: Register) -> int:
 
 
 def safe_initial(row: Register, device_index: int) -> int:
-    """Return a valid fail-safe initial raw value for every %QW point."""
+    """Initial raw value for the three command registers the PLC writes."""
     fixed = {
-        "CONTROL_MODE": 3,  # REMOTE_AUTO; outputs/setpoints still start low.
         "COMMAND_SEQUENCE": 0,
-        "WATCHDOG_COUNTER": 1,
-        "RESET_KEY": 0,
-        "SIMULATION_FLAGS": 0,
-        "ACTIVE_CONTROLLER_ID": device_index + 1,
-        "COMMAND_LEASE_TIME": 5,
-        "OUTPUT_RATE_LIMIT": 1000,  # raw 10.00 %/s
-        "RESERVED": 0,
-        "OUTPUT_HIGH_LIMIT": 10000,  # raw 100.00 %
-        "OUTPUT_LOW_LIMIT": 0,
-        "CONTROLLER_SCAN_TIME": 200,
+        "WATCHDOG_COUNTER": 1,   # must be non-zero for the device to accept it
+        "RESET_KEY": 0,          # only set for the RESET_TRIP pulse window
     }
     value = fixed.get(row.name, raw_minimum(row))
     return max(raw_minimum(row), min(raw_maximum(row), value))
@@ -465,28 +455,23 @@ def declarations(remotes: Sequence[dict], rows: Sequence[Register]) -> list[str]
 
 
 def safe_output_initialization(rows: Sequence[Register]) -> list[str]:
-    """Emit executable first-scan assignments for every southbound %QW.
+    """Emit first-scan assignments for the command registers.
 
     OpenPLC Runtime v4 can start located output variables with a zeroed process
-    image even when their ST declarations contain ``:=`` initializers. Values
-    whose contract minimum is above zero would then be rejected by the device
-    with Modbus exception 03.
+    image even when their ST declarations contain ``:=`` initializers, and a
+    zero watchdog counter is never accepted by the devices.
     """
+    index = contract_index(rows)
     output = [
         "  (* Runtime v4 may zero located %QW variables after declaration setup.",
-        "     Copy every contract-safe value into the output image on first scan. *)",
+        "     Only the command area is ever written: the devices are self-holding",
+        "     and own their own setpoints, limits and manual outputs. *)",
         "  IF NOT i_outputs_initialized THEN",
     ]
     for device_index, device in enumerate(DEVICE_ORDER):
-        device_rows = sorted(
-            (
-                row
-                for row in rows
-                if row.device == device and row.table == "HOLDING"
-            ),
-            key=lambda row: row.offset,
-        )
-        for row in device_rows:
+        for offset in range(COMMAND_HOLDING_START,
+                            COMMAND_HOLDING_START + COMMAND_HOLDING_LENGTH):
+            row = index[(device, "HOLDING", offset)]
             output.append(
                 f"    {alias(device, 'holding', row.name)} := "
                 f"{safe_initial(row, device_index)};"
@@ -521,12 +506,21 @@ def make_main_st(rows: Sequence[Register], remotes: Sequence[dict]) -> str:
     lines = [
         "(* Generated by tools/generate_openplc_gateway.py.",
         "   Raw Modbus values are intentionally retained; engineering_value = raw / scale.",
-        "   The cyclic task interval is 20 ms. *)",
+        "   The cyclic task interval is 20 ms.",
+        "",
+        "   The devices are self-holding: they start themselves and run their own",
+        "   regulators.  This program only exchanges data and evaluates logic; it",
+        "   never computes a control value.  The only holding registers written are",
+        "   COMMAND_SEQUENCE, WATCHDOG_COUNTER and RESET_KEY; every plant-level",
+        "   action is issued as a command coil. *)",
         "PROGRAM main",
         "  VAR",
         "    i_outputs_initialized : BOOL := FALSE;",
         "    i_watchdog_scan_count : UINT := 0;",
         "    i_watchdog_tick : BOOL := FALSE;",
+        "    i_plant_comm_lost : BOOL := FALSE;",
+        "    i_overspeed : BOOL := FALSE;",
+        "    i_overspeed_prev : BOOL := FALSE;",
     ]
     for device in DEVICE_ORDER:
         lines.extend(
@@ -599,28 +593,14 @@ def make_main_st(rows: Sequence[Register], remotes: Sequence[dict]) -> str:
         )
     lines.extend(["  END_IF;", ""])
 
-    # Device-side policies are also implemented by the simulator.  Repeating
-    # these actions in the PLC provides a second, explicit safety layer when
-    # reads work but command echo stops progressing.
     lines.extend(
         [
-            "  (* Communication fail-safe matrix from docs/plc-integration.md. *)",
-            "  IF i_condenser_comm_lost THEN",
-            f"    {alias('condenser', 'holding', 'CONTROL_MODE')} := 1;",
-            "  END_IF;",
-            "  IF i_condensate_pump_comm_lost THEN",
-            f"    {alias('condensate_pump', 'holding', 'CONTROL_MODE')} := 1;",
-            "  END_IF;",
-            "  IF i_boiler_comm_lost THEN",
-            f"    {alias('boiler', 'holding', 'MANUAL_OUTPUT')} := 0;",
-            "  END_IF;",
-            "  IF i_turbine_comm_lost THEN",
-            f"    {alias('turbine', 'holding', 'MANUAL_OUTPUT')} := 0;",
-            "  END_IF;",
-            "  IF i_steam_valve_comm_lost THEN",
-            f"    {alias('steam_valve', 'holding', 'MANUAL_OUTPUT')} := 0;",
-            "  END_IF;",
-            "  (* feedwater_pump/feedwater_tank/generator intentionally HOLD_LAST. *)",
+            "  (* Communication loss is a status, not an action.  The devices keep",
+            "     running on their own regulators (comm.failure_policy = LOCAL_AUTO),",
+            "     so the PLC only aggregates the flag for the HMI. *)",
+            "  i_plant_comm_lost := "
+            + " OR ".join(f"i_{device}_comm_lost" for device in DEVICE_ORDER)
+            + ";",
             "",
             "  (* Pulse outputs are stretched to about 160 ms then cleared.",
             "     EMERGENCY_STOP and FORCE_SAFE are deliberately not included. *)",
@@ -670,29 +650,29 @@ def make_main_st(rows: Sequence[Register], remotes: Sequence[dict]) -> str:
         by_key_offset(rows, device, "DISCRETE", name)
         return alias(device, "discrete", name)
 
-    # Same rising-edge trip matrix as examples/external_plc.py.
+    # Plant trip matrix, expressed as commands only.  The PLC judges; the
+    # device acts.  STOP is a pulse command, so this second layer never fights
+    # the operator's maintained EMERGENCY_STOP / FORCE_SAFE coils, and a
+    # stopped device stays stopped until an operator presses START again.
     trip_actions: dict[str, list[str]] = {
         "turbine": [
             f"{alias('generator', 'coil', 'BREAKER_OPEN')} := TRUE;",
-            f"{alias('steam_valve', 'holding', 'MANUAL_OUTPUT')} := 0;",
-            f"{alias('generator', 'holding', 'PRIMARY_SETPOINT')} := 0;",
+            f"{alias('steam_valve', 'coil', 'STOP')} := TRUE;",
         ],
         "boiler": [
-            f"{alias('boiler', 'holding', 'MANUAL_OUTPUT')} := 0;",
-            f"{alias('steam_valve', 'holding', 'MANUAL_OUTPUT')} := 0;",
+            f"{alias('steam_valve', 'coil', 'STOP')} := TRUE;",
         ],
         "condenser": [
-            f"{alias('generator', 'holding', 'PRIMARY_SETPOINT')} := 0;",
+            f"{alias('generator', 'coil', 'BREAKER_OPEN')} := TRUE;",
         ],
         "feedwater_pump": [
-            f"{alias('boiler', 'holding', 'MANUAL_OUTPUT')} := 0;",
+            f"{alias('boiler', 'coil', 'STOP')} := TRUE;",
         ],
         "condensate_pump": [
-            # 20.00% with scale 100.
-            f"{alias('feedwater_pump', 'holding', 'MANUAL_OUTPUT')} := 2000;",
+            # The feedwater pump protects the tank locally; nothing to command.
         ],
         "steam_valve": [
-            f"{alias('boiler', 'holding', 'MANUAL_OUTPUT')} := 0;",
+            f"{alias('boiler', 'coil', 'STOP')} := TRUE;",
         ],
     }
     lines.append("  (* Rising-edge plant trip matrix, matching examples/external_plc.py. *)")
@@ -700,6 +680,8 @@ def make_main_st(rows: Sequence[Register], remotes: Sequence[dict]) -> str:
         tripped = di(source, "TRIPPED")
         lines.append(f"  IF {tripped} AND NOT i_{source}_trip_prev THEN")
         lines.extend(f"    {action}" for action in actions)
+        if not actions:
+            lines.append("    (* device-level interlocks are sufficient *)")
         lines.extend(
             [
                 "  END_IF;",
@@ -709,13 +691,16 @@ def make_main_st(rows: Sequence[Register], remotes: Sequence[dict]) -> str:
     lines.extend(
         [
             "",
-            "  (* Overspeed always closes the main steam valve, regardless of HMI demand. *)",
+            "  (* Overspeed independently stops the main steam valve, whatever the",
+            "     device's own governor is doing.  Edge triggered: STOP is a pulse. *)",
             (
-                f"  IF ({alias('turbine', 'input', 'SPEED_RPM')} > "
-                f"{OVERSPEED_RAW_RPM}) OR {di('turbine', 'TRIPPED')} THEN"
+                f"  i_overspeed := ({alias('turbine', 'input', 'SPEED_RPM')} > "
+                f"{OVERSPEED_RAW_RPM}) OR {di('turbine', 'TRIPPED')};"
             ),
-            f"    {alias('steam_valve', 'holding', 'MANUAL_OUTPUT')} := 0;",
+            "  IF i_overspeed AND NOT i_overspeed_prev THEN",
+            f"    {alias('steam_valve', 'coil', 'STOP')} := TRUE;",
             "  END_IF;",
+            "  i_overspeed_prev := i_overspeed;",
             "END_PROGRAM",
             "",
         ]
@@ -734,6 +719,16 @@ def by_key_offset(rows: Sequence[Register], device: str, table: str, name: str) 
     return matches[0]
 
 
+def forwards(row: Register) -> bool:
+    """Does the PLC actually write this point down to the device?"""
+    if row.table == "COIL":
+        return row.offset < 8 or row.device == "generator"
+    if row.table == "HOLDING":
+        return (COMMAND_HOLDING_START
+                <= row.offset < COMMAND_HOLDING_START + COMMAND_HOLDING_LENGTH)
+    return False
+
+
 def make_northbound_csv(rows: Sequence[Register]) -> str:
     fields = (
         "device",
@@ -749,6 +744,9 @@ def make_northbound_csv(rows: Sequence[Register]) -> str:
         "scale",
         "writable",
         "pulse",
+        # 自持設備自己決定設定值與輸出：PLC 只轉送命令線圈與命令暫存器。
+        # 其他 Holding Register 在北向仍可讀寫，但不會被 PLC 寫到設備。
+        "plc_forwards",
         "description",
     )
     stream = io.StringIO(newline="")
@@ -789,6 +787,7 @@ def make_northbound_csv(rows: Sequence[Register]) -> str:
                     "scale": format(row.scale, "g"),
                     "writable": "yes" if row.writable else "no",
                     "pulse": "yes" if row.pulse else "no",
+                    "plc_forwards": "yes" if forwards(row) else "no",
                     "description": row.description,
                 }
             )
@@ -811,6 +810,7 @@ def make_northbound_csv(rows: Sequence[Register]) -> str:
                         "scale": format(row.scale, "g"),
                         "writable": "no",
                         "pulse": "no",
+                        "plc_forwards": "no",
                         "description": f"FC3 readback: {row.description}".rstrip(),
                     }
                 )
@@ -823,11 +823,23 @@ def make_readme(host_mode: str) -> str:
         f"`127.0.0.1:{HOST_PORTS[device]}` |"
         for device in DEVICE_ORDER
     )
+    command_end = COMMAND_HOLDING_START + COMMAND_HOLDING_LENGTH - 1
     return f"""# Thermal Plant OpenPLC v4 gateway
 
-This is a source-only OpenPLC Editor v4 project generated from
-`docs/register-map.csv` and the source layout of the supplied `v4.rar`.
-The archive's stale `build/` output is intentionally excluded.
+Source-only OpenPLC Editor v4 project generated from `docs/register-map.csv`.
+The stale `build/` output of the reference `v4.rar` is intentionally excluded.
+
+The eight devices are **self-holding**: they start themselves when their
+permissives are satisfied and run their own regulators.  This project is
+therefore a pure gateway plus interlock logic:
+
+* southbound: poll every device (FC4/FC2/FC3) and write only commands
+  (FC15 coils, FC16 offsets {COMMAND_HOLDING_START}..{command_end})
+* northbound: one flat Modbus image on `0.0.0.0:502` for SCADA/HMI
+* logic: watchdog + echo supervision, pulse stretching, trip matrix, overspeed
+
+It computes **no** control value.  Setpoints, manual outputs, output limits and
+PID parameters are never written: they belong to the devices.
 
 Generated southbound mode: **{host_mode}**.
 
@@ -840,11 +852,10 @@ python3 tools/generate_openplc_gateway.py
 python3 tools/generate_openplc_gateway.py --check
 ```
 
-Host mode is the default because this repository does not define an OpenPLC
-Compose service on `control_net`, and it matches the supplied `v4.rar`.
-Use `--host-mode container` only when the OpenPLC Runtime has explicitly been
-attached to `control_net`; that regenerates the remotes with service names and
-port 502.
+Container mode is the default because `compose.yaml` defines the `openplc-v4`
+service on `control_net`.  Use `--host-mode host` when the Runtime runs on the
+desktop instead of in Compose; that regenerates the remotes with
+`127.0.0.1:1502x`.
 
 | Device | Container mode | Host mode |
 | --- | --- | --- |
@@ -852,13 +863,11 @@ port 502.
 
 Every device uses Modbus TCP Unit ID 1.  FC4, FC2, and FC3 reads run every
 {READ_CYCLE_MS} ms.  FC15/FC16 writes run every {WRITE_CYCLE_MS} ms and therefore
-continually refresh the controller lease.
+continually refresh the controller lease and the watchdog.
 
 ## Flat northbound layout
 
-The OpenPLC Modbus server listens on **0.0.0.0:502**.  SCADA/HMI clients connect
-to the OpenPLC Runtime, not directly to the devices.  For device index `i` in
-the fixed order below:
+For device index `i` in the fixed order below:
 
 ```text
 word_base = 64 * i
@@ -871,7 +880,7 @@ bit_base  = 16 * i
 | FC2 Discrete Inputs | `%IX[bit_base + 0..15]` | device FC2 status bits |
 | FC4 Input Registers | `%IW[512 + word_base + 0..31]` | device FC3 holding readback |
 | FC1/5/15 Coils | `%QX[bit_base + offset]` | device FC15 command coils |
-| FC3/6/16 Holding Registers | `%QW[word_base + offset]` | device FC16 commands/setpoints |
+| FC3/6/16 Holding Registers | `%QW[word_base + offset]` | command registers (see below) |
 
 Fixed device order:
 
@@ -887,8 +896,11 @@ Fixed device order:
 ```
 
 `northbound-map.csv` is the exact HMI import/reference map.  Its offsets are
-zero-based PDU offsets.  Do not send the 3xxxx/4xxxx documentation address on
-the wire.
+zero-based PDU offsets; do not send the 3xxxx/4xxxx documentation address on the
+wire.  The `plc_forwards` column says whether the PLC actually writes that point
+down to the device.  Only the command coils and holding offsets
+{COMMAND_HOLDING_START}..{command_end} are forwarded; everything else is
+read-only data exchange, because the devices regulate themselves.
 
 ## Values and HMI behavior
 
@@ -901,13 +913,22 @@ engineering_value = raw / scale
 `i16` uses two's-complement; `u32` is high-word first.  The CSV contains units,
 types, limits, writable flags, pulse flags, and descriptions for HMI widgets.
 
-The ST program explicitly copies every contract-safe value into `%QW` on its
-first scan (located-variable declaration initializers alone are not reliable
-with Runtime v4), advances each non-zero watchdog every 200 ms, and checks that
-each FC4 watchdog echo continues to progress.  A stale mismatch for 3 seconds
-applies the documented communication fail-safe policy.  It also implements the
-same rising-edge trip matrix as `examples/external_plc.py` and closes the main
-steam valve above {OVERSPEED_RAW_RPM} RPM.
+Self-holding is observable from the HMI without any extra logic:
+
+| Register | Meaning |
+| --- | --- |
+| `30026 LOCAL_OUTPUT` | the device's own regulator output |
+| `30027 SELF_HOLD_STATE` | 0 disabled, 1 standby, 2 self-holding, 3 operator stop, 4 trip locked, 5 maintenance |
+| `30028 PERMISSIVE_WORD` | one bit per start permissive |
+
+The ST program advances each non-zero watchdog every 200 ms and checks that the
+FC4 echo keeps progressing; an unchanged mismatch for 3 s raises the device's
+comm-lost flag (a status only - the devices keep running on local control).
+It implements the rising-edge trip matrix as *commands*: a `STOP` pulse on the
+downstream device and `BREAKER_OPEN` on the generator, plus a `STOP` pulse on
+the main steam valve above {OVERSPEED_RAW_RPM} RPM.  A device stopped this way
+stays stopped until an operator presses `START`, which is also what releases it
+back into self-holding operation.
 
 HMI writes to pulse coils (`START`, `STOP`, `RESET_TRIP`, `ACK_ALARM`,
 `TRIP_TEST`, `CLEAR_TOTALIZER`, plus generator breaker commands) are held for
@@ -915,6 +936,9 @@ approximately {PULSE_SCANS * TASK_INTERVAL_MS} ms and then cleared.  The
 latched `EMERGENCY_STOP` and `FORCE_SAFE` coils are never auto-cleared.
 On a `RESET_TRIP` rising edge the PLC increments the command sequence (skipping
 zero) and applies reset key `0xA55A` for the pulse window.
+
+Normal operation only needs `START` and `STOP`: `START` clears the operator-stop
+lock and lets the device self-hold again, `STOP` latches it stopped.
 
 ## Safety notes
 
@@ -1053,7 +1077,7 @@ def validate_generated(files: dict[Path, str], rows: Sequence[Register]) -> None
         if f"    {point_alias} AT %" not in st:
             raise ValueError(f"main.st does not declare remote alias {point_alias}")
     for row in rows:
-        if row.table != "HOLDING":
+        if row.table != "HOLDING" or not forwards(row):
             continue
         device_index = DEVICE_ORDER.index(row.device)
         location = word_location("QW", device_index * WORD_BLOCK + row.offset)
@@ -1074,7 +1098,7 @@ def validate_generated(files: dict[Path, str], rows: Sequence[Register]) -> None
     if st.index(init_start) > st.index("  (* 200 ms non-zero watchdog"):
         raise ValueError("first-scan QW initialization must run before watchdog logic")
     for row in rows:
-        if row.table != "HOLDING":
+        if row.table != "HOLDING" or not forwards(row):
             continue
         device_index = DEVICE_ORDER.index(row.device)
         expected_initial = safe_initial(row, device_index)
@@ -1239,8 +1263,9 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser.add_argument(
         "--host-mode",
         choices=("container", "host"),
-        default="host",
-        help="container: service names + 502; host: 127.0.0.1 + 15021..15028",
+        default="container",
+        help="container: service names + 502 (compose openplc-v4, default); "
+             "host: 127.0.0.1 + 15021..15028 for a desktop Runtime",
     )
     parser.add_argument(
         "--check",

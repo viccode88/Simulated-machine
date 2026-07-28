@@ -1,4 +1,7 @@
-"""鍋爐設備容器。
+"""鍋爐設備容器（自持）。
+
+本地自持控制：水位與主蒸汽閥允許條件成立就自行吹掃、點火、升壓，
+並由本地壓力調節器把汽包壓力維持在 40010 PRIMARY_SETPOINT。
 
 水量平衡  dM/dt = Mfeedwater - Mevaporation - Mblowdown
 水位      Level = 100 × (M - Mmin) / (Mmax - Mmin)
@@ -10,6 +13,7 @@ from __future__ import annotations
 
 from common.device.alarm import AlarmSpec
 from common.device.base_device import BaseDevice, run_device
+from common.device.regulator import build_regulator
 from common.device.state_machine import BOILER_TRANSITIONS
 from common.modbus.encoding import enc_i16, enc_u16, enc_u32
 from common.modbus.register_map import DeviceState, RegSpec
@@ -72,7 +76,10 @@ class Boiler(BaseDevice):
         "boiler.steam_generation_kg_s", "boiler.steam_temp_c", "boiler.water_mass_kg",
         "boiler.tripped", "boiler.feedwater_permitted", "boiler.burner_output_pct",
     ]
-    SUBSCRIBES = ["feedwater_pump.flow_kg_s", "steam_valve.steam_flow_kg_s"]
+    # generator.breaker_closed 是升壓限幅的解除條件：一旦併聯帶載，
+    # 燃燒器被鎖在 20% 會讓壓力一路掉到低壓、轉速跟著垮
+    SUBSCRIBES = ["feedwater_pump.flow_kg_s", "steam_valve.steam_flow_kg_s",
+                  "generator.breaker_closed"]
 
     STATE_VARS = [
         "water_mass", "evaporation", "pressure", "steam_temp", "burner_output",
@@ -104,6 +111,31 @@ class Boiler(BaseDevice):
         self.valve_close_permissive_pct = float(c.get("valve_close_permissive_pct", 5.0))
         self.relief_setpoint = float(c.get("relief_setpoint_bar", 113.0))
         self.relief_capacity = float(c.get("relief_capacity_kg_s", 40.0))
+
+        # --- 本地自持控制：壓力 -> 燃燒器 ---
+        ctl = c.get("control", {})
+        # 鍋爐壓力是積分型程序（dP/dt ∝ 蒸發量），積分作用必須很小，
+        # 否則會出現週期約 180 秒的振盪：壓力衝到安全閥、洩汽再把水位打亂。
+        self.pressure_ctl = build_regulator(
+            "boiler_pressure", ctl.get("pressure", {}),
+            kp=1.5, ki=0.01, kd=3.0, out_min=0.0, out_max=100.0,
+            rate_up=5.0, rate_down=10.0, deadband=0.2, integral_limit=100.0,
+        )
+        # 升壓期間限制燃燒器輸出，避免壓力大幅過衝；限幅要進到調節器內部，
+        # 從外面 min() 會讓積分累積到上限，解除瞬間直接衝到 100% 而超壓跳機。
+        self.startup_burner_max = float(ctl.get("startup_burner_max_pct", 20.0))
+        # 汽輪機真的開始抽汽（或壓力已接近設定值）才解除升壓限幅：
+        # 一旦帶載，燃燒器被鎖在 20% 會讓壓力一路掉到低壓、轉速跟著垮。
+        self.ramp_release_steam = float(ctl.get("ramp_release_steam_kg_s", 25.0))
+        self.pressure_ramp_done = False
+        # 高壓 runback：甩載時蒸汽需求瞬間消失，正常降載速率（10 %/s）追不上
+        # 蒸發的一階遲滯（tau 20 s），壓力會一路衝過安全閥到超壓跳機。
+        # 壓力達高壓警報門檻就直接切燃料，不受正常速率限制——這正是真實機組
+        # 「高壓 runback」的行為，也是自持設備維持自己在可運行狀態的一部分。
+        self.runback_pressure = float(ctl.get(
+            "runback_pressure_bar", cfg_get(self.cfg, "protections.HIGH_PRESSURE.alarm", 108.0)))
+        self.runback_rate = float(ctl.get("runback_rate_pct_s", 100.0))
+        self.pressure_runback = 0.0
 
         # 物理狀態
         self.water_mass = float(c.get("initial_mass_kg", self.mass_min + 0.667 * (self.mass_max - self.mass_min)))
@@ -175,6 +207,9 @@ class Boiler(BaseDevice):
         self.trip_cause = 0
         self.feedwater_permitted = 1
         self.flame_fail_flag = 0.0
+        # 重置後重新走一次升壓限幅，避免帶著滿檔燃燒率重新點火
+        self.pressure_ramp_done = False
+        self.pressure_ctl.reset()
 
     def on_trip(self, codes: list[int]) -> None:
         # 燃燒器立即降為 0%、切斷燃料
@@ -182,6 +217,7 @@ class Boiler(BaseDevice):
         self.burner_demand = 0.0
         self.burner_output = 0.0
         self.flame = 0
+        self.pressure_ctl.hold(0.0)
         first = self.protection.first_out_code()
         self.trip_cause = first
         # 給水控制依跳機原因處理
@@ -218,14 +254,32 @@ class Boiler(BaseDevice):
                 self.flame = 0
                 self.sm.to(DeviceState.OFF, "STOPPED")
 
-        # --- 燃燒器命令 ---
+        # --- 流量（本地控制要用，必須先於燃燒器計算） ---
+        self.feedwater_flow = max(0.0, self.sig("feedwater_pump.flow_kg_s", 0.0))
+        self.steam_outflow = max(0.0, self.sig("steam_valve.steam_flow_kg_s", 0.0))
+        self.blowdown_flow = self.max_blowdown * self.hr("BLOWDOWN_VALVE_CMD") / 100.0
+        leak = self.faults.factor("boiler_leak_kg_s", 0.0)
+
+        # --- 燃燒器命令（本地壓力自持控制） ---
         firing_states = (DeviceState.IGNITING, DeviceState.PRESSURIZING, DeviceState.RUNNING)
+        self.pressure_ctl.setpoint = self.hr("PRIMARY_SETPOINT")
         if self.sm.tripped or self.estop or self.force_safe or state not in firing_states:
             demand = 0.0
+            self.pressure_ctl.hold(0.0)
+            self.local_output = 0.0
         else:
-            demand = self.hr("MANUAL_OUTPUT")
+            if (self.pressure >= self.pressure_ctl.setpoint * 0.95
+                    or self.sig("generator.breaker_closed", 0.0) >= 0.5
+                    or self.steam_outflow >= self.ramp_release_steam):
+                self.pressure_ramp_done = True
+            cap = 100.0 if self.pressure_ramp_done else self.startup_burner_max
+            demand = self.local_demand(self.pressure_ctl, self.pressure, dt, out_max=cap)
             demand = clamp(demand, self.hr("OUTPUT_LOW_LIMIT"), self.hr("OUTPUT_HIGH_LIMIT"))
             demand = max(demand, self.min_fire_pct)
+            if self.pressure >= self.runback_pressure:
+                demand = 0.0
+                self.pressure_ctl.hold(0.0)
+                self.local_output = 0.0
         # burner_demand = 控制端「要求」的燃燒率；burner_command = 執行器實際輸出。
         # 兩者必須分開，火焰失效偵測才能比較「要求燃燒」與「實際有火」。
         self.burner_demand = demand
@@ -235,16 +289,16 @@ class Boiler(BaseDevice):
             target = 0.0
             self.flame = 0
         self.burner_command = target
-        self.burner_output = rate_limit(self.burner_output, target,
-                                        self.burner_up_rate, self.burner_down_rate, dt)
+        runback = self.pressure >= self.runback_pressure and target < self.burner_output
+        if runback and not self.pressure_runback:
+            self._emit("PRESSURE_RUNBACK", pressure=round(self.pressure, 2),
+                       threshold=self.runback_pressure, burner=round(self.burner_output, 1))
+        self.pressure_runback = 1.0 if runback else 0.0
+        self.burner_output = rate_limit(
+            self.burner_output, target, self.burner_up_rate,
+            self.runback_rate if runback else self.burner_down_rate, dt)
         if self.flame == 0 and self.burner_output > 0.0 and state in firing_states:
             self.burner_output = 0.0
-
-        # --- 流量 ---
-        self.feedwater_flow = max(0.0, self.sig("feedwater_pump.flow_kg_s", 0.0))
-        self.steam_outflow = max(0.0, self.sig("steam_valve.steam_flow_kg_s", 0.0))
-        self.blowdown_flow = self.max_blowdown * self.hr("BLOWDOWN_VALVE_CMD") / 100.0
-        leak = self.faults.factor("boiler_leak_kg_s", 0.0)
 
         # --- 蒸發 ---
         availability = ramp(self.level_actual, 5.0, 20.0)
@@ -295,9 +349,11 @@ class Boiler(BaseDevice):
         self.mass_total += self.evaporation * dt
 
     def apply_comm_loss(self, policy: str) -> None:
-        # 預設通訊失效反應：燃燒器立即降至 0%
-        if policy in ("FAIL_LOW", "FAIL_CLOSE", "HOLD_LAST"):
+        # 自持設備預設 LOCAL_AUTO：本地壓力控制繼續運作，不因失去 PLC 而熄火。
+        # 若設定成傳統失效政策，仍維持原本「燃燒器降至 0%」的行為。
+        if policy in ("FAIL_LOW", "FAIL_CLOSE"):
             self.set_hr("MANUAL_OUTPUT", 0.0)
+            self.pressure_ctl.hold(0.0)
             self.burner_command = 0.0
             self.burner_demand = 0.0
 
@@ -346,10 +402,18 @@ class Boiler(BaseDevice):
         regs[23] = enc_u16(self.relief_flow, 100)
 
     def snapshot_extra(self) -> dict:
-        return {"trip_cause": self.trip_cause}
+        return {
+            "trip_cause": self.trip_cause,
+            "pressure_ramp_done": self.pressure_ramp_done,
+            "pressure_runback": self.pressure_runback,
+            "pressure_ctl": self.pressure_ctl.to_dict(),
+        }
 
     def restore_extra(self, data: dict) -> None:
         self.trip_cause = int(data.get("trip_cause", 0))
+        self.pressure_ramp_done = bool(data.get("pressure_ramp_done", False))
+        self.pressure_runback = float(data.get("pressure_runback", 0.0))
+        self.pressure_ctl.from_dict(data.get("pressure_ctl") or {})
 
 
 if __name__ == "__main__":

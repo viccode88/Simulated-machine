@@ -1,15 +1,19 @@
-"""給水泵設備容器。
+"""給水泵設備容器（自持）。
 
 與凝結水泵同模型，但必須考慮較高排出壓力：
     PumpDischargePressure > BoilerPressure，否則即使泵浦旋轉也無法有效進水。
+
+本地自持控制：三元素鍋爐水位控制（水位修正 + 蒸汽流量前饋 − 給水流量回授），
+設定值取自 40010 PRIMARY_SETPOINT（預設 66.7%）。
 """
 from __future__ import annotations
 
 from common.device.alarm import AlarmSpec
 from common.device.base_device import run_device
+from common.device.regulator import build_regulator
 from common.modbus.encoding import enc_u16
 from common.modbus.register_map import RegSpec
-from common.util import cfg_get
+from common.util import cfg_get, clamp
 from devices.pump_base import PUMP_PROCESS_INPUTS, PumpDevice
 
 CODE = 5700
@@ -18,7 +22,7 @@ CODE = 5700
 class FeedwaterPump(PumpDevice):
     NAME = "feedwater_pump"
     CODE_BASE = CODE
-    DEFAULT_COMM_POLICY = "HOLD_LAST"
+    DEFAULT_COMM_POLICY = "LOCAL_AUTO"
 
     PROCESS_INPUTS = PUMP_PROCESS_INPUTS + [
         RegSpec(20, "BOILER_PRESSURE", "bar(a)", 100),
@@ -49,13 +53,29 @@ class FeedwaterPump(PumpDevice):
 
     PUBLISHES = ["feedwater_pump.flow_kg_s", "feedwater_pump.speed_pct",
                  "feedwater_pump.discharge_bar_abs"]
+    # boiler.level_pct 與 boiler.steam_generation_kg_s 是三元素控制的另外兩個元素
     SUBSCRIBES = ["feedwater_tank.level_pct", "feedwater_tank.pressure_bar_abs",
-                  "boiler.pressure_bar_abs", "boiler.feedwater_permitted"]
+                  "boiler.pressure_bar_abs", "boiler.feedwater_permitted",
+                  "boiler.level_pct", "boiler.steam_generation_kg_s"]
 
     def configure(self) -> None:
         config = dict(self.cfg.get("feedwater_pump", {}))
         config.setdefault("has_outlet_valve", True)
         self.configure_pump(config)
+        # 三元素：水位迴路輸出流量修正（±50%），流量迴路才是轉速命令
+        ctl = config.get("control", {})
+        self.speed_ctl.out_min = -50.0
+        self.speed_ctl.out_max = 50.0
+        self.speed_ctl.kp = float(ctl.get("level", {}).get("kp", 1.5))
+        self.speed_ctl.ki = float(ctl.get("level", {}).get("ki", 0.02))
+        self.speed_ctl.deadband = float(ctl.get("level", {}).get("deadband", 0.3))
+        self.speed_ctl.integral_limit = 50.0
+        self.flow_ctl = build_regulator(
+            "feedwater_flow", ctl.get("flow", {}),
+            kp=1.2, ki=0.4, kd=0.0, out_min=0.0, out_max=100.0,
+            rate_up=25.0, rate_down=25.0, integral_limit=100.0,
+        )
+        self.feedforward_gain = float(ctl.get("feedforward_gain", 1.0))
         self.set_inhibit("CAVITATION_TRIP", lambda: self.speed < 1.0)
         self.set_inhibit("MOTOR_OVERCURRENT", lambda: self.speed < 1.0)
         self.set_inhibit("LOW_LOW_SUCTION", lambda: self.sm.state.name == "OFF")
@@ -77,15 +97,50 @@ class FeedwaterPump(PumpDevice):
     def source_level(self) -> float:
         return self.sig("feedwater_tank.level_pct", 0.0)
 
+    def controlled_level(self) -> float:
+        return self.sig("boiler.level_pct", 0.0)
+
+    def local_speed_demand(self, dt: float) -> float:
+        """三元素鍋爐水位控制。
+
+        水位修正 + 蒸汽流量前饋 = 給水流量設定值，再由流量迴路決定轉速。
+        單靠水位迴路會被汽包脹縮（swell）騙：升壓時水位假性上升，水位迴路
+        反而減水，等 swell 消失就已經逼近低低水位。
+        """
+        self.speed_ctl.setpoint = self.level_setpoint()
+        level_trim = self.local_demand(self.speed_ctl, self.controlled_level(), dt)
+        steam = max(0.0, self.sig("boiler.steam_generation_kg_s", 0.0))
+        feedforward = self.feedforward_gain * 100.0 * steam / max(1.0, self.rated_flow)
+        self.flow_ctl.setpoint = clamp(level_trim + feedforward, 0.0, 150.0)
+        measured = 100.0 * self.flow / max(1.0, self.rated_flow)
+        if self.auto_mode:
+            demand = self.flow_ctl.update(measured, dt)
+        else:
+            demand = clamp(self.hr("MANUAL_OUTPUT"), 0.0, 100.0)
+            self.flow_ctl.track(demand)
+        self.local_output = demand
+        return demand
+
     def flow_inhibited(self) -> tuple[bool, str]:
         # 鍋爐高高水位跳機時禁止繼續補水：泵浦必須實際停轉，
-        # 只把 MANUAL_OUTPUT 歸零不夠，pump_base 的最低轉速／揚程下限會蓋掉它
+        # 只把轉速命令歸零不夠，pump_base 的最低轉速／揚程下限會蓋掉它
         permitted = self.sig("boiler.feedwater_permitted", 1.0) >= 0.5
         return (not permitted), "鍋爐禁止給水（高高水位）"
 
+    def on_trip(self, codes: list[int]) -> None:
+        super().on_trip(codes)
+        self.flow_ctl.hold(0.0)
+
+    def snapshot_extra(self) -> dict:
+        data = super().snapshot_extra()
+        data["flow_ctl"] = self.flow_ctl.to_dict()
+        return data
+
+    def restore_extra(self, data: dict) -> None:
+        super().restore_extra(data)
+        self.flow_ctl.from_dict(data.get("flow_ctl") or {})
+
     def step(self, dt: float) -> None:
-        if self.flow_inhibited()[0] and self.hr("MANUAL_OUTPUT") > 0.0:
-            self.set_hr("MANUAL_OUTPUT", 0.0)
         self.step_pump(dt)
         self.alarms.set(CODE + 12, self.cavitation_factor < 0.95 and self.speed > 1.0,
                         self.cavitation_factor * 100.0, 95.0)

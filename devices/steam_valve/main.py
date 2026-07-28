@@ -1,4 +1,11 @@
-"""主蒸汽閥設備容器。
+"""主蒸汽閥設備容器（自持，內含汽輪機調速器）。
+
+主蒸汽閥是汽輪機唯一的執行器，因此調速器邏輯就住在這裡：
+
+* 進汽允許：鍋爐壓力達最低進汽壓力且冷凝器真空良好才開閥
+* 併聯前：轉速控制（3000 RPM），升速期間限制開度避免瞬間超速
+* 併聯後（強電網）：負載控制，PV 取發電機實際功率
+* 超速、跳機、快關需求一律無條件關閥
 
 閥門動態  dPos/dt = clamp(Command - Actual, -CloseRate, OpenRate)
 可壓縮流  r = Pdown / Pup
@@ -10,6 +17,7 @@ from __future__ import annotations
 
 from common.device.alarm import AlarmSpec
 from common.device.base_device import BaseDevice, run_device
+from common.device.regulator import build_regulator
 from common.modbus.encoding import enc_i16, enc_u16
 from common.modbus.register_map import DeviceState, RegSpec
 from common.util import cfg_get, clamp
@@ -25,7 +33,7 @@ FAULT_MODES = (
 class SteamValve(BaseDevice):
     NAME = "steam_valve"
     CODE_BASE = CODE
-    DEFAULT_COMM_POLICY = "FAIL_CLOSE"
+    DEFAULT_COMM_POLICY = "LOCAL_AUTO"
 
     PROCESS_INPUTS = [
         RegSpec(9, "COMMAND_POSITION", "%", 100),
@@ -61,12 +69,15 @@ class SteamValve(BaseDevice):
 
     PUBLISHES = ["steam_valve.steam_flow_kg_s", "steam_valve.position_pct",
                  "steam_valve.fast_close", "steam_valve.steam_temp_c"]
+    # 調速器需要的量：轉速、發電機功率／負載需求／斷路器狀態／運轉模式
     SUBSCRIBES = ["boiler.pressure_bar_abs", "boiler.steam_temp_c", "condenser.pressure_bar_abs",
-                  "turbine.tripped", "boiler.tripped", "turbine.speed_rpm"]
+                  "turbine.tripped", "boiler.tripped", "turbine.speed_rpm",
+                  "generator.breaker_closed", "generator.electrical_power_mw",
+                  "generator.load_demand_mw", "generator.operating_mode"]
 
     STATE_VARS = ["position", "command", "fast_close", "fast_close_state", "actuator_speed",
                   "steam_flow", "deviation", "fail_to_close_flag", "close_demand_timer",
-                  "feedback_bias", "upstream", "downstream", "steam_temp"]
+                  "feedback_bias", "upstream", "downstream", "steam_temp", "load_control_active"]
 
     def configure(self) -> None:
         c = self.cfg.get("steam_valve", {})
@@ -94,6 +105,33 @@ class SteamValve(BaseDevice):
         self.upstream = 1.0
         self.downstream = 0.08
         self.steam_temp = 25.0
+        self.load_control_active = 0.0
+
+        # --- 本地自持控制：調速器 ---
+        ctl = c.get("control", {})
+        self.min_admission_pressure = float(
+            cfg_get(self.cfg, "boiler.min_turbine_pressure_bar", 30.0))
+        self.max_admission_exhaust = float(
+            cfg_get(self.cfg, "turbine.start_max_exhaust_bar", 0.15))
+        self.rated_speed = float(cfg_get(self.cfg, "turbine.rated_speed_rpm", 3000.0))
+        self.overspeed_close_rpm = float(ctl.get("overspeed_close_rpm", 3150.0))
+        # 升速期間限制開度，避免併聯前瞬間超速。限幅一定要進到調節器內部：
+        # 外部 min() 會讓積分累積到上限，解除瞬間閥門由 15% 跳到 100% 必定超速跳機。
+        self.startup_valve_max = float(ctl.get("startup_valve_max_pct", 15.0))
+        # 負載前饋增益必須接近實際的「閥位 -> MW」物理增益（≈1 %/MW），
+        # 否則穩態缺口全靠積分補，補到一半轉速就先掉到欠頻跳機門檻。
+        self.load_feedforward = float(ctl.get("load_feedforward_pct_per_mw", 1.0))
+        self.speed_ctl = build_regulator(
+            "turbine_speed", ctl.get("speed", {}),
+            kp=0.05, ki=0.005, kd=0.002, setpoint=self.rated_speed,
+            out_min=0.0, out_max=100.0, rate_up=20.0, rate_down=40.0,
+            deadband=2.0, integral_limit=100.0,
+        )
+        self.load_ctl = build_regulator(
+            "turbine_load", ctl.get("load", {}),
+            kp=0.5, ki=0.1, kd=0.0, out_min=0.0, out_max=100.0,
+            rate_up=10.0, rate_down=20.0, integral_limit=100.0,
+        )
 
     def default_holdings(self) -> dict[str, float]:
         return {
@@ -107,7 +145,15 @@ class SteamValve(BaseDevice):
         return self.position
 
     def start_permissives(self) -> list[tuple[str, bool]]:
+        # 進汽條件也是啟動允許條件：壓力不足或真空不良時閥門保持關閉，
+        # 這同時讓鍋爐的「主蒸汽閥接近關閉」允許條件在升壓期間成立。
         return [
+            ("鍋爐壓力達最低進汽壓力",
+             self.sig("boiler.pressure_bar_abs", 0.0) >= self.min_admission_pressure),
+            ("冷凝器真空良好",
+             self.sig("condenser.pressure_bar_abs", 1.0) <= self.max_admission_exhaust),
+            ("鍋爐未跳機", self.sig("boiler.tripped", 0.0) < 0.5),
+            ("汽輪機未跳機", self.sig("turbine.tripped", 0.0) < 0.5),
             ("無閥門跳機鎖存", not self.protection.any_latched),
             ("緊急停止未啟動", not self.estop),
             ("執行器電源正常", not self.faults.actuator("ACTUATOR_POWER_LOSS")),
@@ -117,11 +163,61 @@ class SteamValve(BaseDevice):
         self.sm.to(DeviceState.RUNNING, "START")
 
     def on_stop(self) -> None:
-        self.set_hr("MANUAL_OUTPUT", 0.0)
+        self.speed_ctl.hold(0.0)
+        self.load_ctl.hold(0.0)
         self.sm.to(DeviceState.STOPPING, "STOP")
 
     def on_trip(self, codes: list[int]) -> None:
         self.fast_close = 1
+        self.speed_ctl.hold(0.0)
+        self.load_ctl.hold(0.0)
+
+    # -- 調速器 ------------------------------------------------------------
+    def governor(self, dt: float) -> float:
+        """回傳閥位命令（%）。併聯前控轉速，併聯後（強電網）控負載。"""
+        speed_rpm = max(0.0, self.sig("turbine.speed_rpm", 0.0))
+        breaker_closed = self.sig("generator.breaker_closed", 0.0) >= 0.5
+        grid_mode = breaker_closed and self.sig("generator.operating_mode", 0.0) >= 0.5
+        power = max(0.0, self.sig("generator.electrical_power_mw", 0.0))
+
+        if not self.auto_mode:
+            manual = clamp(self.hr("MANUAL_OUTPUT"), 0.0, 100.0)
+            self.speed_ctl.track(manual)
+            self.load_ctl.track(manual)
+            self.local_output = manual
+            self.load_control_active = 0.0
+            return manual
+
+        if grid_mode:
+            if not self.load_control_active:
+                # 轉速控制 -> 負載控制：以目前閥位無擾動接手（bumpless transfer）
+                self.load_ctl.track(self.position)
+                self.load_control_active = 1.0
+                self._emit("LOAD_CONTROL_ENGAGED", position=round(self.position, 2))
+            self.load_ctl.setpoint = self.sig("generator.load_demand_mw", 0.0)
+            command = self.load_ctl.update(power, dt)
+            self.speed_ctl.track(command)
+        else:
+            if self.load_control_active:
+                self.speed_ctl.track(self.position)
+                self.load_control_active = 0.0
+                self._emit("SPEED_CONTROL_ENGAGED", position=round(self.position, 2))
+            self.speed_ctl.setpoint = self.hr("PRIMARY_SETPOINT")
+            # 升速期間限制開度；併聯後電網已鎖住轉速，限幅必須解除
+            run_up = speed_rpm < self.speed_ctl.setpoint * 0.97 and not breaker_closed
+            cap = self.startup_valve_max if run_up else 100.0
+            # 孤島模式併聯後：負載直接加在軸上，用實際功率做前饋補償轉速偏差
+            feedforward = self.load_feedforward * power if breaker_closed else 0.0
+            command = self.speed_ctl.update(speed_rpm, dt, feedforward=feedforward, out_max=cap)
+            self.load_ctl.track(command)
+
+        # 安全邏輯永遠優先：超速無條件關閥
+        if speed_rpm > self.overspeed_close_rpm or self.sig("turbine.tripped", 0.0) >= 0.5:
+            self.speed_ctl.hold(0.0)
+            self.load_ctl.hold(0.0)
+            command = 0.0
+        self.local_output = command
+        return command
 
     # -- 物理 --------------------------------------------------------------
     def step(self, dt: float) -> None:
@@ -131,26 +227,30 @@ class SteamValve(BaseDevice):
 
         turbine_trip = self.sig("turbine.tripped", 0.0) >= 0.5
         boiler_trip = self.sig("boiler.tripped", 0.0) >= 0.5
+        # 甩載時轉速上升極快（90 MW 甩掉約 270 RPM/s），正常關閉速度
+        # （100% / 3 s）根本追不上，一定衝過 3300 RPM 超速跳機。
+        # 因此超速門檻同時要求「快關」，用 fast_close_time 的速度關閥；
+        # 轉速回到門檻以下就自動解除，調速器接手把轉速拉回 3000 RPM。
+        overspeed = self.sig("turbine.speed_rpm", 0.0) > self.overspeed_close_rpm
         demand_fast_close = (
-            turbine_trip or boiler_trip or self.sm.tripped or self.estop or self.force_safe
+            turbine_trip or boiler_trip or overspeed
+            or self.sm.tripped or self.estop or self.force_safe
         )
         if demand_fast_close and not self.fast_close:
             self._emit("FAST_CLOSE_DEMAND", turbine_trip=turbine_trip, boiler_trip=boiler_trip,
-                       position=round(self.position, 2))
+                       overspeed=overspeed, position=round(self.position, 2))
         self.fast_close = 1 if demand_fast_close else 0
         self.alarms.set(CODE + 12, bool(self.fast_close))
 
-        # --- 位置命令 ---
-        if self.fast_close:
+        # --- 位置命令（本地調速器） ---
+        if self.fast_close or self.sm.in_any([DeviceState.OFF, DeviceState.STOPPING]):
             self.command = 0.0
-        elif self.sm.in_any([DeviceState.OFF, DeviceState.STOPPING]):
-            self.command = 0.0
-        elif self.watchdog_ok or self.comm_policy != "LOCAL_FALLBACK":
-            self.command = clamp(self.hr("MANUAL_OUTPUT"), 0.0, 100.0)
+            self.speed_ctl.hold(0.0)
+            self.load_ctl.hold(0.0)
+            self.local_output = 0.0
+            self.load_control_active = 0.0
         else:
-            # 本地降階：以轉速偏差做簡單比例控制
-            error = self.hr("PRIMARY_SETPOINT") - self.sig("turbine.speed_rpm", 0.0)
-            self.command = clamp(self.position + self.local_gain * error * dt * 10.0, 0.0, 100.0)
+            self.command = clamp(self.governor(dt), 0.0, 100.0)
 
         # --- 執行器 ---
         open_rate = max(0.1, self.hr("OPEN_RATE"))
@@ -233,11 +333,26 @@ class SteamValve(BaseDevice):
         )
 
     def apply_comm_loss(self, policy: str) -> None:
+        # LOCAL_AUTO（預設）：調速器是本地的，失去 PLC 不影響閥位
         if policy in ("FAIL_CLOSE", "FAIL_LOW"):
             self.set_hr("MANUAL_OUTPUT", 0.0)
+            self.speed_ctl.hold(0.0)
+            self.load_ctl.hold(0.0)
             self.command = 0.0
         elif policy == "FAIL_OPEN":
             self.set_hr("MANUAL_OUTPUT", 100.0)
+
+    def snapshot_extra(self) -> dict:
+        return {
+            "speed_ctl": self.speed_ctl.to_dict(),
+            "load_ctl": self.load_ctl.to_dict(),
+            "load_control_active": self.load_control_active,
+        }
+
+    def restore_extra(self, data: dict) -> None:
+        self.speed_ctl.from_dict(data.get("speed_ctl") or {})
+        self.load_ctl.from_dict(data.get("load_ctl") or {})
+        self.load_control_active = float(data.get("load_control_active", 0.0))
 
     def protection_values(self) -> dict[str, float]:
         return {

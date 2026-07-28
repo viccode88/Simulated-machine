@@ -1,7 +1,13 @@
 # OpenPLC 與 ScadaBR 整合
 
-本專案附帶一套以 `docs/register-map.csv` 自動產生的 OpenPLC Editor 專案與
-ScadaBR 1.2 匯入檔。資料路徑固定為：
+本專案附帶一套以 `docs/register-map.csv` 自動產生的 OpenPLC 專案（v4 與 v3）與
+ScadaBR 1.2 匯入檔。
+
+設備是自持的，因此 OpenPLC 專案只做**資料交換與邏輯判斷**：南向輪詢、watchdog、
+脈衝展寬、跳機矩陣、超速保護。它不含任何 PID 或設定值運算，
+南向寫入只有命令線圈與 40002～40004 命令暫存器。
+
+資料路徑固定為：
 
 ```text
 ScadaBR HMI ── Modbus TCP/502 ──> OpenPLC Runtime
@@ -20,12 +26,21 @@ ScadaBR **只連 OpenPLC**，不可再直接連八台設備。設備會依來源
 
 ## 產物
 
-- `integrations/openplc/thermal-plant-v4/`：可由 OpenPLC Editor 開啟的原始碼專案。
-- `integrations/openplc/thermal-plant-v4/northbound-map.csv`：OpenPLC 對 ScadaBR
-  提供的扁平位址表。
+- `integrations/openplc/thermal-plant-v4/`：可由 OpenPLC Editor v4 開啟的原始碼專案
+  （compose 服務 `openplc-v4`，預設 profile）。
+- `integrations/openplc/thermal-plant-v3/`：OpenPLC v3 的 `.st` 程式、`mbconfig.cfg`、
+  Slave Devices 設定表與北向位址表（compose 服務 `openplc-v3`）。
+- `integrations/openplc/docker/Dockerfile.v3`：v3 Runtime 容器（官方無發佈映像，自原始碼建置）。
 - `integrations/scadabr/`：ScadaBR 1.2 匯入 JSON 與操作說明。
-- `tools/generate_openplc_gateway.py`、`tools/generate_scadabr_gateway.py`：由唯一介面契約
-  `docs/register-map.csv` 重建產物，避免人工複製位址造成漂移。
+- `tools/generate_openplc_gateway.py`、`tools/generate_openplc_v3_gateway.py`、
+  `tools/generate_scadabr_gateway.py`：由唯一介面契約 `docs/register-map.csv`
+  重建產物，避免人工複製位址造成漂移。
+
+> **v3 與 v4 的位址不同**。v4 可以自由指定 IEC 位址，因此用本文的扁平佈局；
+> v3 的 Modbus master 影像由 Runtime 固定（`%IW100+`／`%QW100+`／`%IX100.0+`／
+> `%QX100.0+`，每個緩衝區上限 400 筆），而且沒有空間放 FC3 讀回。
+> ScadaBR 匯入檔對應的是 **v4** 佈局；用 v3 時請改用
+> `integrations/openplc/thermal-plant-v3/northbound-map.csv` 的位址。
 
 ## 位址模型
 
@@ -42,7 +57,7 @@ boiler, steam_valve, turbine, generator
 | --- | ---: | --- | --- |
 | Input Register | FC04 | `%IW(word_base + offset)` | Input Register |
 | Discrete Input | FC02 | `%IX(bit_base + offset)` | Input Status |
-| Holding Register 命令 | FC16 | `%QW(word_base + offset)` | Holding Register |
+| Holding Register 命令 | FC16 | `%QW(word_base + offset)` | Holding Register（只有 offset 1~3 會被 PLC 寫到設備） |
 | Coil 命令 | FC15 | `%QX(bit_base + offset)` | Coil Status |
 | Holding Register 讀回 | FC03 | `%IW(512 + word_base + offset)` | PLC 診斷用 |
 
@@ -51,10 +66,11 @@ boiler, steam_valve, turbine, generator
 
 ## 啟動與匯入
 
-1. 啟動不含內建 DCS 的模擬器，將設備控制權留給 OpenPLC：
+1. 啟動模擬器（預設 profile 就會帶起 OpenPLC v4）：
 
    ```bash
-   docker compose --profile external-plc up --build -d
+   docker compose up --build -d                       # OpenPLC v4
+   COMPOSE_PROFILES=openplc-v3 docker compose up -d   # 改用 v3
    ```
 
 2. 在 OpenPLC Editor 開啟 `integrations/openplc/thermal-plant-v4/`，編譯並部署到
@@ -69,12 +85,11 @@ boiler, steam_valve, turbine, generator
 5. 開啟 `Thermal Plant Overview`，先確認所有設備的 watchdog 與通訊品質，再操作
    各設備頁面。
 
-產物預設假設 OpenPLC Runtime 與模擬器在同一台主機，Remote Device 使用
-`127.0.0.1:15021` 至 `127.0.0.1:15028`。若 Runtime 容器已加入
-`control_net`，用 `python3 tools/generate_openplc_gateway.py --host-mode container`
-切換成 Compose service names；未加入該網路的桌面容器可使用
-`host.docker.internal:15021` 至 `:15028`。若 Runtime 在另一台電腦，將 `.env`
-的 `BIND_ADDR` 設為 `0.0.0.0`，並把 Remote Device host 改成模擬器主機的 LAN IP。
+產物預設是 **container 模式**（Remote Device 用 compose 服務名 + 502），因為
+`compose.yaml` 已經把 OpenPLC 放在 `control_net` 上。Runtime 若跑在桌面而非
+compose，用 `python3 tools/generate_openplc_gateway.py --host-mode host` 重新產生，
+Remote Device 會改成 `127.0.0.1:15021` 至 `:15028`。若 Runtime 在另一台電腦，將
+`.env` 的 `BIND_ADDR` 設為 `0.0.0.0`，並把 Remote Device host 改成模擬器主機的 LAN IP。
 
 ScadaBR 資料源預設為 `localhost:502`。ScadaBR 若不與 OpenPLC 同機，匯入後只需修改
 該資料源的 host，不要改各點位的 offset。
@@ -88,17 +103,22 @@ ScadaBR 資料源預設為 `localhost:502`。ScadaBR 若不與 OpenPLC 同機，
 - HMI 觸發 `RESET_TRIP` 時，PLC 會填入 `RESET_KEY = 42330`，並產生新的非零
   `COMMAND_SEQUENCE`；設備仍會自行檢查安全條件。
 - PLC 每 200 ms 更新八台設備的非零 watchdog，並比對 `WATCHDOG_ECHO`。
-- 跳機矩陣與超速先於一般操作：包含關閉發電機 breaker、關主蒸汽閥、燃燒器歸零、
-  發電機負載歸零與給水降至安全輸出。
+- 跳機矩陣與超速先於一般操作，且**一律以命令表達**：發電機 `BREAKER_OPEN`、
+  下游設備 `STOP` 脈衝。PLC 不寫燃燒器輸出或負載設定——那些是設備自己的事。
+- 正常操作只需要 `START`／`STOP`：`START` 解除操作員停機鎖並讓設備恢復自持，
+  `STOP` 把設備鎖在停機。設定值與手動輸出在 AUTO 模式下不會生效。
+- HMI 可直接觀察自持狀態：`LOCAL_OUTPUT`(30026)、`SELF_HOLD_STATE`(30027)、
+  `PERMISSIVE_WORD`(30028)。
 - `feedwater_tank` 是被動設備，HMI 不提供無效的 START／STOP；`generator` 頁面
-  另外提供 breaker 開／關。
+  另外提供 breaker 開／關（v4 才有；v3 的 coil 區只到 offset 7）。
 
 ## 重新產生與驗證
 
 修改 `docs/register-map.csv` 後執行：
 
 ```bash
-python tools/generate_openplc_gateway.py
+python tools/generate_openplc_gateway.py          # v4
+python -m tools.generate_openplc_v3_gateway       # v3
 python tools/generate_scadabr_gateway.py
 pytest -q tests/integration/test_openplc_scadabr_artifacts.py
 ```
