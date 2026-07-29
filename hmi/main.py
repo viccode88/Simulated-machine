@@ -37,6 +37,8 @@ PAGE = """<!doctype html>
  <h1>火力發電廠工業控制模擬器</h1>
  <span class="pill" id="simtime">sim 0.0 s</span>
  <span class="pill" id="paused">RUN</span>
+ <span class="pill" id="rtf" title="即時倍率：模擬時間前進速度 ÷ 真實時間">×–</span>
+ <span class="pill" id="phase">冷態</span>
  <span class="pill" id="gen">0 快照世代</span>
  <button onclick="cmd('/api/sim/pause')">暫停</button>
  <button onclick="cmd('/api/sim/resume')">繼續</button>
@@ -48,7 +50,8 @@ PAGE = """<!doctype html>
 </header>
 <main>
  <div class="card"><h2>機組概要</h2><table id="overview"></table></div>
- <div class="card"><h2>設備狀態</h2><table id="devices"></table></div>
+ <div class="card"><h2>設備狀態</h2><table id="devices"></table>
+  <h2 style="margin-top:10px">其他參與者</h2><table id="observers"></table></div>
  <div class="card"><h2>程序量</h2><table id="signals"></table></div>
  <div class="card"><h2>事件與第一故障</h2><pre id="events"></pre></div>
  <div class="card"><h2>快照</h2><pre id="snapshots"></pre></div>
@@ -68,23 +71,65 @@ async function snapshot(action,clean){
   await cmd('/api/snapshot/'+action,{name:name,clear_latches:!!clean});
 }
 function fmt(v){return (Math.abs(v)<10?v.toFixed(3):v.toFixed(2));}
+// 即時倍率：用兩次輪詢之間「模擬時間前進量 ÷ 真實時間」估算。
+// 自持啟動要 930 模擬秒，倍率掉到 1 以下時畫面看起來會像停住，所以直接標示出來。
+let lastSim=null,lastWall=null,rtf=null;
+function updateRate(s){
+ const now=performance.now()/1000;
+ if(lastSim===null){lastSim=s.sim_time;lastWall=now;}
+ else if(now-lastWall>0.3){
+  const r=(s.sim_time-lastSim)/(now-lastWall);
+  rtf=(rtf===null)?r:rtf*0.6+r*0.4; lastSim=s.sim_time; lastWall=now;}
+ const el=document.getElementById('rtf');
+ if(s.paused){el.textContent='×0 暫停中';el.className='pill warn';}
+ else if(rtf===null){el.textContent='×–';el.className='pill';}
+ else{el.textContent='即時 ×'+rtf.toFixed(2)+(s.speed&&s.speed!==1?' / 設定 ×'+s.speed:'');
+      el.className='pill '+(rtf<0.5?'warn':'ok');}
+}
+// 自持啟動沒有順序器，靠允許條件自然浮現；把目前階段標出來，
+// 免得「才 30 秒、鍋爐還在吹掃」被誤判成設備沒有自持。
+function updatePhase(s){
+ const S=n=>{const p=s.participants[n];return p?(STATE_NAMES[p.state]||''):'';};
+ const V=n=>(s.signals[n]||{}).value||0;
+ const mw=V('generator.electrical_power_mw'),rpm=V('turbine.speed_rpm');
+ const brk=V('generator.breaker_closed'),bs=S('boiler');
+ let phase='冷態啟動中',ok=false;
+ if(brk>0.5&&mw>=59){phase='滿載運轉 '+mw.toFixed(1)+' MW';ok=true;}
+ else if(brk>0.5){phase='併聯加載中 '+mw.toFixed(1)+' MW';ok=true;}
+ else if(rpm>10){phase='汽輪機升速中 '+rpm.toFixed(0)+' RPM';}
+ else if(bs==='PRESSURIZING'){phase='鍋爐升壓中';}
+ else if(bs==='IGNITING'){phase='鍋爐點火中';}
+ else if(bs==='PURGING'){phase='鍋爐吹掃中（30 s）';}
+ const el=document.getElementById('phase');
+ el.textContent=phase; el.className='pill '+(ok?'ok':'');
+ el.title='自持冷啟動全程約 930 模擬秒（即時約 15 分鐘）：'+
+  '2 s 自行 START → 30 s 吹掃 → 約 230 s 併聯 → 約 930 s 到 60 MW。'+
+  '要快轉用 plantctl speed 10，要直接滿載用 RESTORE_ON_BOOT=steady-60mw。';
+}
 async function refresh(){
  const s=await (await fetch('/api/state')).json();
  document.getElementById('simtime').textContent='sim '+s.sim_time.toFixed(1)+' s (tick '+s.tick+')';
  const p=document.getElementById('paused');
  p.textContent=s.paused?'PAUSED':'RUN'; p.className='pill '+(s.paused?'warn':'ok');
  document.getElementById('gen').textContent=s.snapshot_generation+' 快照世代';
+ updateRate(s); updatePhase(s);
  let o='';
  for(const [k,label] of KEY){const sig=s.signals[k];
   if(!sig)continue;
   o+=`<tr><td>${label}</td><td class="q-${sig.quality}">${fmt(sig.value)}</td></tr>`;}
  document.getElementById('overview').innerHTML=o;
- let d='';
+ // historian/HMI 是 observer，沒有設備狀態機；混在設備表裡會被畫成 OFF，
+ // 看起來像有一台設備死掉。分開列。
+ let d='',ob='';
+ const expected=new Set(s.expected_devices||[]);
  for(const [name,info] of Object.entries(s.participants)){
+  if(info.role!=='device'&&!expected.has(name)){
+   ob+=`<tr><td>${name}</td><td>${(info.role||'?').toUpperCase()} 已連線</td></tr>`; continue;}
   d+=`<tr><td>${name}</td><td class="${info.tripped?'trip':''}">`+
      `${STATE_NAMES[info.state]||info.state}${info.tripped?' TRIP':''}</td></tr>`;}
  for(const name of s.offline_devices){d+=`<tr><td>${name}</td><td class="trip">OFFLINE</td></tr>`;}
  document.getElementById('devices').innerHTML=d;
+ document.getElementById('observers').innerHTML=ob||'<tr><td>（無）</td><td></td></tr>';
  let g='';
  for(const [name,sig] of Object.entries(s.signals)){
   g+=`<tr><td>${name}</td><td class="q-${sig.quality}">${fmt(sig.value)}</td></tr>`;}

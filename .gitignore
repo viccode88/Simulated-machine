@@ -24,3 +24,5 @@ htmlcov/
 
 # macOS
 .DS_Store
+
+.runtime/
